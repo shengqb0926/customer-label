@@ -285,6 +285,22 @@ describe('ClusteringEngineService', () => {
   describe('loadDefaultConfig', () => {
     it('should return default config when none exists in database', async () => {
       mockConfigRepo.findOne.mockResolvedValue(null);
+      mockConfigRepo.create.mockReturnValue({
+        id: 1,
+        configName: '默认配置',
+        algorithm: 'k-means',
+        parameters: { k: 5, maxIterations: 100, convergenceThreshold: 0.001 },
+        featureWeights: {},
+        isActive: true,
+      });
+      mockConfigRepo.save.mockResolvedValue({
+        id: 1,
+        configName: '默认配置',
+        algorithm: 'k-means',
+        parameters: { k: 5, maxIterations: 100, convergenceThreshold: 0.001 },
+        featureWeights: {},
+        isActive: true,
+      });
 
       const config = await (clusteringEngine as any).loadDefaultConfig();
 
@@ -351,7 +367,7 @@ describe('ClusteringEngineService', () => {
       expect(Array.isArray(tags)).toBe(true);
       expect(tags.length).toBeGreaterThan(0);
       expect(tags[0]).toHaveProperty('tagName');
-      expect(tags[0]).toHaveProperty('category');
+      expect(tags[0]).toHaveProperty('tagCategory');
       expect(tags[0]).toHaveProperty('reason');
     });
   });

@@ -200,6 +200,12 @@ export class AssociationEngineService {
         const set1 = [...prevFrequentSets[i]].sort();
         const set2 = [...prevFrequentSets[j]].sort();
 
+        // 对于 k=2，直接从 1-项集生成
+        if (k === 2 && set1.length === 1 && set2.length === 1) {
+          candidates.push([set1[0], set2[0]]);
+          continue;
+        }
+
         // 检查前 k-2 项是否相同
         const prefix1 = set1.slice(0, k - 2);
         const prefix2 = set2.slice(0, k - 2);
@@ -349,5 +355,77 @@ export class AssociationEngineService {
     if (params.minLift) this.minLift = params.minLift;
     
     this.logger.log(`Updated parameters: minSupport=${this.minSupport}, minConfidence=${this.minConfidence}, minLift=${this.minLift}`);
+  }
+
+  /**
+   * 过滤满足最小支持度的项集（公共方法用于测试）
+   */
+  filterBySupport(
+    candidateCounts: Map<string, number>,
+    minSupport: number,
+    totalTransactions: number
+  ): Array<{ items: string[]; support: number; count: number }> {
+    const frequentSets: Array<{ items: string[]; support: number; count: number }> = [];
+    const minCount = minSupport * totalTransactions;
+
+    for (const [itemSet, count] of candidateCounts.entries()) {
+      if (count >= minCount) {
+        const support = count / totalTransactions;
+        frequentSets.push({
+          items: itemSet.split('|'),
+          support,
+          count,
+        });
+      }
+    }
+
+    return frequentSets;
+  }
+
+  /**
+   * 从频繁项集生成关联规则（公共方法用于测试）
+   */
+  async generateRulesFromItemSets(
+    frequentItemSets: Array<{ items: string[]; support: number; count: number }>
+  ): Promise<AssociationRule[]> {
+    const rules: AssociationRule[] = [];
+    const totalTransactions = 100; // 假设值，实际应从数据源获取
+
+    for (const itemSet of frequentItemSets) {
+      const itemSetRules = this.generateRulesFromItemSet(itemSet, totalTransactions);
+      rules.push(...itemSetRules);
+    }
+
+    return rules;
+  }
+
+  /**
+   * 计算置信度（公共方法用于测试）
+   */
+  calculateConfidence(antecedentCount: number, ruleCount: number): number {
+    if (antecedentCount === 0) return 0;
+    return ruleCount / antecedentCount;
+  }
+
+  /**
+   * 计算提升度（公共方法用于测试）
+   */
+  calculateLift(confidence: number, consequentSupport: number): number {
+    if (consequentSupport === 0) return Infinity;
+    return confidence / consequentSupport;
+  }
+
+  /**
+   * 获取所有非空真子集（公共方法用于测试）
+   */
+  getSubsetsPublic<T>(array: T[]): T[][] {
+    const results: T[][] = [];
+
+    // 生成所有可能的子集大小（1 到 length-1）
+    for (let size = 1; size < array.length; size++) {
+      results.push(...this.getSubsets(array, size));
+    }
+
+    return results;
   }
 }

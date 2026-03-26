@@ -42,7 +42,13 @@ describe('CacheService', () => {
   describe('get', () => {
     it('should return value from Redis', async () => {
       const mockValue = { key: 'value' };
-      mockRedisService.get.mockResolvedValue(JSON.stringify(mockValue));
+      // CacheService 存储的是 CacheEntry 格式
+      const cacheEntry = JSON.stringify({
+        data: mockValue,
+        timestamp: Date.now(),
+        ttl: 3600,
+      });
+      mockRedisService.get.mockResolvedValue(cacheEntry);
 
       const result = await cacheService.get('test:key');
 
@@ -60,7 +66,12 @@ describe('CacheService', () => {
 
     it('should parse JSON string correctly', async () => {
       const mockData = { id: 1, name: 'test' };
-      mockRedisService.get.mockResolvedValue(JSON.stringify(mockData));
+      const cacheEntry = JSON.stringify({
+        data: mockData,
+        timestamp: Date.now(),
+        ttl: 3600,
+      });
+      mockRedisService.get.mockResolvedValue(cacheEntry);
 
       const result = await cacheService.get('test:key');
 
@@ -83,11 +94,17 @@ describe('CacheService', () => {
 
       await cacheService.set('test:key', mockValue, 3600);
 
-      expect(redisService.set).toHaveBeenCalledWith(
-        'test:key',
-        JSON.stringify(mockValue),
-        3600
-      );
+      // CacheService 会将数据包装在 CacheEntry 中
+      expect(redisService.set).toHaveBeenCalledTimes(1);
+      const callArgs = mockRedisService.set.mock.calls[0];
+      expect(callArgs[0]).toBe('test:key');
+      expect(callArgs[2]).toBe(3600);
+      
+      // 验证存储的是 JSON 格式的 CacheEntry
+      const storedEntry = JSON.parse(callArgs[1]);
+      expect(storedEntry.data).toEqual(mockValue);
+      expect(storedEntry.ttl).toBe(3600);
+      expect(storedEntry.timestamp).toBeDefined();
     });
 
     it('should handle plain string values', async () => {
@@ -95,7 +112,15 @@ describe('CacheService', () => {
 
       await cacheService.set('test:key', 'plain string', 1800);
 
-      expect(redisService.set).toHaveBeenCalledWith('test:key', '"plain string"', 1800);
+      // 验证存储的是 JSON 格式的 CacheEntry
+      expect(redisService.set).toHaveBeenCalledTimes(1);
+      const callArgs = mockRedisService.set.mock.calls[0];
+      expect(callArgs[0]).toBe('test:key');
+      expect(callArgs[2]).toBe(1800);
+      
+      const storedEntry = JSON.parse(callArgs[1]);
+      expect(storedEntry.data).toBe('plain string');
+      expect(storedEntry.ttl).toBe(1800);
     });
 
     it('should work without explicit TTL (default)', async () => {

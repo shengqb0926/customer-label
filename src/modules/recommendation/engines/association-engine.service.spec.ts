@@ -128,13 +128,14 @@ describe('AssociationEngineService', () => {
     });
 
     it('should count 2-itemsets correctly', () => {
-      const candidates = [['A', 'B'], ['B', 'C'], ['A', 'C']];
-      const counts = (associationEngine as any).countCandidates(transactions, 2, candidates);
+      // prevFrequentSets 应该是频繁 1-项集，用于生成 2-项集候选
+      const prevFrequentSets = [['A'], ['B'], ['C']];
+      const counts = (associationEngine as any).countCandidates(transactions, 2, prevFrequentSets);
 
       expect(counts.size).toBe(3);
-      expect(counts.get('A,B')).toBe(2);
-      expect(counts.get('B,C')).toBe(2);
-      expect(counts.get('A,C')).toBe(2);
+      expect(counts.get('A|B')).toBe(2);
+      expect(counts.get('B|C')).toBe(2);
+      expect(counts.get('A|C')).toBe(2);
     });
 
     it('should handle empty transactions', () => {
@@ -284,7 +285,7 @@ describe('AssociationEngineService', () => {
   describe('getSubsets', () => {
     it('should generate all non-empty proper subsets', () => {
       const items = ['A', 'B', 'C'];
-      const subsets = (associationEngine as any).getSubsets(items);
+      const subsets = (associationEngine as any).getSubsetsPublic(items);
 
       expect(subsets.length).toBe(6); // [A], [B], [C], [A,B], [A,C], [B,C]
       expect(subsets.some((s: string[]) => s.length === 0)).toBe(false);
@@ -293,13 +294,13 @@ describe('AssociationEngineService', () => {
 
     it('should return empty array for single item', () => {
       const items = ['A'];
-      const subsets = (associationEngine as any).getSubsets(items);
+      const subsets = (associationEngine as any).getSubsetsPublic(items);
 
       expect(subsets).toEqual([]);
     });
 
     it('should return empty array for empty input', () => {
-      const subsets = (associationEngine as any).getSubsets([]);
+      const subsets = (associationEngine as any).getSubsetsPublic([]);
 
       expect(subsets).toEqual([]);
     });

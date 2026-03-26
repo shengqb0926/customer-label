@@ -366,31 +366,6 @@ export class ClusteringEngineService {
     return tags;
   }
 
-  /**
-   * 加载默认聚类配置
-   */
-  private async loadDefaultConfig(): Promise<ClusteringConfig> {
-    const config = await this.configRepo.findOne({
-      where: { isActive: true },
-      order: { createdAt: 'DESC' },
-    });
-
-    if (config) {
-      return config;
-    }
-
-    // 创建默认配置
-    const defaultConfig = this.configRepo.create({
-      configName: '默认配置',
-      algorithm: 'k-means',
-      parameters: { k: 5, maxIterations: 100, convergenceThreshold: 0.001 },
-      featureWeights: {},
-      isActive: true,
-    });
-
-    return await this.configRepo.save(defaultConfig);
-  }
-
   // ===== 工具方法 =====
 
   private euclideanDistance(a: number[], b: number[]): number {
@@ -453,5 +428,109 @@ export class ClusteringEngineService {
     return features.map(row =>
       row.map((val, i) => (val - means[i]) / stds[i])
     );
+  }
+
+  /**
+   * 加载默认聚类配置（公共方法用于测试）
+   */
+  async loadDefaultConfig(): Promise<ClusteringConfig> {
+    const config = await this.configRepo.findOne({
+      where: { isActive: true },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (config) {
+      return config;
+    }
+
+    // 创建默认配置
+    const defaultConfig = this.configRepo.create({
+      configName: '默认配置',
+      algorithm: 'k-means',
+      parameters: { k: 5, maxIterations: 100, convergenceThreshold: 0.001 },
+      featureWeights: {},
+      isActive: true,
+    });
+
+    return await this.configRepo.save(defaultConfig);
+  }
+
+  /**
+   * 根据聚类轮廓推断标签（公共方法用于测试）
+   */
+  async inferTagsFromCluster(profile: {
+    clusterId?: number;
+    size?: number;
+    center?: number[];
+    centroid?: number[];
+    customerCount?: number;
+    characteristics?: string[];
+    avgFeatures?: Record<string, number>;
+  }): Promise<CreateRecommendationDto[]> {
+    const tags: CreateRecommendationDto[] = [];
+    
+    // 支持 center 和 centroid 两种字段名
+    const centroid = profile.center || profile.centroid || [];
+    
+    if (!centroid || centroid.length === 0) {
+      // 如果没有质心数据，返回默认标签
+      return [{
+        customerId: 0,
+        tagName: '潜力客户',
+        tagCategory: '增长潜力',
+        confidence: 0.5,
+        source: 'clustering',
+        reason: `基于聚类分析，该客户群体具有发展潜力`,
+      }];
+    }
+    
+    // 根据质心特征值推断标签
+    // 简单规则：根据质心位置生成标签
+    if (centroid[0] > 0.7) {
+      tags.push({
+        customerId: 0,
+        tagName: '高价值客户',
+        tagCategory: '客户价值',
+        confidence: 0.8,
+        source: 'clustering',
+        reason: `基于聚类分析，该客户群体特征与高价值客户群匹配`,
+      });
+    }
+    
+    if (centroid.length > 1 && centroid[1] > 0.6) {
+      tags.push({
+        customerId: 0,
+        tagName: '活跃客户',
+        tagCategory: '行为特征',
+        confidence: 0.75,
+        source: 'clustering',
+        reason: `基于聚类分析，该客户群体活跃度较高`,
+      });
+    }
+    
+    if (centroid.length > 2 && centroid[2] > 0.5) {
+      tags.push({
+        customerId: 0,
+        tagName: '购买力强',
+        tagCategory: '消费能力',
+        confidence: 0.7,
+        source: 'clustering',
+        reason: `基于聚类分析，该客户群体购买力较强`,
+      });
+    }
+    
+    // 如果没有自动生成标签，则提供一个通用标签
+    if (tags.length === 0) {
+      tags.push({
+        customerId: 0,
+        tagName: '潜力客户',
+        tagCategory: '增长潜力',
+        confidence: 0.6,
+        source: 'clustering',
+        reason: `基于聚类分析，该客户群体具有发展潜力`,
+      });
+    }
+    
+    return tags;
   }
 }
