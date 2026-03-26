@@ -12,12 +12,8 @@ export class RedisModule {
   static forRoot(config?: RedisConfig): DynamicModule {
     return {
       module: RedisModule,
-      providers: [
-        {
-          provide: 'REDIS_CONFIG',
-          useValue: config,
-        },
-      ],
+      providers: [RedisService, CacheService],
+      exports: [RedisService, CacheService],
     };
   }
 }

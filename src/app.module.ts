@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RedisModule } from './infrastructure/redis';
-import { QueueModule } from './infrastructure/queue';
-import { AuthModule } from './modules/auth/auth.module';
-import { CommonModule } from './common/common.module';
-import { RecommendationModule } from './modules/recommendation/recommendation.module';
-import { ScoringModule } from './modules/scoring/scoring.module';
-import { FeedbackModule } from './modules/feedback/feedback.module';
-import { entities } from './entities';
+import { RedisModule } from './infrastructure/redis/index.js';
+import { QueueModule } from './infrastructure/queue/index.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { CommonModule } from './common/common.module.js';
+import { RecommendationModule } from './modules/recommendation/recommendation.module.js';
+import { ScoringModule } from './modules/scoring/scoring.module.js';
+import { FeedbackModule } from './modules/feedback/feedback.module.js';
+import { entities } from './entities.js';
 
 @Module({
   imports: [
@@ -27,8 +27,9 @@ import { entities } from './entities';
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_DATABASE || 'customer_label',
       entities: entities,
-      synchronize: false,
+      synchronize: false, // 生产环境禁用自动同步，使用 migrations
       logging: process.env.NODE_ENV === 'development',
+      migrationsRun: false, // 手动运行迁移
     }),
 
     // 基础设施模块（全局）

@@ -44,7 +44,7 @@ export class RecommendationController {
       // 使用队列异步处理
       const job = await this.service.generateForCustomer(customerId, {
         mode: mode || 'all',
-        useCache: useCache !== 'false',
+        useCache: (useCache as any) !== 'false',
       });
 
       return {

@@ -9,9 +9,9 @@ import {
 } from 'typeorm';
 
 @Entity('recommendation_rules')
-@Index(['is_active'], { where: '"is_active" = TRUE' })
-@Index(['priority'], { order: 'DESC' })
-@Unique(['rule_name'])
+@Index(['isActive'], { where: '"is_active" = TRUE' })
+@Index('IDX_PRIORITY', ['priority'])
+@Unique(['ruleName'])
 export class RecommendationRule {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;

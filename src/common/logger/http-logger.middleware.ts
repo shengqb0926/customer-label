@@ -4,7 +4,7 @@ import { logger } from './winston.config';
 
 @Injectable()
 export class HttpLoggerMiddleware implements NestMiddleware {
-  private readonly httpLogger = Logger.getLogger('HTTP');
+  // private readonly httpLogger = Logger.getLogger('HTTP');
 
   use(req: Request, res: Response, next: NextFunction) {
     const { method, originalUrl, ip, headers } = req;

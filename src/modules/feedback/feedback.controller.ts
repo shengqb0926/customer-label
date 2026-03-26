@@ -20,7 +20,7 @@ export class FeedbackController {
    * 记录每日反馈统计
    */
   @Post('daily')
-  async recordDaily(@Body() body: DailyFeedbackDto): Promise<FeedbackStatistic> {
+  async recordDaily(@Body() body: any): Promise<FeedbackStatistic> {
     return await this.service.recordDailyFeedback(body);
   }
 

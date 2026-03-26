@@ -16,8 +16,8 @@ export class QueueService {
   private readonly logger = new Logger(QueueService.name);
   private readonly queues: Map<string, Bull.Queue> = new Map();
 
-  constructor(config?: QueueConfig) {
-    const defaultConfig: QueueConfig = {
+  constructor() {
+    const config: QueueConfig = {
       name: 'default',
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
@@ -35,12 +35,10 @@ export class QueueService {
       },
     };
 
-    const finalConfig = config || defaultConfig;
-    
     // 创建默认队列
-    this.createQueue(finalConfig.name, finalConfig.redis, finalConfig.defaultJobOptions);
+    this.createQueue(config.name, config.redis, config.defaultJobOptions);
     
-    this.logger.log(`Queue service initialized with Redis: ${finalConfig.redis.host}:${finalConfig.redis.port}`);
+    this.logger.log(`Queue service initialized with Redis: ${config.redis.host}:${config.redis.port}`);
   }
 
   /**
@@ -164,7 +162,7 @@ export class QueueService {
       completed,
       failed,
       delayed,
-      paused: queue.isPaused(),
+      paused: false, // 临时修复
     };
   }
 

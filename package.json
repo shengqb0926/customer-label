@@ -3,18 +3,18 @@
   "version": "1.0.0",
   "description": "客户标签智能推荐系统",
   "main": "dist/main.js",
-  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
-    "dev": "node --loader ts-node/esm src/main.ts",
+    "dev": "npm run build && npm start",
+    "dev:watch": "tsc --watch",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "typeorm": "typeorm-ts-node-esm",
-    "migration:generate": "typeorm migration:generate -d data-source.ts",
-    "migration:run": "typeorm migration:run -d data-source.ts",
-    "migration:revert": "typeorm migration:revert -d data-source.ts"
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d data-source.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d data-source.ts"
   },
   "keywords": [
     "customer",

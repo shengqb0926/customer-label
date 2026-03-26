@@ -97,7 +97,7 @@ export class CreateTagScoresTable1711507260000 implements MigrationInterface {
           {
             name: 'insights',
             type: 'text',
-            arrayMode: true,
+            
             isNullable: true,
           },
           {

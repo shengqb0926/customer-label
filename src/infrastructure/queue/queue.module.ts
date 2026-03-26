@@ -10,12 +10,8 @@ export class QueueModule {
   static forRoot(config?: QueueConfig): DynamicModule {
     return {
       module: QueueModule,
-      providers: [
-        {
-          provide: 'QUEUE_CONFIG',
-          useValue: config,
-        },
-      ],
+      providers: [QueueService],
+      exports: [QueueService],
     };
   }
 }

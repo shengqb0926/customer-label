@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthService } from './auth.service';
+import { AuthService } from '../auth.service.js';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -14,15 +14,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const user = await this.authService.verifyToken(
-      // Token 已经由 passport 验证过，这里只需要返回用户信息
-      { sub: payload.sub, username: payload.username, roles: payload.roles }
-    );
-    
-    if (!user) {
-      throw new UnauthorizedException('Invalid token');
-    }
-    
-    return user;
+    // Passport-JWT 已经验证了 token 的有效性
+    // payload 包含：sub (用户 ID), username, roles, iat, exp
+    return {
+      id: payload.sub,
+      username: payload.username,
+      roles: payload.roles,
+    };
   }
 }

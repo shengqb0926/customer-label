@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Request, Response } from 'express';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -20,55 +21,52 @@ async function bootstrap() {
     app.setGlobalPrefix(apiPrefix);
     
     // 启用 CORS
-    app.enableCors({
-      origin: process.env.CORS_ORIGIN || '*',
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-    });
+    app.enableCors();
     
-    // 配置 Swagger
+    // Swagger 文档配置（必须在全局前缀设置之后）
     const swaggerConfig = new DocumentBuilder()
       .setTitle('客户标签智能推荐系统 API')
-      .setDescription('提供客户标签推荐、评分和反馈管理的完整 API 接口')
-      .setVersion('1.0')
-      .addBearerAuth({
-        description: 'JWT Token 认证，格式：Bearer <token>',
-        name: 'Authorization',
-        in: 'header',
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-      })
-      .addTag('auth', '用户认证相关接口')
-      .addTag('recommendations', '标签推荐相关接口')
-      .addTag('scores', '标签评分相关接口')
-      .addTag('feedback', '反馈统计相关接口')
+      .setDescription('完整的 RESTful API 文档')
+      .setVersion('1.0.0')
+      .addBearerAuth()
       .build();
     
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('api/docs', app, document, {
       swaggerOptions: {
         persistAuthorization: true,
+        // 禁用 OAuth2 重定向，使用简单的 JWT token 输入
+        oauth2RedirectUrl: undefined,
       },
-      customCssUrl:
-        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css',
-      customJs: [
-        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-bundle.min.js',
-      ],
+      // 自定义 Swagger 页面，添加 JWT Token 输入框说明
+      customCss: `
+        .swagger-ui .topbar { display: none; }
+        .auth-wrapper { margin-right: 20px; }
+      `,
+      customSiteTitle: '客户标签 API 文档',
     });
     
-    logger.log(`📚 Swagger UI: http://localhost:${port}/api/docs`);
+    // 添加根路径重定向到 Swagger 文档（放在最后，避免拦截其他路由）
+    app.use('/', (req: Request, res: Response, next) => {
+      if (req.path === '/') {
+        res.redirect('/api/docs');
+      } else {
+        next(); // 让其他路径继续由 NestJS 路由处理
+      }
+    });
     
-    // 启动应用
-    await app.listen(port);
+    // 启动应用，监听所有网络接口
+    await app.listen(port, '0.0.0.0');
     
-    logger.log(`🚀 Application started successfully!`);
-    logger.log(`📍 API Prefix: ${apiPrefix}`);
-    logger.log(`❤️  Redis: ${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || '6379'}`);
-    logger.log(`❤️  PostgreSQL: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}/${process.env.DB_DATABASE || 'customer_label'}`);
+    logger.log(`🚀 应用启动成功！`);
+    logger.log(`📡 API 地址：http://localhost:${port}${apiPrefix}`);
+    logger.log(`📚 Swagger 文档：http://localhost:${port}/api/docs`);
+    logger.log(`❤️ 健康检查：http://localhost:${port}/health`);
+    logger.log(`📊 Prometheus 指标：http://localhost:${port}/metrics`);
+    logger.log(`\n🔑 默认账号：admin / admin123`);
     
   } catch (error) {
-    logger.error('Failed to start application:', error);
+    logger.error('应用启动失败', error);
     process.exit(1);
   }
 }

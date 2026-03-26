@@ -7,11 +7,20 @@ import {
   Index,
 } from 'typeorm';
 
+export interface CreateRecommendationDto {
+  customerId: number;
+  tagName: string;
+  tagCategory: string;
+  confidence: number;
+  source: 'rule' | 'clustering' | 'association';
+  reason: string;
+}
+
 @Entity('tag_recommendations')
-@Index(['customer_id'])
+@Index(['customerId'])
 @Index(['source'])
-@Index(['is_accepted'])
-@Index(['created_at'])
+@Index(['isAccepted'])
+@Index(['createdAt'])
 export class TagRecommendation {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;

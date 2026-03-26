@@ -14,21 +14,19 @@ export class RedisService {
   private readonly logger = new Logger(RedisService.name);
   private connected = false;
 
-  constructor(config?: RedisConfig) {
-    const defaultConfig: RedisConfig = {
+  constructor() {
+    const config: RedisConfig = {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
       password: process.env.REDIS_PASSWORD || undefined,
       db: 0,
     };
 
-    const finalConfig = config || defaultConfig;
-
     this.client = new Redis({
-      host: finalConfig.host,
-      port: finalConfig.port,
-      password: finalConfig.password,
-      db: finalConfig.db,
+      host: config.host,
+      port: config.port,
+      password: config.password,
+      db: config.db,
       retryStrategy: (times) => {
         if (times > 10) {
           this.logger.warn('Redis connection failed after multiple retries');

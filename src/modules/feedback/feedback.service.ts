@@ -40,7 +40,7 @@ export class FeedbackService {
     const date = new Date(dto.date);
     
     // 查找是否已存在该日期的记录
-    let entity = await this.feedbackRepo.findOne({ where: { date } });
+    let entity = await this.feedbackRepo.findOne({ where: { date: date.toISOString().split('T')[0] } as any });
 
     if (entity) {
       // 更新现有记录
@@ -80,7 +80,7 @@ export class FeedbackService {
    */
   async getByDate(date: string): Promise<FeedbackStatistic | null> {
     return await this.feedbackRepo.findOne({ 
-      where: { date: new Date(date) },
+      where: { date } as any,
     });
   }
 
@@ -128,11 +128,15 @@ export class FeedbackService {
   }> {
     const stats = await this.getRecentDays(days);
     
-    // 按日期升序排序
-    stats.sort((a, b) => a.date.getTime() - b.date.getTime());
+    // 按日期升序排序（将 date 字符串转为时间戳）
+    stats.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return {
-      dates: stats.map(s => s.date.toISOString().split('T')[0]),
+      dates: stats.map(s => {
+        if (typeof s.date === 'string') return s.date;
+        // 如果是 Date 对象，转为字符串
+        return new Date(s.date as any).toISOString().split('T')[0];
+      }),
       rates: stats.map(s => s.acceptanceRate),
       totals: stats.map(s => s.totalRecommendations),
     };

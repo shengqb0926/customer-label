@@ -16,7 +16,7 @@ export class ClusteringConfig {
   @Column({ type: 'varchar', length: 50 })
   algorithm: 'k-means' | 'dbscan' | 'hierarchical';
 
-  @Column({ type: 'simple-json', type: 'jsonb' })
+  @Column({ type: 'simple-json' })
   parameters: {
     k?: number;
     maxIterations?: number;
