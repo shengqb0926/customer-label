@@ -9,6 +9,7 @@ import { RuleEngineService, CustomerData } from './engines/rule-engine.service';
 import { ClusteringEngineService, CustomerFeatureVector } from './engines/clustering-engine.service';
 import { AssociationEngineService } from './engines/association-engine.service';
 import { FusionEngineService, FusionWeights } from './engines/fusion-engine.service';
+import { ConflictDetectorService } from './services/conflict-detector.service';
 
 export interface CreateRecommendationDto {
   customerId: number;
@@ -23,6 +24,7 @@ export interface RecommendOptions {
   mode?: 'rule' | 'clustering' | 'association' | 'all';
   useCache?: boolean;
   weights?: Partial<FusionWeights>;
+  detectConflicts?: boolean;
 }
 
 @Injectable()
@@ -41,6 +43,7 @@ export class RecommendationService {
     private readonly clusteringEngine: ClusteringEngineService,
     private readonly associationEngine: AssociationEngineService,
     private readonly fusionEngine: FusionEngineService,
+    private readonly conflictDetector: ConflictDetectorService,
   ) {}
 
   /**
@@ -51,7 +54,7 @@ export class RecommendationService {
     options: RecommendOptions = {},
     customerData?: CustomerData
   ): Promise<TagRecommendation[]> {
-    const { mode = 'all', useCache = true, weights } = options;
+    const { mode = 'all', useCache = true, weights, detectConflicts = true } = options;
 
     // 尝试从缓存获取
     if (useCache) {
@@ -104,6 +107,55 @@ export class RecommendationService {
       );
 
       this.logger.log(`Fused to ${fusedRecommendations.length} final recommendations`);
+
+      // 冲突检测和处理
+      if (detectConflicts && fusedRecommendations.length > 0) {
+        // 转换为实体对象以便检测冲突
+        const recommendationEntities = fusedRecommendations.map(dto => 
+          this.recommendationRepo.create({
+            customerId: dto.customerId,
+            tagName: dto.tagName,
+            tagCategory: dto.tagCategory,
+            confidence: dto.confidence,
+            source: dto.source,
+            reason: dto.reason,
+          })
+        );
+
+        // 检测冲突
+        const conflicts = await this.conflictDetector.detectCustomerConflicts(
+          customerId,
+          recommendationEntities
+        );
+
+        if (conflicts.length > 0) {
+          this.logger.warn(`Detected ${conflicts.length} conflicts, resolving...`);
+          
+          // 解决冲突
+          const resolved = await this.conflictDetector.resolveConflicts(
+            conflicts,
+            recommendationEntities
+          );
+
+          // 转换回 DTO
+          const resolvedDtos: CreateRecommendationDto[] = resolved.map(entity => ({
+            customerId: entity.customerId,
+            tagName: entity.tagName,
+            tagCategory: entity.tagCategory,
+            confidence: entity.confidence,
+            source: entity.source as any,
+            reason: entity.reason,
+          }));
+
+          this.logger.log(`Conflict resolution completed. Final count: ${resolvedDtos.length}`);
+
+          // 保存并返回结果
+          if (resolvedDtos.length > 0) {
+            const saved = await this.saveRecommendations(customerId, resolvedDtos);
+            return saved;
+          }
+        }
+      }
 
       // 保存并返回结果
       if (fusedRecommendations.length > 0) {

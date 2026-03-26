@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RecommendationController } from './recommendation.controller';
 import { RecommendationService } from './recommendation.service';
+import { ConflictDetectorService } from './services/conflict-detector.service';
 import { RuleEngineService } from './engines/rule-engine.service';
 import { ClusteringEngineService } from './engines/clustering-engine.service';
 import { AssociationEngineService } from './engines/association-engine.service';
@@ -25,6 +26,7 @@ import { QueueModule } from '../../infrastructure/queue';
   controllers: [RecommendationController],
   providers: [
     RecommendationService,
+    ConflictDetectorService,
     RuleEngineService,
     ClusteringEngineService,
     AssociationEngineService,
@@ -32,6 +34,7 @@ import { QueueModule } from '../../infrastructure/queue';
   ],
   exports: [
     RecommendationService,
+    ConflictDetectorService,
     RuleEngineService,
     ClusteringEngineService,
     AssociationEngineService,
