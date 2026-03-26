@@ -1,0 +1,167 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { RedisService } from './redis.service';
+
+export interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl?: number;
+}
+
+@Injectable()
+export class CacheService {
+  private readonly logger = new Logger(CacheService.name);
+  private readonly defaultTTL = 3600; // 1 hour
+
+  constructor(private readonly redis: RedisService) {}
+
+  /**
+   * 获取缓存数据
+   * @param key 缓存键
+   * @returns 缓存的数据，如果不存在或已过期则返回 null
+   */
+  async get<T>(key: string): Promise<T | null> {
+    try {
+      const cached = await this.redis.get(key);
+      if (!cached) {
+        return null;
+      }
+
+      const entry: CacheEntry<T> = JSON.parse(cached);
+      
+      // 检查是否过期
+      if (entry.ttl && Date.now() - entry.timestamp > entry.ttl * 1000) {
+        await this.redis.del(key);
+        return null;
+      }
+
+      return entry.data;
+    } catch (error) {
+      this.logger.error(`Cache GET error for key ${key}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * 设置缓存数据
+   * @param key 缓存键
+   * @param data 要缓存的数据
+   * @param ttl 过期时间（秒），默认 3600 秒
+   */
+  async set<T>(key: string, data: T, ttl?: number): Promise<void> {
+    try {
+      const entry: CacheEntry<T> = {
+        data,
+        timestamp: Date.now(),
+        ttl: ttl || this.defaultTTL,
+      };
+
+      await this.redis.set(key, JSON.stringify(entry), ttl || this.defaultTTL);
+      this.logger.debug(`Cache SET: ${key}, TTL: ${ttl || this.defaultTTL}s`);
+    } catch (error) {
+      this.logger.error(`Cache SET error for key ${key}:`, error);
+    }
+  }
+
+  /**
+   * 删除缓存
+   * @param key 缓存键
+   */
+  async delete(key: string): Promise<void> {
+    try {
+      await this.redis.del(key);
+      this.logger.debug(`Cache DELETE: ${key}`);
+    } catch (error) {
+      this.logger.error(`Cache DELETE error for key ${key}:`, error);
+    }
+  }
+
+  /**
+   * 检查缓存是否存在
+   * @param key 缓存键
+   */
+  async exists(key: string): Promise<boolean> {
+    try {
+      const count = await this.redis.exists(key);
+      return count > 0;
+    } catch (error) {
+      this.logger.error(`Cache EXISTS error for key ${key}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 批量获取缓存
+   * @param keys 缓存键数组
+   */
+  async mget<T>(keys: string[]): Promise<Map<string, T>> {
+    const result = new Map<string, T>();
+    
+    for (const key of keys) {
+      const data = await this.get<T>(key);
+      if (data !== null) {
+        result.set(key, data);
+      }
+    }
+    
+    return result;
+  }
+
+  /**
+   * 缓存包装器 - 如果缓存未命中则执行回调并缓存结果
+   * @param key 缓存键
+   * @param callback 回调函数
+   * @param ttl 过期时间
+   */
+  async wrap<T>(key: string, callback: () => Promise<T>, ttl?: number): Promise<T> {
+    // 先尝试从缓存获取
+    const cached = await this.get<T>(key);
+    if (cached !== null) {
+      this.logger.debug(`Cache HIT: ${key}`);
+      return cached;
+    }
+
+    // 缓存未命中，执行回调
+    this.logger.debug(`Cache MISS: ${key}, executing callback...`);
+    const data = await callback();
+    
+    // 缓存结果
+    await this.set(key, data, ttl);
+    return data;
+  }
+
+  /**
+   * 清除所有缓存
+   */
+  async clear(): Promise<void> {
+    try {
+      await this.redis.flushdb();
+      this.logger.warn('Cache cleared');
+    } catch (error) {
+      this.logger.error('Cache CLEAR error:', error);
+    }
+  }
+
+  /**
+   * 获取缓存统计信息
+   */
+  async getStats(): Promise<{
+    isConnected: boolean;
+    keysCount?: number;
+  }> {
+    const stats = {
+      isConnected: this.redis.isConnected(),
+      keysCount: undefined as number | undefined,
+    };
+
+    if (stats.isConnected) {
+      try {
+        const keys = await this.redis.keys('*');
+        stats.keysCount = keys.length;
+      } catch (error) {
+        this.logger.error('Failed to get cache stats:', error);
+      }
+    }
+
+    return stats;
+  }
+}

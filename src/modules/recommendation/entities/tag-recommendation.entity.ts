@@ -1,0 +1,63 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
+
+@Entity('tag_recommendations')
+@Index(['customer_id'])
+@Index(['source'])
+@Index(['is_accepted'])
+@Index(['created_at'])
+export class TagRecommendation {
+  @PrimaryGeneratedColumn({ type: 'bigint' })
+  id: number;
+
+  @Column({ type: 'int', name: 'customer_id' })
+  customerId: number;
+
+  @Column({ type: 'varchar', length: 100, name: 'tag_name' })
+  tagName: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, name: 'tag_category' })
+  tagCategory: string;
+
+  @Column({ type: 'decimal', precision: 5, scale: 4 })
+  confidence: number;
+
+  @Column({ type: 'varchar', length: 20 })
+  source: 'rule' | 'clustering' | 'association';
+
+  @Column({ type: 'text', nullable: true })
+  reason: string;
+
+  @Column({ type: 'decimal', precision: 5, scale: 4, nullable: true, name: 'score_overall' })
+  scoreOverall: number;
+
+  @Column({ type: 'boolean', default: false, name: 'is_accepted' })
+  isAccepted: boolean;
+
+  @Column({ type: 'timestamp', nullable: true, name: 'accepted_at' })
+  acceptedAt: Date;
+
+  @Column({ type: 'int', nullable: true, name: 'accepted_by' })
+  acceptedBy: number;
+
+  @Column({ type: 'varchar', length: 100, nullable: true, name: 'modified_tag_name' })
+  modifiedTagName: string;
+
+  @Column({ type: 'varchar', length: 500, nullable: true, name: 'feedback_reason' })
+  feedbackReason: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @Column({ type: 'timestamp', nullable: true, name: 'expires_at' })
+  expiresAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
