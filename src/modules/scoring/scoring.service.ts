@@ -95,7 +95,7 @@ export class ScoringService {
       Object.assign(entity, {
         ...dto,
         overallScore,
-        recommendation,
+        recommendation: recommendation as any,
         lastCalculatedAt: new Date(),
       });
     } else {
@@ -103,7 +103,7 @@ export class ScoringService {
       entity = this.scoreRepo.create({
         ...dto,
         overallScore,
-        recommendation,
+        recommendation: recommendation as any,
       });
     }
 
@@ -166,7 +166,7 @@ export class ScoringService {
    */
   async getByRecommendation(recommendation: string): Promise<TagScore[]> {
     return await this.scoreRepo.find({
-      where: { recommendation },
+      where: { recommendation: recommendation as any },
       order: { overallScore: 'DESC' },
     });
   }
@@ -201,9 +201,9 @@ export class ScoringService {
         .getRawMany(),
     ]);
 
-    const byRecommendation = {};
+    const byRecommendation: Record<string, number> = {};
     byRecommendationResult.forEach(row => {
-      byRecommendation[row.recommendation] = parseInt(row.count);
+      byRecommendation[row.recommendation as string] = parseInt(row.count);
     });
 
     return {

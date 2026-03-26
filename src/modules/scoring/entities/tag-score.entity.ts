@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 
 @Entity('tag_scores')
-@Index(['overall_score'], { order: 'DESC' })
+@Index('IDX_TAG_SCORES_OVERALL', ['overall_score'])
 @Unique(['tag_id'])
 export class TagScore {
   @PrimaryGeneratedColumn({ type: 'bigint' })

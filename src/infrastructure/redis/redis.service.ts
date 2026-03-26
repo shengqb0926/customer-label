@@ -109,7 +109,7 @@ export class RedisService {
   }
 
   async flushdb(): Promise<void> {
-    return this.client.flushdb();
+    await this.client.flushdb();
   }
 
   isConnected(): boolean {

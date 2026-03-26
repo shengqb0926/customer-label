@@ -60,7 +60,7 @@ export class AuthController {
       },
     },
   })
-  async login(@Request() req, @Body() body: any) {
+  async login(@Request() req: any, @Body() body: any) {
     this.logger.log(`User ${req.user.username} logged in`);
     
     return await this.authService.login(req.user);
@@ -75,7 +75,7 @@ export class AuthController {
   @ApiOperation({ summary: '刷新 Token' })
   @ApiResponse({ status: 200, description: '刷新成功' })
   @ApiResponse({ status: 401, description: '未授权' })
-  async refresh(@Request() req) {
+  async refresh(@Request() req: any) {
     this.logger.log(`Refreshing token for user ${req.user.username}`);
     return await this.authService.refreshToken(req.user);
   }
@@ -91,7 +91,7 @@ export class AuthController {
     status: 200,
     description: '返回当前用户信息',
   })
-  async getCurrentUser(@Request() req) {
+  async getCurrentUser(@Request() req: any) {
     return {
       user: req.user,
     };
