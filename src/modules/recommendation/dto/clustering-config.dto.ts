@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsInt, IsNumber, Min, IsOptional, IsObject } from 'class-validator';
+import { IsString, IsInt, IsNumber, Min, IsOptional, IsObject, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateClusteringConfigDto {
@@ -9,7 +9,8 @@ export class CreateClusteringConfigDto {
 
   @ApiProperty({ description: '算法类型', enum: ['k-means', 'dbscan', 'hierarchical'], example: 'k-means' })
   @IsString()
-  algorithm: string;
+  @IsIn(['k-means', 'dbscan', 'hierarchical'])
+  algorithm: 'k-means' | 'dbscan' | 'hierarchical';
 
   @ApiProperty({ description: '聚类参数', example: { k: 5, maxIterations: 100 } })
   @IsObject()
@@ -34,7 +35,8 @@ export class UpdateClusteringConfigDto {
   @ApiPropertyOptional({ description: '算法类型', enum: ['k-means', 'dbscan', 'hierarchical'] })
   @IsOptional()
   @IsString()
-  algorithm?: string;
+  @IsIn(['k-means', 'dbscan', 'hierarchical'])
+  algorithm?: 'k-means' | 'dbscan' | 'hierarchical';
 
   @ApiPropertyOptional({ description: '聚类参数', example: { k: 5, maxIterations: 100 } })
   @IsOptional()

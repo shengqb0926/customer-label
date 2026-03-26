@@ -99,16 +99,7 @@ export class CreateTagRecommendationsTable1711507200000 implements MigrationInte
           },
         ],
       }),
-      true,
-    );
-
-    // 创建索引
-    await queryRunner.createIndex(
-      'tag_recommendations',
-      new TableIndex({
-        name: 'idx_rec_customer',
-        columnNames: ['customer_id'],
-      }),
+      false, // 不要自动创建索引
     );
 
     await queryRunner.createIndex(

@@ -4,6 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { RedisModule } from './infrastructure/redis/index.js';
 import { QueueModule } from './infrastructure/queue/index.js';
+import { DatabaseModule } from './infrastructure/database/database.module.js';
+import { LockModule } from './infrastructure/lock/lock.module.js';
+import { WebSocketModule } from './infrastructure/websocket/websocket.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { CommonModule } from './common/common.module.js';
 import { RecommendationModule } from './modules/recommendation/recommendation.module.js';
@@ -56,9 +59,42 @@ import { entities } from './entities.js';
       synchronize: false, // 生产环境禁用自动同步，使用 migrations
       logging: process.env.NODE_ENV === 'development',
       migrationsRun: false, // 手动运行迁移
+      
+      // 连接池优化配置
+      extra: {
+        // 最大连接数 - 根据服务器 CPU 核心数和内存调整
+        // 公式：CPU 核心数 * 2 + 1 或 根据内存计算（每 2GB 内存 1 个连接）
+        max: parseInt(process.env.DB_POOL_MAX || '20'),
+        
+        // 最小空闲连接数 - 保持一定的空闲连接以应对突发请求
+        min: parseInt(process.env.DB_POOL_MIN || '5'),
+        
+        // 连接空闲超时时间（毫秒）- 超过此时间的空闲连接将被释放
+        idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT || '30000'),
+        
+        // 连接最大存活时间（毫秒）- 防止连接老化问题
+        connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT || '60000'),
+        
+        // 获取连接超时时间（毫秒）
+        acquireTimeoutMillis: parseInt(process.env.DB_POOL_ACQUIRE_TIMEOUT || '30000'),
+        
+        // 心跳检测间隔（毫秒）- 定期检测连接是否可用
+        heartbeatIntervalMillis: parseInt(process.env.DB_POOL_HEARTBEAT_INTERVAL || '30000'),
+        
+        // 启用 SSL（生产环境推荐）
+        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+      },
+      
+      // 启用连接池统计
+      poolErrorHandler: (err) => {
+        console.error('[Database] Connection pool error:', err);
+      },
     }),
 
     // 基础设施模块（全局）
+    DatabaseModule,
+    LockModule,
+    WebSocketModule.forRoot(),
     RedisModule.forRoot(),
     QueueModule.forRoot(),
 

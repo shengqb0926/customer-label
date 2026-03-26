@@ -1,10 +1,7 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { CacheService } from './cache.service';
-import { RedisService } from './redis.service';
 
 describe('CacheService', () => {
   let cacheService: CacheService;
-  let redisService: RedisService;
 
   const mockRedisService = {
     get: jest.fn(),
@@ -16,22 +13,9 @@ describe('CacheService', () => {
     isConnected: jest.fn(),
   };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CacheService,
-        {
-          provide: RedisService,
-          useValue: mockRedisService,
-        },
-      ],
-    }).compile();
-
-    cacheService = module.get<CacheService>(CacheService);
-    redisService = module.get<RedisService>(RedisService);
-  });
-
-  afterEach(() => {
+  beforeEach(() => {
+    // 直接实例化 CacheService，绕过 NestJS 依赖注入
+    cacheService = new (CacheService as any)(mockRedisService);
     jest.clearAllMocks();
   });
 
@@ -42,7 +26,6 @@ describe('CacheService', () => {
   describe('get', () => {
     it('should return value from Redis', async () => {
       const mockValue = { key: 'value' };
-      // CacheService 存储的是 CacheEntry 格式
       const cacheEntry = JSON.stringify({
         data: mockValue,
         timestamp: Date.now(),
@@ -53,7 +36,7 @@ describe('CacheService', () => {
       const result = await cacheService.get('test:key');
 
       expect(result).toEqual(mockValue);
-      expect(redisService.get).toHaveBeenCalledWith('test:key');
+      expect(mockRedisService.get).toHaveBeenCalledWith('test:key');
     });
 
     it('should return null if key does not exist', async () => {
@@ -94,13 +77,11 @@ describe('CacheService', () => {
 
       await cacheService.set('test:key', mockValue, 3600);
 
-      // CacheService 会将数据包装在 CacheEntry 中
-      expect(redisService.set).toHaveBeenCalledTimes(1);
+      expect(mockRedisService.set).toHaveBeenCalledTimes(1);
       const callArgs = mockRedisService.set.mock.calls[0];
       expect(callArgs[0]).toBe('test:key');
       expect(callArgs[2]).toBe(3600);
       
-      // 验证存储的是 JSON 格式的 CacheEntry
       const storedEntry = JSON.parse(callArgs[1]);
       expect(storedEntry.data).toEqual(mockValue);
       expect(storedEntry.ttl).toBe(3600);
@@ -112,8 +93,7 @@ describe('CacheService', () => {
 
       await cacheService.set('test:key', 'plain string', 1800);
 
-      // 验证存储的是 JSON 格式的 CacheEntry
-      expect(redisService.set).toHaveBeenCalledTimes(1);
+      expect(mockRedisService.set).toHaveBeenCalledTimes(1);
       const callArgs = mockRedisService.set.mock.calls[0];
       expect(callArgs[0]).toBe('test:key');
       expect(callArgs[2]).toBe(1800);
@@ -128,7 +108,7 @@ describe('CacheService', () => {
       
       await cacheService.set('test:key', mockValue);
 
-      expect(redisService.set).toHaveBeenCalled();
+      expect(mockRedisService.set).toHaveBeenCalled();
     });
 
     it('should handle errors gracefully', async () => {
@@ -136,7 +116,6 @@ describe('CacheService', () => {
 
       await cacheService.set('test:key', { data: 'test' });
 
-      // Should not throw
       expect(true).toBe(true);
     });
   });
@@ -147,7 +126,7 @@ describe('CacheService', () => {
 
       await cacheService.delete('test:key');
 
-      expect(redisService.del).toHaveBeenCalledWith('test:key');
+      expect(mockRedisService.del).toHaveBeenCalledWith('test:key');
     });
 
     it('should handle errors gracefully', async () => {
@@ -155,7 +134,6 @@ describe('CacheService', () => {
 
       await cacheService.delete('test:key');
 
-      // Should not throw
       expect(true).toBe(true);
     });
   });
@@ -203,7 +181,7 @@ describe('CacheService', () => {
       const result = await cacheService.exists('test:key');
 
       expect(result).toBe(true);
-      expect(redisService.exists).toHaveBeenCalledWith('test:key');
+      expect(mockRedisService.exists).toHaveBeenCalledWith('test:key');
     });
 
     it('should return false if key does not exist', async () => {
@@ -239,8 +217,8 @@ describe('CacheService', () => {
       const result = await cacheService.wrap(mockKey, async () => mockData, mockTtl);
 
       expect(result).toEqual(mockData);
-      expect(redisService.get).toHaveBeenCalledWith(mockKey);
-      expect(redisService.set).not.toHaveBeenCalled();
+      expect(mockRedisService.get).toHaveBeenCalledWith(mockKey);
+      expect(mockRedisService.set).not.toHaveBeenCalled();
     });
 
     it('should execute callback and cache result if not cached', async () => {
@@ -252,7 +230,7 @@ describe('CacheService', () => {
 
       expect(result).toEqual(mockData);
       expect(callback).toHaveBeenCalledTimes(1);
-      expect(redisService.set).toHaveBeenCalled();
+      expect(mockRedisService.set).toHaveBeenCalled();
     });
 
     it('should use default TTL when not specified', async () => {
@@ -261,10 +239,10 @@ describe('CacheService', () => {
 
       await cacheService.wrap(mockKey, async () => ({ data: 'test' }));
 
-      expect(redisService.set).toHaveBeenCalledWith(
+      expect(mockRedisService.set).toHaveBeenCalledWith(
         mockKey,
         expect.any(String),
-        3600 // default TTL
+        3600
       );
     });
   });
@@ -275,7 +253,7 @@ describe('CacheService', () => {
 
       await cacheService.clear();
 
-      expect(redisService.flushdb).toHaveBeenCalled();
+      expect(mockRedisService.flushdb).toHaveBeenCalled();
     });
 
     it('should handle errors gracefully', async () => {
@@ -283,7 +261,6 @@ describe('CacheService', () => {
 
       await cacheService.clear();
 
-      // Should not throw
       expect(true).toBe(true);
     });
   });
@@ -298,6 +275,11 @@ describe('CacheService', () => {
       expect(result).toEqual({
         isConnected: true,
         keysCount: 3,
+        hits: 0,
+        misses: 0,
+        writes: 0,
+        evictions: 0,
+        hitRate: 0,
       });
     });
 
@@ -309,6 +291,11 @@ describe('CacheService', () => {
       expect(result).toEqual({
         isConnected: false,
         keysCount: undefined,
+        hits: 0,
+        misses: 0,
+        writes: 0,
+        evictions: 0,
+        hitRate: 0,
       });
     });
 
@@ -320,7 +307,12 @@ describe('CacheService', () => {
 
       expect(result).toEqual({
         isConnected: true,
-        keysCount: undefined,
+        keysCount: 0,
+        hits: 0,
+        misses: 0,
+        writes: 0,
+        evictions: 0,
+        hitRate: 0,
       });
     });
   });

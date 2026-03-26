@@ -1,7 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RecommendationController } from './recommendation.controller';
+import { RuleManagerController } from './controllers/rule-manager.controller';
+import { ClusteringManagerController } from './controllers/clustering-manager.controller';
 import { RecommendationService } from './recommendation.service';
+import { RuleManagerService } from './services/rule-manager.service';
+import { ClusteringManagerService } from './services/clustering-manager.service';
 import { ConflictDetectorService } from './services/conflict-detector.service';
 import { RuleEngineService } from './engines/rule-engine.service';
 import { ClusteringEngineService } from './engines/clustering-engine.service';
@@ -23,9 +27,11 @@ import { QueueModule } from '../../infrastructure/queue';
     RedisModule,
     QueueModule,
   ],
-  controllers: [RecommendationController],
+  controllers: [RecommendationController, RuleManagerController, ClusteringManagerController],
   providers: [
     RecommendationService,
+    RuleManagerService,
+    ClusteringManagerService,
     ConflictDetectorService,
     RuleEngineService,
     ClusteringEngineService,
@@ -34,6 +40,8 @@ import { QueueModule } from '../../infrastructure/queue';
   ],
   exports: [
     RecommendationService,
+    RuleManagerService,
+    ClusteringManagerService,
     ConflictDetectorService,
     RuleEngineService,
     ClusteringEngineService,

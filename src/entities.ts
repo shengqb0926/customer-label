@@ -3,6 +3,7 @@ import { RecommendationRule } from './modules/recommendation/entities/recommenda
 import { ClusteringConfig } from './modules/recommendation/entities/clustering-config.entity';
 import { TagScore } from './modules/scoring/entities/tag-score.entity';
 import { FeedbackStatistic } from './modules/feedback/entities/feedback-statistic.entity';
+import { User } from './modules/user/entities/user.entity';
 
 export const entities = [
   TagRecommendation,
@@ -10,6 +11,7 @@ export const entities = [
   ClusteringConfig,
   TagScore,
   FeedbackStatistic,
+  User,
 ];
 
 export {
@@ -18,4 +20,5 @@ export {
   ClusteringConfig,
   TagScore,
   FeedbackStatistic,
+  User,
 };

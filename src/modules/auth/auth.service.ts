@@ -1,52 +1,47 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { UserService } from '../user/services/user.service';
+import { User, UserRole } from '../user/entities/user.entity';
 
 export interface UserPayload {
   id: number;
   username: string;
   email: string;
-  roles: string[];
+  roles: UserRole[];
+  sub?: number; // JWT standard field
 }
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly userService: UserService,
+  ) {}
 
   /**
    * 验证用户登录
    */
-  async validateUser(username: string, password: string): Promise<UserPayload | null> {
-    // TODO: 从数据库查询用户并验证密码
-    // 这里暂时返回模拟数据
+  async validateUser(username: string, password: string): Promise<User | null> {
+    const user = await this.userService.validateUser(username, password);
     
-    if (username === 'admin' && password === 'admin123') {
-      return {
-        id: 1,
-        username: 'admin',
-        email: 'admin@example.com',
-        roles: ['admin', 'user'],
-      };
+    if (!user) {
+      return null;
     }
-    
-    if (username === 'user' && password === 'user123') {
-      return {
-        id: 2,
-        username: 'user',
-        email: 'user@example.com',
-        roles: ['user'],
-      };
-    }
-    
-    return null;
+
+    return user;
   }
 
   /**
-   * 生成 JWT Token
+   * 用户登录
    */
-  async login(user: UserPayload) {
-    const payload = { sub: user.id, username: user.username, roles: user.roles };
-    
+  async login(user: User) {
+    const payload = { 
+      sub: user.id, 
+      username: user.username, 
+      roles: user.roles,
+      email: user.email,
+    };
+
     return {
       access_token: this.jwtService.sign(payload),
       expires_in: 3600, // 1 hour
@@ -55,6 +50,7 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
+        fullName: user.fullName,
         roles: user.roles,
       },
     };
@@ -63,18 +59,27 @@ export class AuthService {
   /**
    * 刷新 Token
    */
-  async refreshToken(user: UserPayload) {
+  async refreshToken(user: User) {
     return this.login(user);
   }
 
   /**
-   * 验证 Token 是否有效
+   * 验证 Token 并获取用户信息
    */
-  verifyToken(token: string): UserPayload | null {
+  async validateToken(token: string): Promise<User | null> {
     try {
-      return this.jwtService.verify<UserPayload>(token);
+      const payload = this.jwtService.verify<UserPayload>(token);
+      const user = await this.userService.getUserById(payload.sub as number);
+      return user;
     } catch (error) {
       return null;
     }
+  }
+
+  /**
+   * 修改密码
+   */
+  async changePassword(userId: number, oldPassword: string, newPassword: string): Promise<User> {
+    return await this.userService.changePassword(userId, oldPassword, newPassword);
   }
 }

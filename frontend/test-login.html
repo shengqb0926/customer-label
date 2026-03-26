@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>登录测试</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+    .success { color: green; }
+    .error { color: red; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    input { padding: 8px; margin: 5px; width: 200px; }
+  </style>
+</head>
+<body>
+  <h1>登录功能测试</h1>
+  
+  <div>
+    <input type="text" id="username" placeholder="用户名" value="admin" />
+    <input type="password" id="password" placeholder="密码" value="admin123" />
+    <button onclick="testLogin()">测试登录</button>
+    <button onclick="checkStorage()">检查 Storage</button>
+    <button onclick="goToApp()">前往应用</button>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <script>
+    async function testLogin() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>正在登录...</p>';
+
+      try {
+        const response = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+          })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          // 保存 token 和用户信息
+          localStorage.setItem('access_token', data.access_token);
+          localStorage.setItem('user_info', JSON.stringify(data.user));
+          
+          resultDiv.innerHTML = `
+            <p class="success">✅ 登录成功！</p>
+            <p><strong>Token:</strong> ${data.access_token.substring(0, 50)}...</p>
+            <p><strong>用户:</strong> ${JSON.stringify(data.user)}</p>
+            <p><strong>Expires in:</strong> ${data.expires_in}秒</p>
+          `;
+        } else {
+          resultDiv.innerHTML = `<p class="error">❌ 登录失败：${data.message || '未知错误'}</p>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ 请求失败：${error.message}</p>`;
+      }
+    }
+
+    function checkStorage() {
+      const resultDiv = document.getElementById('result');
+      const token = localStorage.getItem('access_token');
+      const userInfo = localStorage.getItem('user_info');
+      
+      resultDiv.innerHTML = `
+        <p><strong>access_token:</strong> ${token ? token.substring(0, 50) + '...' : '不存在'}</p>
+        <p><strong>user_info:</strong> ${userInfo ? userInfo : '不存在'}</p>
+        <p><strong>所有 Keys:</strong> ${Object.keys(localStorage).join(', ') || '无'}</p>
+      `;
+    }
+
+    function goToApp() {
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

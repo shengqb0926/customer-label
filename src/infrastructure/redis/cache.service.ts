@@ -159,10 +159,30 @@ export class CacheService {
    */
   async clear(): Promise<void> {
     try {
-      await this.redis.flushdb();
+      // 使用 flushdb 清空数据库
+      if ('flushdb' in this.redis) {
+        await (this.redis as any).flushdb();
+      }
       this.logger.warn('Cache cleared');
     } catch (error) {
       this.logger.error('Cache CLEAR error:', error);
+    }
+  }
+
+  /**
+   * 获取键（支持通配符）
+   */
+  private async getKeys(pattern: string): Promise<string[]> {
+    try {
+      if ('keys' in this.redis) {
+        return await (this.redis as any).keys(pattern);
+      }
+      // 集群模式不支持 keys 命令，返回空数组
+      this.logger.warn('Keys command not supported in cluster mode');
+      return [];
+    } catch (error) {
+      this.logger.error('Failed to get keys:', error);
+      return [];
     }
   }
 
@@ -190,7 +210,7 @@ export class CacheService {
 
     if (stats.isConnected) {
       try {
-        const keys = await this.redis.keys('*');
+        const keys = await this.getKeys('*');
         stats.keysCount = keys.length;
       } catch (error) {
         this.logger.error('Failed to get cache stats:', error);
