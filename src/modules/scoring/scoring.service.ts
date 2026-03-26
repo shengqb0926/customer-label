@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TagScore } from './entities/tag-score.entity';
 import { CacheService } from '../../infrastructure/redis';
+import { GetScoresDto } from './dto/get-scores.dto';
+import { PaginatedResponse } from '../recommendation/dto/get-recommendations.dto';
 
 export interface UpdateTagScoreDto {
   tagId: number;
@@ -159,6 +161,60 @@ export class ScoringService {
     return await this.scoreRepo.find({
       order: { overallScore: 'DESC' },
     });
+  }
+
+  /**
+   * 分页获取标签评分列表
+   */
+  async findAllWithPagination(
+    options: GetScoresDto,
+  ): Promise<PaginatedResponse<TagScore>> {
+    const {
+      page = 1,
+      limit = 20,
+      tagName,
+      recommendation,
+      minScore,
+      maxScore,
+      sortBy = 'overallScore',
+      sortOrder = 'desc',
+    } = options;
+
+    // 构建查询条件
+    const where: any = {};
+    
+    if (tagName) {
+      where.tagName = `LIKE %${tagName}%`;
+    }
+    
+    if (recommendation) {
+      where.recommendation = recommendation;
+    }
+    
+    if (minScore !== undefined || maxScore !== undefined) {
+      where.overallScore = {};
+      if (minScore !== undefined) {
+        where.overallScore['>='] = minScore;
+      }
+      if (maxScore !== undefined) {
+        where.overallScore['<='] = maxScore;
+      }
+    }
+
+    // 构建排序
+    const order: any = {};
+    order[sortBy] = sortOrder === 'desc' ? 'DESC' : 'ASC';
+    order.tagId = 'ASC'; // 次要排序
+
+    // 查询总数和数据
+    const [data, total] = await this.scoreRepo.findAndCount({
+      where,
+      order,
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return new PaginatedResponse(data, total, page, limit);
   }
 
   /**

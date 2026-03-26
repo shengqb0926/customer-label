@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FeedbackStatistic } from './entities/feedback-statistic.entity';
+import { GetFeedbackDto } from './dto/get-feedback.dto';
+import { PaginatedResponse } from '../recommendation/dto/get-recommendations.dto';
 
 export interface DailyFeedbackDto {
   date: string; // YYYY-MM-DD
@@ -100,6 +102,60 @@ export class FeedbackService {
       })
       .orderBy('feedback.date', 'DESC')
       .getMany();
+  }
+
+  /**
+   * 分页获取反馈统计列表
+   */
+  async findAllWithPagination(
+    options: GetFeedbackDto,
+  ): Promise<PaginatedResponse<FeedbackStatistic>> {
+    const {
+      page = 1,
+      limit = 20,
+      startDate,
+      endDate,
+      minAcceptanceRate,
+      maxAcceptanceRate,
+      sortBy = 'date',
+      sortOrder = 'desc',
+    } = options;
+
+    // 构建查询条件
+    const where: any = {};
+    
+    if (startDate) {
+      where.date = `>= ${startDate}`;
+    }
+    
+    if (endDate) {
+      if (!where.date) where.date = {};
+      where.date['<='] = endDate;
+    }
+    
+    if (minAcceptanceRate !== undefined || maxAcceptanceRate !== undefined) {
+      where.acceptanceRate = {};
+      if (minAcceptanceRate !== undefined) {
+        where.acceptanceRate['>='] = minAcceptanceRate;
+      }
+      if (maxAcceptanceRate !== undefined) {
+        where.acceptanceRate['<='] = maxAcceptanceRate;
+      }
+    }
+
+    // 构建排序
+    const order: any = {};
+    order[sortBy] = sortOrder === 'desc' ? 'DESC' : 'ASC';
+
+    // 查询总数和数据
+    const [data, total] = await this.feedbackRepo.findAndCount({
+      where,
+      order,
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return new PaginatedResponse(data, total, page, limit);
   }
 
   /**

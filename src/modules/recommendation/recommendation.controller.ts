@@ -8,6 +8,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { UseGuards } from '@nestjs/common';
 import { RecommendationService } from './recommendation.service';
 import { TagRecommendation } from './entities/tag-recommendation.entity';
 import { GetRecommendationsDto, PaginatedResponse } from './dto/get-recommendations.dto';
