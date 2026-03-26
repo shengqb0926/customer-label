@@ -54,7 +54,7 @@ export class RuleEngineService {
         const result = await this.evaluateRule(rule, customer);
         
         if (result.matched && result.confidence && result.confidence >= 0.6) {
-          const tagTemplate = rule.tagTemplate || { name: '智能推荐标签', category: '规则推荐' };
+          const tagTemplate = rule.tagTemplate || { name: '智能推荐标签', category: undefined };
           
           recommendations.push({
             customerId: customer.id,
@@ -169,13 +169,22 @@ export class RuleEngineService {
   private inferCategory(rule: RecommendationRule): string {
     const name = rule.ruleName.toLowerCase();
 
-    if (name.includes('价值') || name.includes('high-value')) return '客户价值';
-    if (name.includes('流失') || name.includes('risk')) return '风险预警';
-    if (name.includes('潜力') || name.includes('potential')) return '增长潜力';
-    if (name.includes('交叉') || name.includes('cross')) return '营销机会';
-    if (name.includes('活跃') || name.includes('active')) return '行为特征';
+    // 优先使用 tagTemplate 的 category
+    if (rule.tagTemplate?.category) {
+      return rule.tagTemplate.category;
+    }
 
-    return '智能推荐';
+    // 根据规则名称推断类别
+    if (name.includes('价值') || name.includes('high-value') || name.includes('高价值')) return '客户价值';
+    if (name.includes('流失') || name.includes('risk') || name.includes('风险')) return '风险预警';
+    if (name.includes('潜力') || name.includes('potential') || name.includes('潜')) return '增长潜力';
+    if (name.includes('交叉') || name.includes('cross') || name.includes('营销')) return '营销机会';
+    if (name.includes('活跃') || name.includes('active') || name.includes('活')) return '行为特征';
+    if (name.includes('衰退') || name.includes('decline')) return '客户状态';
+    if (name.includes('睡眠') || name.includes('sleep')) return '客户状态';
+
+    // 默认返回"规则推荐"
+    return '规则推荐';
   }
 
   private parseValue(valueStr: string): any {

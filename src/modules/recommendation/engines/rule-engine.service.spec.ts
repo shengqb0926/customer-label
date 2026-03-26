@@ -284,7 +284,7 @@ describe('RuleEngineService', () => {
       expect(result[0].tagCategory).toBe('风险预警');
     });
 
-    it('should default to "智能推荐" for unknown categories', async () => {
+    it('should default to "规则推荐" for unknown categories', async () => {
       const mockRule: Partial<RecommendationRule> = {
         id: 1,
         ruleName: 'Generic Rule',
@@ -297,7 +297,7 @@ describe('RuleEngineService', () => {
       const customer = { id: 1, orderCount: 10 } as CustomerData;
       const result = await ruleEngine.generateRecommendations(customer);
 
-      expect(result[0].tagCategory).toBe('智能推荐');
+      expect(result[0].tagCategory).toBe('规则推荐');
     });
   });
 

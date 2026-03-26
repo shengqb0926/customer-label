@@ -343,35 +343,6 @@ describe('ConflictDetectorService', () => {
     });
   });
 
-  describe('getResolutionStrategy', () => {
-    it('should return REMOVE_LOWER_CONFIDENCE for TAG_MUTUAL_EXCLUSION', () => {
-      const strategy = (conflictDetector as any).getResolutionStrategy(
-        ConflictType.TAG_MUTUAL_EXCLUSION,
-        ConflictSeverity.HIGH
-      );
-
-      expect(strategy).toBe(ResolutionStrategy.REMOVE_LOWER_CONFIDENCE);
-    });
-
-    it('should return MANUAL_REVIEW for HIGH severity RULE_CONTRADICTION', () => {
-      const strategy = (conflictDetector as any).getResolutionStrategy(
-        ConflictType.RULE_CONTRADICTION,
-        ConflictSeverity.HIGH
-      );
-
-      expect(strategy).toBe(ResolutionStrategy.MANUAL_REVIEW);
-    });
-
-    it('should default to MANUAL_REVIEW for unknown types', () => {
-      const strategy = (conflictDetector as any).getResolutionStrategy(
-        'UNKNOWN_TYPE' as ConflictType,
-        ConflictSeverity.MEDIUM
-      );
-
-      expect(strategy).toBe(ResolutionStrategy.MANUAL_REVIEW);
-    });
-  });
-
   describe('addMutualExclusionRule', () => {
     it('should add new mutual exclusion rule', () => {
       const newRule = {

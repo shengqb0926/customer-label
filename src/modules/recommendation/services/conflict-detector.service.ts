@@ -32,12 +32,7 @@ export interface ConflictRecord {
   severity: ConflictSeverity;
   customerId?: number;
   description: string;
-  conflictingItems: Array<{
-    type: 'tag' | 'rule' | 'recommendation';
-    id?: number;
-    name: string;
-    value?: any;
-  }>;
+  conflictingItems: ConflictItem[];
   resolution?: ConflictResolution;
   detectedAt: Date;
   resolvedAt?: Date;
@@ -73,6 +68,16 @@ export interface MutualExclusionRule {
   category1?: string;
   category2?: string;
   reason: string;
+}
+
+/**
+ * 冲突项接口
+ */
+export interface ConflictItem {
+  type: 'tag' | 'rule' | 'recommendation';
+  id?: number;
+  name: string;
+  value?: any;
 }
 
 @Injectable()
@@ -254,6 +259,21 @@ export class ConflictDetectorService {
     for (const [category, recs] of categoryMap.entries()) {
       if (recs.length < 2) continue;
 
+      // 检测 tagName 中包含相反关键词的冲突
+      const conflictPairs = this.detectOppositeRecommendations(recs);
+      if (conflictPairs.length > 0) {
+        conflicts.push({
+          id: this.generateConflictId(ConflictType.RECOMMENDATION_CONFLICT, customerId, category),
+          type: ConflictType.RECOMMENDATION_CONFLICT,
+          severity: ConflictSeverity.HIGH,
+          customerId,
+          description: `类别 "${category}" 内存在相反的推荐建议`,
+          conflictingItems: conflictPairs,
+          detectedAt: new Date(),
+        });
+        continue;
+      }
+
       // 简单的冲突检测：如果置信度差异过大且建议方向相反
       const sortedRecs = [...recs].sort((a, b) => b.confidence - a.confidence);
       
@@ -289,6 +309,56 @@ export class ConflictDetectorService {
     }
 
     return conflicts;
+  }
+
+  /**
+   * 检测相反的推荐（如"推荐购买"vs"不推荐购买"）
+   */
+  private detectOppositeRecommendations(recs: TagRecommendation[]): ConflictItem[] {
+    const oppositeKeywords = [
+      { positive: '推荐', negative: '不推荐' },
+      { positive: '购买', negative: '避免' },
+      { positive: '适合', negative: '不适合' },
+      { positive: '建议', negative: '不建议' },
+    ];
+
+    for (let i = 0; i < recs.length; i++) {
+      for (let j = i + 1; j < recs.length; j++) {
+        const rec1 = recs[i];
+        const rec2 = recs[j];
+        
+        const name1 = rec1.tagName.toLowerCase();
+        const name2 = rec2.tagName.toLowerCase();
+
+        // 检查是否包含相反关键词
+        for (const pair of oppositeKeywords) {
+          const rec1HasPositive = name1.includes(pair.positive);
+          const rec1HasNegative = name1.includes(pair.negative);
+          const rec2HasPositive = name2.includes(pair.positive);
+          const rec2HasNegative = name2.includes(pair.negative);
+
+          // 如果一个有正面词，一个有负面词，则是冲突
+          if ((rec1HasPositive && rec2HasNegative) || (rec1HasNegative && rec2HasPositive)) {
+            return [
+              {
+                type: 'recommendation',
+                id: rec1.id,
+                name: rec1.tagName,
+                value: { confidence: rec1.confidence, reason: rec1.reason },
+              },
+              {
+                type: 'recommendation',
+                id: rec2.id,
+                name: rec2.tagName,
+                value: { confidence: rec2.confidence, reason: rec2.reason },
+              },
+            ];
+          }
+        }
+      }
+    }
+
+    return [];
   }
 
   /**
@@ -547,11 +617,31 @@ export class ConflictDetectorService {
   ): TagRecommendation[] {
     switch (resolution.strategy) {
       case ResolutionStrategy.REMOVE_LOWER_CONFIDENCE: {
-        // 找出置信度最低的推荐并移除
+        // 对于 TAG_MUTUAL_EXCLUSION，移除置信度较低的标签
+        if (conflict.type === ConflictType.TAG_MUTUAL_EXCLUSION) {
+          // 找出所有冲突的 tagName
+          const conflictingTagNames = new Set(conflict.conflictingItems.map(item => item.name));
+          
+          // 找到属于冲突标签的推荐
+          const conflictingRecs = recommendations.filter(r => 
+            conflictingTagNames.has(r.tagName)
+          );
+          
+          // 按置信度排序，保留置信度最高的
+          const sorted = [...conflictingRecs].sort((a, b) => b.confidence - a.confidence);
+          const toKeep = sorted[0]?.tagName;
+          
+          // 移除置信度不是最高的推荐
+          return recommendations.filter(r => 
+            !conflictingTagNames.has(r.tagName) || r.tagName === toKeep
+          );
+        }
+        
+        // 对于其他类型，移除置信度较低的推荐
         const itemsToRemove = new Set<number>();
         
         for (const item of conflict.conflictingItems) {
-          if (item.type === 'recommendation' || item.type === 'tag') {
+          if ((item.type === 'recommendation' || item.type === 'tag') && item.id) {
             const rec = recommendations.find(r => r.id === item.id);
             if (rec) {
               // 找到同一组中置信度更高的推荐
