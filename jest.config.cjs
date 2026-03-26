@@ -14,7 +14,9 @@ module.exports = {
   
   // 转换配置
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
+    '^.+\\.(t|j)s$': ['ts-jest', {
+      tsconfig: 'tsconfig.spec.json',
+    }],
   },
   
   // 收集覆盖率
@@ -49,19 +51,4 @@ module.exports = {
   
   // 详细输出
   verbose: true,
-  
-  // 设置测试前的全局变量
-  globals: {
-    'ts-jest': {
-      tsconfig: {
-        target: 'ES2021',
-        module: 'commonjs',
-        lib: ['es2021'],
-        experimentalDecorators: true,
-        emitDecoratorMetadata: true,
-        allowSyntheticDefaultImports: true,
-        strictPropertyInitialization: false,
-      },
-    },
-  },
 };
