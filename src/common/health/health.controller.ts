@@ -1,5 +1,5 @@
 import { Controller, Get, Logger } from '@nestjs/common';
-import { promClient } from 'prom-client';
+import * as promClient from 'prom-client';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('health')
