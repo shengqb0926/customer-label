@@ -10,6 +10,7 @@ import { ClusteringEngineService, CustomerFeatureVector } from './engines/cluste
 import { AssociationEngineService } from './engines/association-engine.service';
 import { FusionEngineService, FusionWeights } from './engines/fusion-engine.service';
 import { ConflictDetectorService } from './services/conflict-detector.service';
+import { GetRecommendationsDto, PaginatedResponse } from './dto/get-recommendations.dto';
 
 export interface CreateRecommendationDto {
   customerId: number;
@@ -269,7 +270,48 @@ export class RecommendationService {
   }
 
   /**
-   * 查询客户的推荐列表
+   * 查询客户的推荐列表（支持分页和过滤）
+   */
+  async findByCustomerWithPagination(
+    customerId: number,
+    options: GetRecommendationsDto
+  ): Promise<PaginatedResponse<TagRecommendation>> {
+    const {
+      page = 1,
+      limit = 20,
+      category,
+      source,
+      minConfidence,
+      sortBy = 'confidence',
+      sortOrder = 'desc',
+    } = options;
+
+    // 构建查询条件
+    const where: any = { customerId };
+    if (category) where.tagCategory = category;
+    if (source) where.source = source;
+    if (minConfidence !== undefined) {
+      where.confidence = `>= ${minConfidence}`;
+    }
+
+    // 构建排序
+    const order: any = {};
+    order[sortBy] = sortOrder === 'desc' ? 'DESC' : 'ASC';
+    order.createdAt = 'DESC'; // 次要排序
+
+    // 查询总数和数据
+    const [data, total] = await this.recommendationRepo.findAndCount({
+      where,
+      order,
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return new PaginatedResponse(data, total, page, limit);
+  }
+
+  /**
+   * 查询客户的推荐列表（旧版，保持向后兼容）
    */
   async findByCustomer(customerId: number): Promise<TagRecommendation[]> {
     return await this.recommendationRepo.find({

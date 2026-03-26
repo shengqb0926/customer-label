@@ -7,9 +7,12 @@ import {
   Query,
   Logger,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { RecommendationService } from './recommendation.service';
 import { TagRecommendation } from './entities/tag-recommendation.entity';
+import { GetRecommendationsDto, PaginatedResponse } from './dto/get-recommendations.dto';
 
+@ApiTags('推荐管理')
 @Controller('recommendations')
 export class RecommendationController {
   private readonly logger = new Logger(RecommendationController.name);
@@ -19,13 +22,40 @@ export class RecommendationController {
   ) {}
 
   /**
-   * 获取客户的推荐列表
+   * 获取客户的推荐列表（支持分页和过滤）
    */
   @Get('customer/:customerId')
+  @ApiOperation({ summary: '获取客户推荐列表', description: '支持分页、过滤和排序' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: '页码（从 1 开始）', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: '每页数量 (1-100)', example: 20 })
+  @ApiQuery({ name: 'category', required: false, type: String, description: '按标签类别过滤', example: '客户价值' })
+  @ApiQuery({ name: 'source', required: false, enum: ['rule', 'clustering', 'association', 'fusion'], description: '按推荐来源过滤' })
+  @ApiQuery({ name: 'minConfidence', required: false, type: Number, description: '最低置信度 (0-1)', example: 0.7 })
+  @ApiQuery({ name: 'sortBy', required: false, enum: ['confidence', 'createdAt'], description: '排序字段', example: 'confidence' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: '排序方向', example: 'desc' })
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回分页的推荐列表',
+    type: PaginatedResponse,
+  })
   async getCustomerRecommendations(
+    @Param('customerId') customerId: number,
+    @Query() query: GetRecommendationsDto
+  ): Promise<PaginatedResponse<TagRecommendation>> {
+    this.logger.log(`Getting paginated recommendations for customer ${customerId}`);
+    return await this.service.findByCustomerWithPagination(customerId, query);
+  }
+
+  /**
+   * 获取客户的推荐列表（旧版，向后兼容）
+   */
+  @Get('customer/:customerId/simple')
+  @ApiOperation({ summary: '获取客户推荐列表（简化版）', deprecated: true })
+  @ApiResponse({ status: 200, description: '返回推荐列表（最多 20 条）', type: [TagRecommendation] })
+  async getSimpleRecommendations(
     @Param('customerId') customerId: number
   ): Promise<TagRecommendation[]> {
-    this.logger.log(`Getting recommendations for customer ${customerId}`);
+    this.logger.log(`Getting simple recommendations for customer ${customerId}`);
     return await this.service.findByCustomer(customerId);
   }
 
