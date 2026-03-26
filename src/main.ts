@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -21,7 +21,27 @@ async function bootstrap() {
     app.setGlobalPrefix(apiPrefix);
     
     // 启用 CORS
-    app.enableCors();
+    app.enableCors({
+      origin: process.env.CORS_ORIGIN || '*',
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
+    });
+    
+    // 全局验证管道配置
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true, // 自动移除未装饰的属性
+        forbidNonWhitelisted: true, // 禁止非白名单属性
+        transform: true, // 自动转换类型
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+        validationError: {
+          target: false,
+          value: false,
+        },
+      })
+    );
     
     // Swagger 文档配置（必须在全局前缀设置之后）
     const swaggerConfig = new DocumentBuilder()

@@ -11,8 +11,33 @@ export interface CacheEntry<T> {
 export class CacheService {
   private readonly logger = new Logger(CacheService.name);
   private readonly defaultTTL = 3600; // 1 hour
+  
+  // 缓存性能指标
+  private cacheHits = 0;
+  private cacheMisses = 0;
+  private cacheWrites = 0;
+  private cacheEvictions = 0; // 过期清理次数
 
   constructor(private readonly redis: RedisService) {}
+
+  /**
+   * 获取缓存命中率
+   */
+  getHitRate(): number {
+    const total = this.cacheHits + this.cacheMisses;
+    if (total === 0) return 0;
+    return this.cacheHits / total;
+  }
+
+  /**
+   * 重置统计信息
+   */
+  resetStats(): void {
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
+    this.cacheWrites = 0;
+    this.cacheEvictions = 0;
+  }
 
   /**
    * 获取缓存数据
@@ -142,15 +167,25 @@ export class CacheService {
   }
 
   /**
-   * 获取缓存统计信息
+   * 获取缓存统计信息（包含命中率）
    */
   async getStats(): Promise<{
     isConnected: boolean;
     keysCount?: number;
+    hits: number;
+    misses: number;
+    writes: number;
+    evictions: number;
+    hitRate: number;
   }> {
     const stats = {
       isConnected: this.redis.isConnected(),
       keysCount: undefined as number | undefined,
+      hits: this.cacheHits,
+      misses: this.cacheMisses,
+      writes: this.cacheWrites,
+      evictions: this.cacheEvictions,
+      hitRate: this.getHitRate(),
     };
 
     if (stats.isConnected) {
