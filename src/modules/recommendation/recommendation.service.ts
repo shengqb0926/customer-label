@@ -451,6 +451,82 @@ export class RecommendationService {
   }
 
   /**
+   * 按状态统计推荐数量（支持筛选）
+   */
+  async getStatusStats(options?: GetRecommendationsDto): Promise<{
+    total: number;
+    pending: number;
+    accepted: number;
+    rejected: number;
+  }> {
+    const {
+      category,
+      source,
+      minConfidence,
+      startDate,
+      endDate,
+      customerName,
+    } = options || {};
+
+    // 使用 QueryBuilder 构建动态查询
+    const queryBuilder = this.recommendationRepo.createQueryBuilder('rec');
+
+    // 应用筛选条件
+    if (customerName) {
+      queryBuilder.andWhere('rec.customer_id::text ILIKE :customerName', { 
+        customerName: `%${customerName}%` 
+      });
+    }
+    if (category) {
+      queryBuilder.andWhere('rec.tagCategory = :category', { category });
+    }
+    if (source) {
+      queryBuilder.andWhere('rec.source = :source', { source });
+    }
+    if (minConfidence !== undefined) {
+      queryBuilder.andWhere('rec.confidence >= :minConfidence', { minConfidence });
+    }
+    if (startDate && endDate) {
+      queryBuilder.andWhere('rec.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+    } else if (startDate) {
+      queryBuilder.andWhere('rec.createdAt >= :startDate', { startDate });
+    } else if (endDate) {
+      queryBuilder.andWhere('rec.createdAt <= :endDate', { endDate });
+    }
+
+    // 按状态分组统计
+    const results = await queryBuilder
+      .select('rec.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('rec.status')
+      .getRawMany();
+
+    // 初始化统计对象
+    const stats = {
+      total: 0,
+      pending: 0,
+      accepted: 0,
+      rejected: 0,
+    };
+
+    // 填充统计数据
+    results.forEach(row => {
+      const count = parseInt(row.count);
+      stats.total += count;
+      
+      if (row.status === 'pending') {
+        stats.pending = count;
+      } else if (row.status === 'accepted') {
+        stats.accepted = count;
+      } else if (row.status === 'rejected') {
+        stats.rejected = count;
+      }
+    });
+
+    return stats;
+  }
+
+  /**
    * 获取活跃的规则列表
    */
   async getActiveRules(): Promise<RecommendationRule[]> {

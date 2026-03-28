@@ -145,6 +145,11 @@ export const recommendationService = {
     return await apiClient.get<{ data: Recommendation[]; total: number; page?: number; limit?: number }>('/recommendations', { params });
   },
 
+  // 获取状态统计
+  async getStatusStats(params?: GetRecommendationsParams) {
+    return await apiClient.get<{ total: number; pending: number; accepted: number; rejected: number }>('/recommendations/stats/status', { params });
+  },
+
   // 采纳推荐
   async acceptRecommendation(id: number, feedbackReason?: string) {
     return await apiClient.post(`/recommendations/${id}/accept`, { feedbackReason });

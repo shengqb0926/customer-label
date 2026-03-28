@@ -27,7 +27,11 @@ interface FilterState {
   status?: string;
   source?: string;
   minConfidence?: number;
+
 }
+
+// 推荐状态类型（兼容后端枚举）
+type RecommendationStatus = 'pending' | 'accepted' | 'rejected' | boolean;
 
 const RecommendationList: React.FC = () => {
   const {
@@ -39,6 +43,9 @@ const RecommendationList: React.FC = () => {
     rejectRecommendation,
     batchAcceptRecommendations,
     batchRejectRecommendations,
+    statistics,
+    statisticsLoading,
+    fetchStatistics,
   } = useRuleStore();
 
   const [detailVisible, setDetailVisible] = React.useState(false);
@@ -47,9 +54,10 @@ const RecommendationList: React.FC = () => {
   const [form] = Form.useForm();
   const [selectedRowKeys, setSelectedRowKeys] = React.useState<React.Key[]>([]);
 
-  // 加载推荐列表
+  // 加载推荐列表和统计数据
   useEffect(() => {
     loadRecommendations();
+    loadStatistics();
   }, []);
 
   const loadRecommendations = (params?: any) => {
@@ -58,6 +66,10 @@ const RecommendationList: React.FC = () => {
       limit: recommendationPagination.pageSize,
       ...params,
     });
+  };
+
+  const loadStatistics = (params?: any) => {
+    fetchStatistics(params);
   };
 
   // 处理搜索（只更新状态，不查询）
@@ -111,6 +123,7 @@ const RecommendationList: React.FC = () => {
 
     setFilters(values);
     loadRecommendations(queryParams);
+    loadStatistics(queryParams); // 同时刷新统计数据
   };
 
   // 处理刷新
@@ -118,7 +131,7 @@ const RecommendationList: React.FC = () => {
     form.resetFields();
     setFilters({});
     loadRecommendations();
-    message.success('刷新成功');
+    loadStatistics();
   };
 
   // 处理重置筛选
@@ -195,7 +208,7 @@ const RecommendationList: React.FC = () => {
     
     try {
       const result = await batchAcceptRecommendations(selectedRowKeys as number[]);
-      const successCount = result?.success || selectedRowKeys.length;
+      const successCount = (result as any)?.success || selectedRowKeys.length;
       
       if (successCount === selectedRowKeys.length) {
         message.success(`已成功接受 ${successCount} 条推荐`);
@@ -249,7 +262,7 @@ const RecommendationList: React.FC = () => {
         
         try {
           const result = await batchRejectRecommendations(selectedRowKeys as number[], reasonValue.trim());
-          const successCount = result?.success || selectedRowKeys.length;
+          const successCount = (result as any)?.success || selectedRowKeys.length;
           
           if (successCount === selectedRowKeys.length) {
             message.success(`已成功拒绝 ${successCount} 条推荐`);
@@ -312,12 +325,39 @@ const RecommendationList: React.FC = () => {
     return sourceMap[source] || source;
   };
 
+  // 获取状态文本和颜色
+  const getStatusConfig = (status: RecommendationStatus | boolean) => {
+    if (typeof status === 'boolean') {
+      // 向后兼容布尔值
+      return status 
+        ? { text: '已接受', color: 'green' } as const
+        : { text: '待处理', color: 'orange' } as const;
+    }
+    
+    const statusMap: Record<string, { text: string; color: string }> = {
+      pending: { text: '待处理', color: 'orange' },
+      accepted: { text: '已接受', color: 'green' },
+      rejected: { text: '已拒绝', color: 'red' },
+    };
+    return statusMap[status] || { text: '未知', color: 'default' };
+  };
+
+  // 获取置信度颜色
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 0.8) return '#52c41a'; // 绿色 - 高置信度
+    if (confidence >= 0.6) return '#faad14'; // 橙色 - 中等置信度
+    if (confidence >= 0.4) return '#ff9500'; // 深橙色 - 较低置信度
+    return '#ff4d4f'; // 红色 - 低置信度
+  };
+
   // 表格列定义
   const columns: ColumnsType<Recommendation> = [
     {
       title: '客户',
       dataIndex: 'customerName',
       key: 'customerName',
+      width: 200,
+      fixed: 'left',
       render: (text, record) => (
         <a onClick={() => handleViewDetail(record)}>{text || `客户#${record.customerId}`}</a>
       ),
@@ -326,34 +366,46 @@ const RecommendationList: React.FC = () => {
       title: '推荐标签',
       dataIndex: 'tagName',
       key: 'tagName',
+      width: 150,
       render: (text: string) => <Tag color="blue">{text}</Tag>,
     },
     {
       title: '标签类型',
       dataIndex: 'tagCategory',
       key: 'tagCategory',
+      width: 120,
+      render: (text?: string) => text || '-',
     },
     {
       title: '置信度',
       dataIndex: 'confidence',
       key: 'confidence',
+      width: 140,
       sorter: (a, b) => a.confidence - b.confidence,
-      render: (confidence: number) => (
-        <Progress
-          percent={Number((confidence * 100).toFixed(1))}
-          strokeColor={{
-            '0%': '#108ee9',
-            '100%': '#87d068',
-          }}
-          status="active"
-          style={{ width: 100 }}
-        />
-      ),
+      render: (confidence: number) => {
+        const percent = Number((confidence * 100).toFixed(1));
+        const color = getConfidenceColor(confidence);
+        
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Progress
+              percent={percent}
+              strokeColor={color}
+              trailColor="#f5f5f5"
+              status="active"
+              format={() => `${percent}%`}
+              style={{ width: 100, marginBottom: 0 }}
+              size="small"
+            />
+          </div>
+        );
+      },
     },
     {
       title: '来源',
       dataIndex: 'source',
       key: 'source',
+      width: 120,
       render: (source: 'rule' | 'clustering' | 'association') => {
         const sourceMap = {
           rule: { text: '规则引擎', color: 'blue' },
@@ -368,80 +420,85 @@ const RecommendationList: React.FC = () => {
       dataIndex: 'reason',
       key: 'reason',
       ellipsis: true,
+      responsive: ['md'], // 中屏以上显示
     },
     {
       title: '状态',
       key: 'status',
-      // 后端已支持筛选，移除前端 onFilter
-      render: (_: any, record: Recommendation) => (
-        <Tag color={record.isAccepted ? 'green' : 'orange'}>
-          {record.isAccepted ? '已接受' : '待处理'}
-        </Tag>
-      ),
+      width: 100,
+      render: (_: any, record: Recommendation) => {
+        // 优先使用 status 字段，向后兼容 isAccepted
+        const statusValue = (record as any).status || record.isAccepted;
+        const config = getStatusConfig(statusValue);
+        return <Tag color={config.color}>{config.text}</Tag>;
+      },
     },
     {
       title: '推荐时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
+      width: 160,
+      responsive: ['lg'], // 大屏以上显示
       sorter: (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       render: (createdAt: string) => dayjs(createdAt).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
       title: '操作',
       key: 'actions',
+      width: 220,
       fixed: 'right',
-      width: 200,
-      render: (_: any, record: Recommendation) => (
-        <Space>
-          {!record.isAccepted && (
-            <>
-              <Popconfirm
-                title="确定要接受此推荐吗？"
-                onConfirm={() => handleAccept(record.id)}
-              >
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<CheckCircleOutlined />}
+      render: (_: any, record: Recommendation) => {
+        // 判断是否已处理
+        const isProcessed = record.isAccepted || (record as any).status === 'accepted' || (record as any).status === 'rejected';
+        
+        return (
+          <Space>
+            {!isProcessed && (
+              <>
+                <Popconfirm
+                  title="确定要接受此推荐吗？"
+                  onConfirm={() => handleAccept(record.id)}
+                  okText="接受"
+                  cancelText="取消"
                 >
-                  接受
-                </Button>
-              </Popconfirm>
-              <Popconfirm
-                title="确定要拒绝此推荐吗？"
-                onConfirm={() => handleReject(record.id)}
-              >
-                <Button
-                  type="link"
-                  size="small"
-                  danger
-                  icon={<CloseCircleOutlined />}
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<CheckCircleOutlined />}
+                  >
+                    接受
+                  </Button>
+                </Popconfirm>
+                <Popconfirm
+                  title="确定要拒绝此推荐吗？"
+                  onConfirm={() => handleReject(record.id)}
+                  okText="拒绝"
+                  cancelText="取消"
                 >
-                  拒绝
-                </Button>
-              </Popconfirm>
-            </>
-          )}
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handleViewDetail(record)}
-          >
-            详情
-          </Button>
-        </Space>
-      ),
+                  <Button
+                    type="link"
+                    size="small"
+                    danger
+                    icon={<CloseCircleOutlined />}
+                  >
+                    拒绝
+                  </Button>
+                </Popconfirm>
+              </>
+            )}
+            <Button
+              type="link"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => handleViewDetail(record)}
+            >
+              详情
+            </Button>
+          </Space>
+        );
+      },
     },
   ];
-
-  // 统计卡片数据
-  const statistics = {
-    total: recommendationPagination.total,
-    pending: recommendations.filter(r => !r.isAccepted).length,
-    accepted: recommendations.filter(r => r.isAccepted).length,
-    rejected: 0,
-  };
 
   // 处理分页变化
   const handleTableChange = (pagination: any, tableFilters: any, sorter: any) => {
@@ -457,43 +514,44 @@ const RecommendationList: React.FC = () => {
     <div style={{ padding: '24px' }}>
       <Title level={2}>推荐结果管理</Title>
 
-      {/* 统计卡片 */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
-          <Card>
+      {/* 统计卡片 - 使用后端 API 数据 */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} md={6}>
+          <Card hoverable loading={statisticsLoading}>
             <Statistic
               title="总推荐数"
-              value={statistics.total}
+              value={statistics?.total ?? 0}
               prefix={<Text type="secondary">📄</Text>}
+              valueStyle={{ fontSize: 24, fontWeight: 600 }}
             />
           </Card>
         </Col>
-        <Col span={6}>
-          <Card>
+        <Col xs={24} sm={12} md={6}>
+          <Card hoverable loading={statisticsLoading}>
             <Statistic
               title="待处理"
-              value={statistics.pending}
-              valueStyle={{ color: '#faad14' }}
+              value={statistics?.pending ?? 0}
+              valueStyle={{ color: '#faad14', fontSize: 24, fontWeight: 600 }}
               prefix={<Text type="secondary">⏰</Text>}
             />
           </Card>
         </Col>
-        <Col span={6}>
-          <Card>
+        <Col xs={24} sm={12} md={6}>
+          <Card hoverable loading={statisticsLoading}>
             <Statistic
               title="已接受"
-              value={statistics.accepted}
-              valueStyle={{ color: '#52c41a' }}
+              value={statistics?.accepted ?? 0}
+              valueStyle={{ color: '#52c41a', fontSize: 24, fontWeight: 600 }}
               prefix={<Text type="secondary">✅</Text>}
             />
           </Card>
         </Col>
-        <Col span={6}>
-          <Card>
+        <Col xs={24} sm={12} md={6}>
+          <Card hoverable loading={statisticsLoading}>
             <Statistic
               title="已拒绝"
-              value={statistics.rejected}
-              valueStyle={{ color: '#ff4d4f' }}
+              value={statistics?.rejected ?? 0}
+              valueStyle={{ color: '#ff4d4f', fontSize: 24, fontWeight: 600 }}
               prefix={<Text type="secondary">❌</Text>}
             />
           </Card>
@@ -592,9 +650,11 @@ const RecommendationList: React.FC = () => {
           pageSize: recommendationPagination.pageSize,
           total: recommendationPagination.total,
           showSizeChanger: true,
+          showQuickJumper: true,
           showTotal: (total) => `共 ${total} 条`,
+          pageSizeOptions: ['10', '20', '50', '100'],
         }}
-        scroll={{ x: 1600 }}
+        scroll={{ x: 'max-content' }}
         rowSelection={{
           type: 'checkbox',
           selectedRowKeys,
@@ -604,6 +664,23 @@ const RecommendationList: React.FC = () => {
             Table.SELECTION_INVERT,
             Table.SELECTION_NONE,
           ],
+        }}
+        locale={{
+          emptyText: recommendations.length === 0 
+            ? (
+              <div style={{ padding: '40px 0', textAlign: 'center' }}>
+                <div style={{ fontSize: 64, marginBottom: 16 }}>📭</div>
+                <div style={{ fontSize: 16, color: '#999', marginBottom: 8 }}>
+                  暂无推荐数据
+                </div>
+                <div style={{ fontSize: 14, color: '#bbb' }}>
+                  {filters.customerName || filters.category || filters.source || filters.status 
+                    ? '当前筛选条件下没有数据，请尝试调整筛选条件' 
+                    : '还没有生成任何推荐，请稍后刷新或查看规则配置'}
+                </div>
+              </div>
+            ) 
+            : '暂无数据',
         }}
         footer={() => (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>

@@ -145,7 +145,7 @@ export class RecommendationController {
   }
 
   /**
-   * 获取推荐统计信息
+   * 获取推荐的统计信息
    */
   @Get('stats')
   async getStats(): Promise<{
@@ -154,6 +154,41 @@ export class RecommendationController {
     avgConfidence: number;
   }> {
     return await this.service.getStats();
+  }
+
+  /**
+   * 按状态统计推荐数量（支持筛选）
+   */
+  @Get('stats/status')
+  @ApiOperation({ summary: '获取状态统计', description: '按待处理、已接受、已拒绝统计推荐数量，支持筛选条件' })
+  @ApiQuery({ name: 'category', required: false, type: String, description: '按标签类别过滤', example: '客户价值' })
+  @ApiQuery({ name: 'customerName', required: false, type: String, description: '按客户名称模糊查询', example: '张三' })
+  @ApiQuery({ name: 'source', required: false, enum: ['rule', 'clustering', 'association'], description: '按推荐来源过滤' })
+  @ApiQuery({ name: 'minConfidence', required: false, type: Number, description: '最低置信度 (0-1)', example: 0.7 })
+  @ApiQuery({ name: 'startDate', required: false, type: String, description: '开始日期（ISO 格式）', example: '2026-03-01' })
+  @ApiQuery({ name: 'endDate', required: false, type: String, description: '结束日期（ISO 格式）', example: '2026-03-31' })
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回按状态分组的统计数据',
+    schema: {
+      type: 'object',
+      properties: {
+        total: { type: 'number', description: '总记录数', example: 100 },
+        pending: { type: 'number', description: '待处理数量', example: 60 },
+        accepted: { type: 'number', description: '已接受数量', example: 30 },
+        rejected: { type: 'number', description: '已拒绝数量', example: 10 },
+      },
+    },
+  })
+  async getStatusStats(
+    @Query() options: GetRecommendationsDto
+  ): Promise<{
+    total: number;
+    pending: number;
+    accepted: number;
+    rejected: number;
+  }> {
+    return await this.service.getStatusStats(options);
   }
 
   /**

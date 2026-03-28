@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import type { Rule, Recommendation, CreateRuleDto, UpdateRuleDto, TestRuleDto, TestResult } from '@/services/rule';
 import { ruleService, recommendationService } from '@/services/rule';
 
+interface Statistics {
+  total: number;
+  pending: number;
+  accepted: number;
+  rejected: number;
+}
+
 interface RuleState {
   // 规则相关状态
   rules: Rule[];
@@ -25,6 +32,10 @@ interface RuleState {
     total: number;
   };
   
+  // 统计相关状态
+  statistics: Statistics | null;
+  statisticsLoading: boolean;
+  
   // 规则 Actions
   fetchRules: (params?: { page?: number; limit?: number; isActive?: boolean }) => Promise<void>;
   createRule: (data: CreateRuleDto) => Promise<any>;
@@ -40,8 +51,11 @@ interface RuleState {
   fetchRecommendations: (params?: any) => Promise<void>;
   acceptRecommendation: (id: number, feedbackReason?: string) => Promise<void>;
   rejectRecommendation: (id: number, feedbackReason?: string) => Promise<void>;
-  batchAcceptRecommendations: (ids: number[]) => Promise<void>;
-  batchRejectRecommendations: (ids: number[], feedbackReason?: string) => Promise<void>;
+  batchAcceptRecommendations: (ids: number[]) => Promise<any>;
+  batchRejectRecommendations: (ids: number[], feedbackReason?: string) => Promise<any>;
+  
+  // 统计 Actions
+  fetchStatistics: (params?: any) => Promise<void>;
 }
 
 export const useRuleStore = create<RuleState>((set, get) => ({
@@ -62,6 +76,9 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     pageSize: 20,
     total: 0,
   },
+  
+  statistics: null,
+  statisticsLoading: false,
   
   // 规则 Actions
   fetchRules: async (params) => {
@@ -155,22 +172,43 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   acceptRecommendation: async (id: number, feedbackReason?: string) => {
     await recommendationService.acceptRecommendation(id, feedbackReason);
     await get().fetchRecommendations();
+    await get().fetchStatistics(); // 刷新统计
   },
   
   rejectRecommendation: async (id: number, feedbackReason?: string) => {
     await recommendationService.rejectRecommendation(id, feedbackReason);
     await get().fetchRecommendations();
+    await get().fetchStatistics(); // 刷新统计
   },
   
   batchAcceptRecommendations: async (ids: number[]) => {
     const result = await recommendationService.batchAcceptRecommendations(ids);
     await get().fetchRecommendations();
+    await get().fetchStatistics(); // 刷新统计
     return result; // 返回 API 响应
   },
   
   batchRejectRecommendations: async (ids: number[], feedbackReason?: string) => {
     const result = await recommendationService.batchRejectRecommendations(ids, feedbackReason);
     await get().fetchRecommendations();
+    await get().fetchStatistics(); // 刷新统计
     return result; // 返回 API 响应
+  },
+  
+  // 统计 Actions
+  fetchStatistics: async (params) => {
+    set({ statisticsLoading: true });
+    try {
+      const response: any = await recommendationService.getStatusStats(params);
+      
+      set({
+        statistics: response,
+        statisticsLoading: false,
+      });
+    } catch (error) {
+      console.error('Failed to fetch statistics:', error);
+      set({ statisticsLoading: false });
+      throw error;
+    }
   },
 }));
