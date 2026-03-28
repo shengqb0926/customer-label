@@ -1,0 +1,6 @@
+name,email,phone,gender,age,city,totalAssets,monthlyIncome,annualSpend
+张三，zhangsan@example.com,13800138000,M,35，北京，500000,30000,180000
+李四，lisi@example.com,13900139000,F,28，上海，300000,25000,150000
+王五，wangwu@example.com,13700137000,M,42，广州，800000,50000,300000
+赵六，zhaoliu@example.com,13600136000,F,31，深圳，450000,35000,210000
+孙七，sunqi@example.com,13500135000,M,45，杭州，1000000,60000,360000

@@ -3,7 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RecommendationController } from './recommendation.controller';
 import { ClusteringManagerController } from './controllers/clustering-manager.controller';
 import { RuleEngineController } from './controllers/rule-engine.controller';
+import { CustomerController } from './controllers/customer.controller';
 import { RecommendationService } from './recommendation.service';
+import { CustomerService } from './services/customer.service';
 import { RecommendationSeedService } from './services/recommendation-seed.service';
 import { ClusteringManagerService } from './services/clustering-manager.service';
 import { ConflictDetectorService } from './services/conflict-detector.service';
@@ -16,6 +18,7 @@ import { FusionEngineService } from './engines/fusion-engine.service';
 import { TagRecommendation } from './entities/tag-recommendation.entity';
 import { RecommendationRule } from './entities/recommendation-rule.entity';
 import { ClusteringConfig } from './entities/clustering-config.entity';
+import { Customer } from './entities/customer.entity';
 import { RedisModule } from '../../infrastructure/redis';
 import { QueueModule } from '../../infrastructure/queue';
 
@@ -25,6 +28,7 @@ import { QueueModule } from '../../infrastructure/queue';
       TagRecommendation,
       RecommendationRule,
       ClusteringConfig,
+      Customer,
     ]),
     RedisModule,
     QueueModule,
@@ -33,9 +37,11 @@ import { QueueModule } from '../../infrastructure/queue';
     RecommendationController, 
     ClusteringManagerController,
     RuleEngineController,
+    CustomerController,
   ],
   providers: [
     RecommendationService,
+    CustomerService,
     RecommendationSeedService,
     ClusteringManagerService,
     ConflictDetectorService,
@@ -48,8 +54,9 @@ import { QueueModule } from '../../infrastructure/queue';
   ],
   exports: [
     RecommendationService,
+    CustomerService,
     ClusteringManagerService,
-    ConflictDetectorService,
+    RuleEngineService,
     ClusteringEngineService,
     AssociationEngineService,
     FusionEngineService,

@@ -22,7 +22,9 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d data-source.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d data-source.ts"
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d data-source.ts",
+    "migrate:customers": "node run-customer-migration.cjs",
+    "seed:customers": "node scripts/seed-customers.cjs"
   },
   "keywords": [
     "customer",
