@@ -357,13 +357,15 @@ const RecommendationList: React.FC = () => {
   const columns: ColumnsType<Recommendation> = [
     {
       title: '客户',
-      dataIndex: 'customerName',
-      key: 'customerName',
+      dataIndex: 'customerId',
+      key: 'customerId',
       width: 200,
       fixed: 'left',
       ellipsis: true,
-      render: (text: string) => (
-        <Text strong style={{ color: '#1890ff' }}>{text}</Text>
+      render: (customerId: number) => (
+        <Text strong style={{ color: '#1890ff' }}>
+          客户 #{customerId}
+        </Text>
       ),
     },
     {

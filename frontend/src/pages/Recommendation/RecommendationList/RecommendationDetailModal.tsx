@@ -39,7 +39,10 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
       {/* 基本信息 */}
       <Descriptions bordered column={2} size="small">
         <Descriptions.Item label="客户名称">
-          {recommendation.customerName || `客户#${recommendation.customerId}`}
+          {recommendation.customerName || `客户 #${recommendation.customerId}`}
+        </Descriptions.Item>
+        <Descriptions.Item label="客户 ID">
+          {recommendation.customerId}
         </Descriptions.Item>
         <Descriptions.Item label="标签类型">
           {recommendation.tagCategory || '-'}
@@ -71,7 +74,7 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
           <div style={{ marginBottom: 16 }}>
             <Text strong>置信度:</Text>
             <Progress
-              percent={(recommendation.confidence * 100).toFixed(1)}
+              percent={Number((recommendation.confidence * 100).toFixed(1))}
               strokeColor={{
                 '0%': '#108ee9',
                 '100%': '#87d068',
@@ -112,7 +115,7 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
                   </div>
                 ),
               },
-              recommendation.acceptedAt && {
+              ...(recommendation.acceptedAt ? [{
                 color: 'blue',
                 children: (
                   <div>
@@ -121,7 +124,7 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
                       <>
                         <br />
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          操作人：用户#{recommendation.acceptedBy}
+                          操作人：用户 #{recommendation.acceptedBy}
                         </Text>
                       </>
                     )}
@@ -131,8 +134,8 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
                     </Text>
                   </div>
                 ),
-              },
-            ].filter(Boolean)}
+              }] : []),
+            ]}
           />
         </>
       )}
