@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { TagRecommendation } from '../entities/tag-recommendation.entity';
-import { RecommendationRule } from '../entities/recommendation-rule.entity';
+import { RecommendationRule, type RuleExpression } from '../entities/recommendation-rule.entity';
 
 /**
  * 冲突类型枚举
@@ -435,8 +435,15 @@ export class ConflictDetectorService {
     rule2: RecommendationRule
   ): { description: string } | null {
     // 解析规则表达式
-    const conditions1 = this.parseRuleExpression(rule1.ruleExpression);
-    const conditions2 = this.parseRuleExpression(rule2.ruleExpression);
+    const expression1 = typeof rule1.ruleExpression === 'string' 
+      ? JSON.parse(rule1.ruleExpression) 
+      : rule1.ruleExpression;
+    const expression2 = typeof rule2.ruleExpression === 'string' 
+      ? JSON.parse(rule2.ruleExpression) 
+      : rule2.ruleExpression;
+    
+    const conditions1 = this.parseRuleExpression(expression1);
+    const conditions2 = this.parseRuleExpression(expression2);
 
     // 检查是否有直接矛盾的条件
     for (const cond1 of conditions1) {
@@ -461,23 +468,26 @@ export class ConflictDetectorService {
   /**
    * 解析规则表达式为条件数组
    */
-  private parseRuleExpression(expression: string): Array<{ field: string; operator: string; value: any }> {
+  private parseRuleExpression(
+    expression: RuleExpression
+  ): Array<{ field: string; operator: string; value: any }> {
     const conditions: Array<{ field: string; operator: string; value: any }> = [];
     
-    // 简单解析：按 AND 分割
-    const andParts = expression.split(/\s+AND\s+/i);
+    if (!expression.conditions) return conditions;
     
-    for (const part of andParts) {
-      const orParts = part.split(/\s+OR\s+/i);
-      for (const expr of orParts) {
-        const match = expr.trim().match(/^(\w+)\s*(>=|<=|!=|==|>|<|contains|in)\s*(.+)$/i);
-        if (match) {
-          conditions.push({
-            field: match[1],
-            operator: match[2].toLowerCase(),
-            value: match[3],
-          });
-        }
+    // 递归解析条件
+    for (const condition of expression.conditions) {
+      if ('operator' in condition && 'field' in condition) {
+        // 这是 BaseCondition
+        conditions.push({
+          field: condition.field,
+          operator: condition.operator,
+          value: condition.value,
+        });
+      } else if ('operator' in condition && 'conditions' in condition) {
+        // 这是嵌套的 RuleExpression，递归解析
+        const nested = this.parseRuleExpression(condition);
+        conditions.push(...nested);
       }
     }
 

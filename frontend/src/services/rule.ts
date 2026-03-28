@@ -1,35 +1,68 @@
 import apiClient from './api';
 
+// 规则表达式类型
+export interface RuleExpression {
+  operator: 'AND' | 'OR' | 'NOT';
+  conditions: (BaseCondition | RuleExpression)[];
+}
+
+export interface BaseCondition {
+  field: string;
+  operator: '>' | '<' | '>=' | '<=' | '==' | '!=' | 'between' | 'in' | 'includes' | 'startsWith' | 'contains' | 'endsWith';
+  value: any;
+}
+
 // 规则实体
 export interface Rule {
   id: number;
-  name: string;
+  ruleName: string;
   description?: string;
-  conditions: Record<string, any>;
-  action: string;
+  ruleExpression: RuleExpression | string; // 可能是解析后的对象，也可能是字符串
   priority: number;
+  tagTemplate: any; // 标签模板对象
   isActive: boolean;
+  hitCount?: number;
+  acceptanceRate?: number;
   createdAt: string;
   updatedAt: string;
 }
 
 // 创建规则 DTO
 export interface CreateRuleDto {
-  name: string;
+  ruleName: string;
+  ruleExpression: RuleExpression | string;
+  tagTemplate: any;
   description?: string;
-  conditions: Record<string, any>;
-  action: string;
   priority?: number;
+  isActive?: boolean;
 }
 
 // 更新规则 DTO
 export interface UpdateRuleDto {
-  name?: string;
+  ruleName?: string;
+  ruleExpression?: RuleExpression | string;
+  tagTemplate?: any;
   description?: string;
-  conditions?: Record<string, any>;
-  action?: string;
   priority?: number;
   isActive?: boolean;
+}
+
+// 测试规则 DTO
+export interface TestRuleDto {
+  ruleExpression: RuleExpression;
+  customerData: Record<string, any>;
+}
+
+// 测试结果
+export interface TestResult {
+  matched: boolean;
+  confidence?: number;
+  matchedConditions?: number;
+  totalConditions?: number;
+  error?: string;
+  executionTime?: number;
+  expression?: RuleExpression;
+  customerData?: Record<string, any>;
 }
 
 // 获取规则参数
@@ -39,27 +72,101 @@ export interface GetRulesParams {
   isActive?: boolean;
 }
 
-// 获取规则列表
-export const getRules = async (params?: GetRulesParams): Promise<any> => {
-  return apiClient.get('/rules', { params });
+// 推荐实体
+export interface Recommendation {
+  id: number;
+  customerId: number;
+  customerName?: string;
+  tagName: string;
+  tagCategory?: string;
+  confidence: number;
+  source: 'rule' | 'clustering' | 'association';
+  reason: string;
+  isAccepted: boolean;
+  acceptedAt?: string;
+  acceptedBy?: number;
+  createdAt: string;
+}
+
+// 获取推荐列表参数
+export interface GetRecommendationsParams {
+  page?: number;
+  limit?: number;
+  customerId?: number;
+  customerName?: string; // 新增：客户名称模糊查询
+  status?: 'all' | 'pending' | 'accepted' | 'rejected';
+  tagCategory?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+// 规则服务
+export const ruleService = {
+  // 获取规则列表
+  async getRules(params?: GetRulesParams) {
+    return await apiClient.get<{ data: Rule[]; total: number; page?: number; limit?: number }>('/rules', { params });
+  },
+
+  // 创建规则
+  async createRule(data: CreateRuleDto) {
+    return await apiClient.post<Rule>('/rules', data);
+  },
+
+  // 更新规则
+  async updateRule(id: number, data: UpdateRuleDto) {
+    return await apiClient.put<Rule>(`/rules/${id}`, data);
+  },
+
+  // 删除规则
+  async deleteRule(id: number) {
+    return await apiClient.delete(`/rules/${id}`);
+  },
+
+  // 激活规则
+  async activateRule(id: number) {
+    return await apiClient.post(`/rules/${id}/activate`);
+  },
+
+  // 停用规则
+  async deactivateRule(id: number) {
+    return await apiClient.post(`/rules/${id}/deactivate`);
+  },
+
+  // 测试规则
+  async testRule(data: TestRuleDto) {
+    return await apiClient.post<TestResult>('/rules/test', data);
+  },
 };
 
-// 获取规则详情
-export const getRule = async (id: number): Promise<Rule> => {
-  return apiClient.get(`/rules/${id}`);
-};
+// 推荐服务
+export const recommendationService = {
+  // 获取推荐列表
+  async getRecommendations(params?: GetRecommendationsParams) {
+    return await apiClient.get<{ data: Recommendation[]; total: number; page?: number; limit?: number }>('/recommendations', { params });
+  },
 
-// 创建规则
-export const createRule = async (data: CreateRuleDto): Promise<Rule> => {
-  return apiClient.post('/rules', data);
-};
+  // 采纳推荐
+  async acceptRecommendation(id: number, feedbackReason?: string) {
+    return await apiClient.post(`/recommendations/${id}/accept`, { feedbackReason });
+  },
 
-// 更新规则
-export const updateRule = async (id: number, data: UpdateRuleDto): Promise<Rule> => {
-  return apiClient.patch(`/rules/${id}`, data);
-};
+  // 拒绝推荐
+  async rejectRecommendation(id: number, feedbackReason?: string) {
+    return await apiClient.post(`/recommendations/${id}/reject`, { feedbackReason });
+  },
 
-// 删除规则
-export const deleteRule = async (id: number): Promise<void> => {
-  return apiClient.delete(`/rules/${id}`);
+  // 批量接受推荐
+  async batchAcceptRecommendations(ids: number[]) {
+    return await apiClient.post('/recommendations/batch-accept', { ids });
+  },
+
+  // 批量拒绝推荐
+  async batchRejectRecommendations(ids: number[], feedbackReason?: string) {
+    const payload: any = { ids };
+    if (feedbackReason) {
+      payload.feedbackReason = feedbackReason;
+    }
+    
+    return await apiClient.post('/recommendations/batch-reject', payload);
+  },
 };

@@ -11,7 +11,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 5176, // 固定前端端口为 5176
+    strictPort: true, // 端口被占用时直接报错，不自动切换其他端口
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
@@ -20,4 +21,6 @@ export default defineConfig({
       },
     },
   },
+  logLevel: 'info', // 设置日志级别
+  clearScreen: false, // 不清空控制台以便查看完整日志
 })

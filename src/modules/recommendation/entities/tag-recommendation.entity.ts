@@ -7,6 +7,13 @@ import {
   Index,
 } from 'typeorm';
 
+// 推荐状态枚举
+export enum RecommendationStatus {
+  PENDING = 'pending',      // 待处理
+  ACCEPTED = 'accepted',    // 已接受
+  REJECTED = 'rejected',    // 已拒绝
+}
+
 export interface CreateRecommendationDto {
   customerId: number;
   tagName: string;
@@ -19,7 +26,7 @@ export interface CreateRecommendationDto {
 @Entity('tag_recommendations')
 @Index(['customerId'])
 @Index(['source'])
-@Index(['isAccepted'])
+@Index(['status'])
 @Index(['createdAt'])
 export class TagRecommendation {
   @PrimaryGeneratedColumn({ type: 'bigint' })
@@ -46,8 +53,11 @@ export class TagRecommendation {
   @Column({ type: 'decimal', precision: 5, scale: 4, nullable: true, name: 'score_overall' })
   scoreOverall: number;
 
-  @Column({ type: 'boolean', default: false, name: 'is_accepted' })
-  isAccepted: boolean;
+  @Column({ type: 'enum', enum: RecommendationStatus, default: RecommendationStatus.PENDING, name: 'status' })
+  status: RecommendationStatus;
+
+  @Column({ type: 'boolean', default: false, name: 'is_accepted', nullable: true })
+  isAccepted: boolean; // 保留字段用于向后兼容，新代码使用 status
 
   @Column({ type: 'timestamp', nullable: true, name: 'accepted_at' })
   acceptedAt: Date;

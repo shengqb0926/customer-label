@@ -114,7 +114,7 @@ function processData(data: ProcessableData): unknown {
 
 ### 3. 枚举类型使用大写字母
 
-```typescript
+``typescript
 // ✅ 推荐
 export enum UserRole {
   ADMIN = 'admin',
@@ -131,7 +131,7 @@ export enum UserRole {
 
 ### 4. 使用可选链和空值合并运算符
 
-```typescript
+``typescript
 // ✅ 推荐
 const userName = user?.profile?.name ?? '匿名用户';
 
@@ -190,7 +190,7 @@ export class UserController {
 
 #### 2.3 统一返回格式
 
-```typescript
+``typescript
 // ✅ 推荐：直接返回数据对象
 async getUser(id: number): Promise<User> {
   return await this.service.findOne(id);
@@ -298,6 +298,263 @@ export class CreateUserDto {
 
 ---
 
+### 6. 规则引擎代码规范（新增）⭐
+
+#### 6.1 分层架构规范
+
+规则引擎采用严格的三层架构，各层职责清晰：
+
+```typescript
+// ✅ 推荐：清晰的职责分层
+// 第一层：Parser（解析层）- 负责语法解析和验证
+class RuleParser {
+  parse(expression: RuleExpression): ParsedExpression {
+    // 1. 验证运算符有效性
+    // 2. 解析条件
+    // 3. 返回结构化数据
+  }
+  
+  validate(expression: RuleExpression): boolean {
+    // 纯验证逻辑，不修改数据
+  }
+}
+
+// 第二层：Evaluator（评估层）- 负责执行评估
+class RuleEvaluator {
+  constructor(private parser: RuleParser) {}
+  
+  evaluateExpression(expr: RuleExpression, data: any): EvaluationResult {
+    // 1. 使用 Parser 解析
+    // 2. 递归评估条件
+    // 3. 计算置信度
+  }
+  
+  private evaluateCondition(condition: Condition, data: any): boolean {
+    // 单个条件的评估逻辑
+  }
+}
+
+// 第三层：Engine（引擎层）- 负责编排和推荐生成
+@Injectable()
+class RuleEngine {
+  constructor(
+    @InjectRepository(RecommendationRule)
+    private ruleRepository: Repository<RecommendationRule>,
+    private evaluator: RuleEvaluator,
+  ) {}
+  
+  async recommend(customer: CustomerData): Promise<TagRecommendation[]> {
+    // 1. 加载活跃规则
+    // 2. 批量评估
+    // 3. 去重排序
+    // 4. 生成推荐
+  }
+}
+```
+
+#### 6.2 表达式类型定义规范
+
+``typescript
+// ✅ 推荐：使用联合类型确保类型安全
+type LogicalOperator = 'AND' | 'OR' | 'NOT';
+type ComparisonOperator = '>' | '<' | '>=' | '<=' | '==' | '!=';
+type ArrayOperator = 'in' | 'includes';
+type StringOperator = 'startsWith' | 'contains' | 'endsWith';
+type RangeOperator = 'between';
+
+type Operator = LogicalOperator | ComparisonOperator | ArrayOperator | StringOperator | RangeOperator;
+
+interface BaseCondition {
+  field: string;
+  operator: ComparisonOperator | ArrayOperator | StringOperator | RangeOperator;
+  value: any;
+}
+
+interface NestedExpression {
+  operator: LogicalOperator;
+  conditions: (BaseCondition | NestedExpression)[];
+}
+
+type RuleExpression = BaseCondition | NestedExpression;
+```
+
+#### 6.3 错误处理规范
+
+``typescript
+// ✅ 推荐：抛出明确的错误信息
+parse(expression: any): ParsedExpression {
+  if (!expression.operator) {
+    throw new Error('规则表达式必须包含 operator 字段');
+  }
+  
+  if (!['AND', 'OR', 'NOT'].includes(expression.operator)) {
+    throw new Error(`无效的运算符：${expression.operator}，支持的运算符：AND, OR, NOT`);
+  }
+  
+  if (!Array.isArray(expression.conditions)) {
+    throw new Error('规则表达式必须包含 conditions 数组');
+  }
+  
+  // 验证每个条件
+  for (const condition of expression.conditions) {
+    if (!condition.field) {
+      throw new Error(`条件必须包含 field 字段：${JSON.stringify(condition)}`);
+    }
+    if (condition.value === undefined) {
+      throw new Error(`条件必须包含 value 字段：${JSON.stringify(condition)}`);
+    }
+  }
+}
+```
+
+#### 6.4 置信度计算规范
+
+``typescript
+// ✅ 推荐：根据逻辑运算符采用不同的置信度策略
+evaluateExpression(expr: RuleExpression, data: any): EvaluationResult {
+  if ('field' in expr) {
+    // 基础条件
+    const matched = this.evaluateCondition(expr, data);
+    return {
+      matched,
+      confidence: matched ? 1 : 0,
+      matchedConditions: matched ? 1 : 0,
+      totalConditions: 1,
+    };
+  }
+  
+  // 嵌套表达式
+  const results = expr.conditions.map(cond => this.evaluateExpression(cond, data));
+  const matchedCount = results.filter(r => r.matched).length;
+  const totalCount = results.length;
+  
+  let confidence: number;
+  let matched: boolean;
+  
+  switch (expr.operator) {
+    case 'AND':
+      // AND: 所有条件都匹配才为 true，置信度 = 匹配数/总数
+      matched = matchedCount === totalCount;
+      confidence = matchedCount / totalCount;
+      break;
+      
+    case 'OR':
+      // OR: 任一条件匹配就为 true，置信度 = 匹配数/总数
+      matched = matchedCount > 0;
+      confidence = matchedCount / totalCount;
+      break;
+      
+    case 'NOT':
+      // NOT: 反向逻辑
+      matched = matchedCount === 0;
+      confidence = matched ? 1 : 0;
+      break;
+      
+    default:
+      throw new Error(`不支持的逻辑运算符：${expr.operator}`);
+  }
+  
+  return { matched, confidence, matchedConditions: matchedCount, totalConditions: totalCount };
+}
+```
+
+#### 6.5 推荐去重和排序规范
+
+``typescript
+// ✅ 推荐：使用 Map 高效去重，按置信度排序
+deduplicateAndSort(recommendations: Partial<TagRecommendation>[]): Partial<TagRecommendation>[] {
+  // 使用 Map 去重（tagName -> recommendation）
+  // 相同标签只保留置信度最高的
+  const map = new Map<string, Partial<TagRecommendation>>();
+  
+  for (const rec of recommendations) {
+    const existing = map.get(rec.tagName!);
+    if (!existing || (rec.confidence! > existing.confidence!)) {
+      map.set(rec.tagName!, rec);
+    }
+  }
+  
+  // 转换为数组并按置信度降序排序
+  return Array.from(map.values())
+    .sort((a, b) => b.confidence! - a.confidence!);
+}
+```
+
+#### 6.6 单元测试规范
+
+``typescript
+// ✅ 推荐：完整的测试覆盖，包括正常场景和边界情况
+describe('RuleParser', () => {
+  let parser: RuleParser;
+  
+  beforeEach(() => {
+    parser = new RuleParser();
+  });
+  
+  describe('parse()', () => {
+    it('应正确解析简单条件', () => {
+      const expr: RuleExpression = {
+        operator: 'AND',
+        conditions: [{ field: 'age', operator: '>=', value: 18 }],
+      };
+      
+      const result = parser.parse(expr);
+      
+      expect(result.operator).toBe('AND');
+      expect(result.conditions).toHaveLength(1);
+    });
+    
+    it('应拒绝无效的运算符', () => {
+      const invalidExpr = { operator: 'INVALID', conditions: [] };
+      
+      expect(() => parser.parse(invalidExpr)).toThrow('无效的运算符');
+    });
+    
+    it('应拒绝缺失 field 的条件', () => {
+      const invalidExpr = {
+        operator: 'AND',
+        conditions: [{ operator: '>=', value: 18 }],
+      };
+      
+      expect(() => parser.parse(invalidExpr)).toThrow('必须包含 field 字段');
+    });
+  });
+});
+```
+
+#### 6.7 性能优化规范
+
+``typescript
+// ✅ 推荐：惰性加载、缓存结果、避免重复计算
+@Injectable()
+class RuleEngineService {
+  private activeRulesCache: RecommendationRule[] | null = null;
+  private cacheTimestamp: number = 0;
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 分钟
+  
+  async getActiveRules(): Promise<RecommendationRule[]> {
+    const now = Date.now();
+    
+    // 检查缓存是否有效
+    if (this.activeRulesCache && (now - this.cacheTimestamp) < this.CACHE_TTL) {
+      return this.activeRulesCache;
+    }
+    
+    // 从数据库加载（按优先级降序）
+    this.activeRulesCache = await this.ruleRepository.find({
+      where: { isActive: true },
+      order: { priority: 'DESC' },
+    });
+    
+    this.cacheTimestamp = now;
+    return this.activeRulesCache;
+  }
+}
+```
+
+---
+
+
 ## ⚛️ React 前端规范
 
 ### 1. 组件结构规范
@@ -336,7 +593,7 @@ export const UserList: FC<UserListProps> = ({ initialData = [] }) => {
 
 #### 1.2 组件文件组织
 
-```typescript
+``typescript
 // 1. Imports
 import { useState } from 'react';
 import type { FC } from 'react';
@@ -417,7 +674,7 @@ useUserStore.getState().logout();
 
 #### 3.1 使用 Axios 实例
 
-```typescript
+``typescript
 // services/api.ts
 const apiClient = axios.create({
   baseURL: '/api/v1',
@@ -449,7 +706,7 @@ export default apiClient;
 
 #### 3.2 Service 层封装
 
-```typescript
+``typescript
 // services/user.ts
 import apiClient from './api';
 import type { User, ApiResponse } from '@/types';
@@ -471,7 +728,7 @@ export const userService = {
 
 ### 4. 路由保护规范
 
-```typescript
+``typescript
 // components/AuthGuard.tsx
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -500,7 +757,7 @@ export function AuthGuard({ children, roles }: AuthGuardProps) {
 
 ### 5. 页面组件规范
 
-```typescript
+``typescript
 // pages/UserManagement/index.tsx
 import { useEffect, useState } from 'react';
 import { Table, Button, Space } from 'antd';
@@ -614,7 +871,7 @@ export default function UserManagement() {
 
 ### 1. 文件头注释
 
-```typescript
+```
 /**
  * 用户管理服务
  * 负责用户相关的业务逻辑处理
@@ -626,7 +883,7 @@ export default function UserManagement() {
 
 ### 2. 类和接口注释
 
-```typescript
+```
 /**
  * 用户实体类
  * 代表系统中的用户账户
@@ -644,7 +901,7 @@ export class User {
 
 ### 3. 函数注释
 
-```typescript
+```
 /**
  * 创建新用户
  * 
@@ -666,7 +923,7 @@ async createUser(dto: CreateUserDto): Promise<User> {
 
 ### 4. 行内注释
 
-```typescript
+```
 // ✅ 推荐：解释为什么这样做
 // 使用 bcrypt 加密，10 轮是安全性和性能的平衡点
 const hashedPassword = await hash(password, 10);
@@ -706,7 +963,7 @@ setLoading(true);
 
 ### 3. 示例
 
-```bash
+```
 # 新功能
 git commit -m "feat(auth): 添加 JWT 认证支持"
 
@@ -775,7 +1032,7 @@ GET /api/v1/users?page=1&limit=20&username=admin&isActive=true
 
 #### 3.1 成功响应
 
-```typescript
+```
 // 单个资源
 {
   "id": 1,
@@ -794,7 +1051,7 @@ GET /api/v1/users?page=1&limit=20&username=admin&isActive=true
 
 #### 3.2 错误响应
 
-```typescript
+```
 {
   "statusCode": 400,
   "message": "用户名已存在",
@@ -835,7 +1092,7 @@ GET /api/v1/users?page=1&limit=20&username=admin&isActive=true
 
 ### 1. 使用 Tailwind CSS 优先
 
-```tsx
+```
 // ✅ 推荐
 <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow">
   <h2 className="text-xl font-bold text-gray-800">标题</h2>
@@ -852,7 +1109,7 @@ GET /api/v1/users?page=1&limit=20&username=admin&isActive=true
 
 ### 2. Ant Design 组件使用
 
-```tsx
+```
 import { Button, Table, Form } from 'antd';
 
 // ✅ 推荐：使用 Ant Design 组件库
@@ -870,7 +1127,7 @@ import { Button, Table, Form } from 'antd';
 
 ### 1. 单元测试命名
 
-```typescript
+```
 describe('UserService', () => {
   describe('createUser', () => {
     it('应该成功创建用户', async () => {
@@ -899,7 +1156,7 @@ describe('UserService', () => {
 
 ### 1. 前端性能
 
-```typescript
+```
 // 列表虚拟化（大数据量）
 import { VirtualList } from 'rc-virtual-list';
 
@@ -912,7 +1169,7 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'));
 
 ### 2. 后端性能
 
-```typescript
+```
 // 使用缓存
 @CacheKey('users:list')
 @CacheTTL(300) // 5 分钟
@@ -934,7 +1191,7 @@ export class User {
 
 ### 1. 输入验证
 
-```typescript
+```
 // ✅ 后端必须验证
 @IsString()
 @MinLength(3)
@@ -952,7 +1209,7 @@ username: string;
 
 ### 2. SQL 注入防护
 
-```typescript
+```
 // ✅ 使用参数化查询
 await this.repository.find({
   where: { username: userInput },
@@ -964,7 +1221,7 @@ await this.query(`SELECT * FROM users WHERE username = '${userInput}'`);
 
 ### 3. XSS 防护
 
-```typescript
+```
 // ✅ React 自动转义
 <div>{userInput}</div>
 

@@ -309,24 +309,119 @@ enum UserRole {
 
 ---
 
-### 3. 推荐系统模块
+### 3. 推荐系统模块 ⭐ 核心模块
 
 **位置**: `src/modules/recommendation/`
 
 **子模块**:
 - **推荐结果**: 存储和管理推荐结果
 - **规则管理**: 业务规则配置和执行
-- **聚类分析**: 客户聚类算法
+- **聚类分析**: 客户聚类算法（待开发）
+- **关联分析**: 标签关联关系挖掘（待开发）
+
+#### 3.1 规则引擎（2026-03-27 已完成）⭐
+
+**核心功能**:
+- ✅ 灵活的规则表达式语言（支持 AND/OR/NOT 嵌套）
+- ✅ 12 种运算符支持（比较、范围、数组、字符串）
+- ✅ 置信度评分机制
+- ✅ 智能推荐生成（去重、排序、理由生成）
+- ✅ 规则管理和测试工具
+
+**关键文件**:
+```
+src/modules/recommendation/
+├── entities/
+│   ├── recommendation-rule.entity.ts    # 规则实体
+│   └── tag-recommendation.entity.ts     # 推荐实体
+├── dto/
+│   ├── create-rule.dto.ts               # 创建规则 DTO
+│   ├── update-rule.dto.ts               # 更新规则 DTO
+│   └── test-rule.dto.ts                 # 测试规则 DTO
+├── engines/
+│   ├── rule-parser.ts                   # 规则解析器 ⭐
+│   ├── rule-evaluator.ts                # 规则评估器 ⭐
+│   └── rule-engine.ts                   # 规则引擎核心 ⭐
+├── services/
+│   └── rule-engine.service.ts           # 规则引擎服务
+├── controllers/
+│   └── rule-engine.controller.ts        # RESTful API
+└── seeds/
+    └── default-rules.seed.ts            # 默认规则种子
+```
 
 **核心流程**:
+```typescript
+// 1. 加载活跃规则（按优先级降序）
+const rules = await ruleRepository.find({
+  where: { isActive: true },
+  order: { priority: 'DESC' },
+});
+
+// 2. 逐条评估规则
+for (const rule of rules) {
+  const result = evaluator.evaluateExpression(rule.expression, customer);
+  
+  if (result.matched) {
+    // 3. 生成推荐（带置信度）
+    recommendations.push({
+      tagName: tag,
+      confidence: result.confidence,
+      source: 'rule',
+      reason: `满足规则：${rule.description}`,
+    });
+  }
+}
+
+// 4. 去重排序（相同标签保留最高置信度）
+return deduplicateAndSort(recommendations);
 ```
-1. 读取客户数据
-2. 应用业务规则
-3. 生成推荐标签
-4. 保存推荐结果
-5. 收集用户反馈
-6. 优化推荐算法
+
+**API 端点**:
+```typescript
+GET    /api/v1/rules                    # 获取规则列表
+GET    /api/v1/rules/:id                # 获取规则详情
+POST   /api/v1/rules                    # 创建新规则
+PUT    /api/v1/rules/:id                # 更新规则
+DELETE /api/v1/rules/:id                # 删除规则
+POST   /api/v1/rules/:id/activate       # 激活规则
+POST   /api/v1/rules/:id/deactivate     # 停用规则
+POST   /api/v1/rules/test               # 测试规则 ⭐
+POST   /api/v1/rules/batch/import       # 批量导入
+GET    /api/v1/rules/batch/export       # 批量导出
 ```
+
+**使用示例**:
+```typescript
+// 测试规则
+const testResult = await apiClient.post('/rules/test', {
+  ruleExpression: {
+    operator: 'AND',
+    conditions: [
+      { field: 'age', operator: '>=', value: 18 },
+      { field: 'city', operator: 'in', value: ['北京', '上海'] },
+    ],
+  },
+  customerData: { age: 25, city: '北京' },
+});
+
+// 为客户生成推荐
+const recommendations = await apiClient.post(
+  `/recommendations/generate/${customerId}`
+);
+```
+
+**预定义规则**（4 条）:
+1. **高价值客户识别** - 识别消费金额和订单数双高的客户
+2. **流失风险预警** - 识别有流失风险的存量客户
+3. **潜力客户挖掘** - 识别高潜力的年轻客户
+4. **频繁购买者** - 识别购买频率高的活跃客户
+
+**学习资源**:
+- 📄 详细文档：`openspec/changes/add-smart-tag-recommendation/TASK_3.1_SUMMARY.md`
+- 🚀 快速参考：`openspec/changes/add-smart-tag-recommendation/task-3.1-quickref.md`
+- 🧪 单元测试：`src/modules/recommendation/engines/*.spec.ts`
+- 📖 API 文档：http://localhost:3000/api/docs
 
 ---
 
@@ -354,11 +449,272 @@ enum UserRole {
 
 ## 💻 开发指南
 
+### 开发新功能的通用流程
+
+#### 1. 阅读 OpenSpec 文档
+
+在开始任何开发工作前，先阅读相关文档:
+- 📄 `openspec/changes/add-smart-tag-recommendation/` 目录下的文档
+- 📋 了解当前项目进度和待开发任务
+- 🎯 明确任务目标和验收标准
+
+#### 2. 遵循开发检查清单
+
+参考 [`DEVELOPMENT_CHECKLIST.md`](./DEVELOPMENT_CHECKLIST.md) 中的专项检查清单:
+- ✅ 后端开发检查清单
+- ✅ 前端开发检查清单
+- ✅ TypeScript 检查清单
+- ✅ **规则引擎专项检查清单** ⭐
+
+---
+
+### 规则引擎开发指引（新增）⭐
+
+#### 如何测试规则引擎
+
+```bash
+# 运行所有规则引擎相关的单元测试
+npm test -- --testPathPattern="rule-" --passWithNoTests
+
+# 单独运行某个测试文件
+npm test -- rule-parser.spec.ts --passWithNoTests
+npm test -- rule-evaluator.spec.ts --passWithNoTests
+npm test -- rule-engine.service.spec.ts --passWithNoTests
+npm test -- rule-engine.controller.spec.ts --passWithNoTests
+```
+
+#### 如何使用规则测试工具
+
+通过 Swagger UI 测试规则:
+
+1. 启动后端服务：`npm run start:dev`
+2. 访问 Swagger 文档：http://localhost:3000/api/docs
+3. 找到 `POST /rules/test` 端点
+4. 点击 "Try it out"
+5. 输入测试数据:
+
+```json
+{
+  "ruleExpression": {
+    "operator": "AND",
+    "conditions": [
+      {
+        "field": "totalOrders",
+        "operator": ">=",
+        "value": 10
+      },
+      {
+        "field": "totalAmount",
+        "operator": ">=",
+        "value": 10000
+      }
+    ]
+  },
+  "customerData": {
+    "id": 1,
+    "totalOrders": 15,
+    "totalAmount": 25000,
+    "city": "北京",
+    "age": 35
+  }
+}
+```
+
+6. 点击 "Execute" 执行测试
+7. 查看返回结果:
+
+```json
+{
+  "success": true,
+  "matched": true,
+  "confidence": 1,
+  "matchedConditions": 2,
+  "totalConditions": 2,
+  "executionTime": 5
+}
+```
+
+#### 如何创建新规则
+
+**方法一：通过 API 创建**
+
+```typescript
+const newRule = await apiClient.post('/rules', {
+  name: '新客户获取规则',
+  description: '识别最近注册的新客户',
+  expression: {
+    operator: 'AND',
+    conditions: [
+      {
+        field: 'registrationDate',
+        operator: '>=',
+        value: '2026-01-01',
+      },
+      {
+        field: 'status',
+        operator: '==',
+        value: 'active',
+      },
+    ],
+  },
+  priority: 70,
+  tags: ['新客户', '潜力客户'],
+  isActive: true,
+});
+```
+
+**方法二：通过种子文件批量添加**
+
+```typescript
+// src/modules/recommendation/seeds/new-rules.seed.ts
+export const NEW_RULES = [
+  {
+    name: '新客户获取规则',
+    description: '识别最近注册的新客户',
+    expression: { /* ... */ },
+    priority: 70,
+    tags: ['新客户', '潜力客户'],
+    isActive: true,
+  },
+  // ... 更多规则
+];
+```
+
+#### 如何调试规则表达式
+
+**常见错误及解决方案:**
+
+1. **错误：无效的运算符**
+```typescript
+// ❌ 错误
+{ operator: 'GREATER_THAN', value: 18 }
+
+// ✅ 正确
+{ operator: '>', value: 18 }
+```
+
+2. **错误：缺失 field 字段**
+```typescript
+// ❌ 错误
+{ operator: '>=', value: 18 }
+
+// ✅ 正确
+{ field: 'age', operator: '>=', value: 18 }
+```
+
+3. **错误：嵌套表达式格式错误**
+```typescript
+// ❌ 错误 - 缺少外层 operator
+{
+  conditions: [
+    { field: 'age', operator: '>=', value: 18 },
+  ]
+}
+
+// ✅ 正确
+{
+  operator: 'AND',
+  conditions: [
+    { field: 'age', operator: '>=', value: 18 },
+  ]
+}
+```
+
+#### 性能调优建议
+
+```typescript
+// 1. 使用缓存避免重复加载规则
+@Injectable()
+class RuleEngineService {
+  private rulesCache: RecommendationRule[] | null = null;
+  
+  async getActiveRules(): Promise<RecommendationRule[]> {
+    if (!this.rulesCache) {
+      this.rulesCache = await this.ruleRepository.find({
+        where: { isActive: true },
+        order: { priority: 'DESC' },
+      });
+    }
+    return this.rulesCache;
+  }
+}
+
+// 2. 批量评估时并行处理
+async recommendAllCustomers(customers: CustomerData[]) {
+  const results = await Promise.all(
+    customers.map(customer => this.recommend(customer))
+  );
+  return results;
+}
+
+// 3. 数据库查询优化
+@Index(['isActive', 'priority'])  // 复合索引
+@Index(['hitCount'])              // 统计查询索引
+@Entity('recommendation_rules')
+export class RecommendationRule {
+  // ...
+}
+```
+
+#### 常见问题解答
+
+**Q: 如何添加自定义运算符？**
+
+A: 修改 `rule-evaluator.ts` 中的 `evaluateCondition` 方法:
+
+```typescript
+private evaluateCondition(condition: Condition, data: any): boolean {
+  const { field, operator, value } = condition;
+  const fieldValue = this.getFieldValue(field, data);
+  
+  switch (operator) {
+    // 添加新的运算符
+    case 'custom_operator':
+      return this.customCompare(fieldValue, value);
+    // ... 现有运算符
+  }
+}
+```
+
+**Q: 如何处理大规模客户数据？**
+
+A: 使用分批处理和流式处理:
+
+```typescript
+async recommendBatch(customerIds: number[], batchSize = 100) {
+  for (let i = 0; i < customerIds.length; i += batchSize) {
+    const batch = customerIds.slice(i, i + batchSize);
+    const customers = await this.customerRepository.findByIds(batch);
+    
+    const recommendations = await Promise.all(
+      customers.map(c => this.recommend(c))
+    );
+    
+    await this.saveBatch(recommendations);
+  }
+}
+```
+
+**Q: 如何监控规则执行情况？**
+
+A: 利用命中次数统计和日志:
+
+```typescript
+// 每次规则匹配后更新命中次数
+rule.hitCount += 1;
+await this.ruleRepository.save(rule);
+
+// 记录详细日志
+console.log(`[RuleEngine] 规则 "${rule.name}" 匹配，置信度：${result.confidence}`);
+```
+
+---
+
 ### 添加新的 API 接口
 
 #### 步骤 1: 创建 Controller
 
-```typescript
+```
 // src/modules/example/example.controller.ts
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -388,7 +744,7 @@ export class ExampleController {
 
 #### 步骤 2: 创建 Service
 
-```typescript
+```
 // src/modules/example/example.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -424,7 +780,7 @@ export class ExampleService {
 
 #### 步骤 3: 创建 Entity
 
-```typescript
+```
 // src/modules/example/entities/example.entity.ts
 import {
   Entity,
@@ -451,7 +807,7 @@ export class Example {
 
 #### 步骤 4: 注册 Module
 
-```typescript
+```
 // src/modules/example/example.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -470,7 +826,7 @@ export class ExampleModule {}
 
 #### 步骤 5: 添加到 app.module.ts
 
-```typescript
+```
 // src/app.module.ts
 import { ExampleModule } from './modules/example/example.module';
 
@@ -489,7 +845,7 @@ export class AppModule {}
 
 #### 步骤 1: 创建页面组件
 
-```typescript
+```
 // frontend/src/pages/Example/index.tsx
 import { useEffect, useState } from 'react';
 import { Table, Button, Space, message } from 'antd';
@@ -538,7 +894,7 @@ export default function ExamplePage() {
 
 #### 步骤 2: 创建 Service
 
-```typescript
+```
 // frontend/src/services/example.ts
 import apiClient from './api';
 import type { Example } from '@/types';
@@ -556,7 +912,7 @@ export const exampleService = {
 
 #### 步骤 3: 添加路由
 
-```typescript
+```
 // frontend/src/App.tsx
 import ExamplePage from '@/pages/Example';
 
@@ -600,7 +956,7 @@ function App() {
 - 路由守卫配置错误
 
 **解决方案**:
-```typescript
+```
 // 检查 api.ts 中的拦截器
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');

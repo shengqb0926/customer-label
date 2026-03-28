@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { TagRecommendation } from './entities/tag-recommendation.entity';
+import { Repository, MoreThanOrEqual } from 'typeorm';
+import { TagRecommendation, RecommendationStatus } from './entities/tag-recommendation.entity';
 import { RecommendationRule } from './entities/recommendation-rule.entity';
 import { ClusteringConfig } from './entities/clustering-config.entity';
 import { CacheService } from '../../infrastructure/redis';
@@ -282,30 +282,124 @@ export class RecommendationService {
       category,
       source,
       minConfidence,
+      isAccepted,
+      startDate,
+      endDate,
+      customerName,
       sortBy = 'confidence',
       sortOrder = 'desc',
     } = options;
 
-    // 构建查询条件
-    const where: any = { customerId };
-    if (category) where.tagCategory = category;
-    if (source) where.source = source;
+    // 使用 QueryBuilder
+    const queryBuilder = this.recommendationRepo.createQueryBuilder('rec');
+    queryBuilder.where('rec.customerId = :customerId', { customerId });
+
+    // 如果提供了 customerName，添加到查询条件中（使用数据库列名 customer_id）
+    if (customerName) {
+      queryBuilder.andWhere('rec.customer_id::text ILIKE :customerName', { customerName: `%${customerName}%` });
+    }
+
+    // 构建 WHERE 条件
+    if (category) {
+      queryBuilder.andWhere('rec.tagCategory = :category', { category });
+    }
+    if (source) {
+      queryBuilder.andWhere('rec.source = :source', { source });
+    }
     if (minConfidence !== undefined) {
-      where.confidence = `>= ${minConfidence}`;
+      queryBuilder.andWhere('rec.confidence >= :minConfidence', { minConfidence });
+    }
+    if (isAccepted !== undefined) {
+      queryBuilder.andWhere('rec.isAccepted = :isAccepted', { isAccepted });
+    }
+    if (startDate || endDate) {
+      if (startDate && endDate) {
+        queryBuilder.andWhere('rec.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+      } else if (startDate) {
+        queryBuilder.andWhere('rec.createdAt >= :startDate', { startDate });
+      } else if (endDate) {
+        queryBuilder.andWhere('rec.createdAt <= :endDate', { endDate });
+      }
     }
 
     // 构建排序
-    const order: any = {};
-    order[sortBy] = sortOrder === 'desc' ? 'DESC' : 'ASC';
-    order.createdAt = 'DESC'; // 次要排序
+    queryBuilder.orderBy(`rec.${sortBy}`, sortOrder === 'desc' ? 'DESC' : 'ASC');
+    queryBuilder.addOrderBy('rec.createdAt', 'DESC');
+
+    // 分页
+    queryBuilder.skip((page - 1) * limit).take(limit);
 
     // 查询总数和数据
-    const [data, total] = await this.recommendationRepo.findAndCount({
-      where,
-      order,
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return new PaginatedResponse(data, total, page, limit);
+  }
+
+  /**
+   * 查询所有客户的推荐列表（支持分页和过滤）
+   */
+  async findAllWithPagination(
+    options: GetRecommendationsDto
+  ): Promise<PaginatedResponse<TagRecommendation>> {
+    const {
+      page = 1,
+      limit = 20,
+      category,
+      source,
+      minConfidence,
+      status,
+      isAccepted,
+      startDate,
+      endDate,
+      customerName,
+      sortBy = 'confidence',
+      sortOrder = 'desc',
+    } = options;
+
+    // 使用 QueryBuilder
+    const queryBuilder = this.recommendationRepo.createQueryBuilder('rec');
+
+    // 构建 WHERE 条件
+    if (customerName) {
+      // 客户 ID 模糊查询（使用数据库列名 customer_id）
+      queryBuilder.andWhere('rec.customer_id::text ILIKE :customerName', { customerName: `%${customerName}%` });
+    }
+    if (category) {
+      queryBuilder.andWhere('rec.tagCategory = :category', { category });
+    }
+    if (source) {
+      queryBuilder.andWhere('rec.source = :source', { source });
+    }
+    if (minConfidence !== undefined) {
+      queryBuilder.andWhere('rec.confidence >= :minConfidence', { minConfidence });
+    }
+    if (status !== undefined) {
+      queryBuilder.andWhere('rec.status = :status', { status });
+    }
+    // 向后兼容：如果使用了 isAccepted 参数（已废弃）
+    if (isAccepted !== undefined) {
+      const isAcceptedBool = isAccepted === 'true' || isAccepted === true;
+      queryBuilder.andWhere('rec.isAccepted = :isAccepted', { isAccepted: isAcceptedBool });
+    }
+    if (startDate || endDate) {
+      if (startDate && endDate) {
+        queryBuilder.andWhere('rec.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate });
+      } else if (startDate) {
+        queryBuilder.andWhere('rec.createdAt >= :startDate', { startDate });
+      } else if (endDate) {
+        queryBuilder.andWhere('rec.createdAt <= :endDate', { endDate });
+      }
+    }
+
+    // 构建排序
+    queryBuilder.orderBy(`rec.${sortBy}`, sortOrder === 'desc' ? 'DESC' : 'ASC');
+    queryBuilder.addOrderBy('rec.createdAt', 'DESC');
+
+    // 分页
+    queryBuilder.skip((page - 1) * limit).take(limit);
+
+    // 查询总数和数据
+    const [data, total] = await queryBuilder.getManyAndCount();
 
     return new PaginatedResponse(data, total, page, limit);
   }
@@ -381,5 +475,111 @@ export class RecommendationService {
   async invalidateCache(customerId: number): Promise<void> {
     await this.cache.delete(`recommendations:${customerId}`);
     this.logger.debug(`Invalidated cache for customer ${customerId}`);
+  }
+
+  /**
+   * 接受推荐
+   */
+  async acceptRecommendation(
+    id: number,
+    userId: number,
+    modifiedTagName?: string,
+    feedbackReason?: string
+  ): Promise<TagRecommendation> {
+    const recommendation = await this.recommendationRepo.findOne({ where: { id } });
+    
+    if (!recommendation) {
+      throw new Error('推荐记录不存在');
+    }
+
+    recommendation.status = RecommendationStatus.ACCEPTED;
+    recommendation.isAccepted = true; // 向后兼容
+    recommendation.acceptedAt = new Date();
+    recommendation.acceptedBy = userId;
+    
+    if (modifiedTagName) {
+      recommendation.modifiedTagName = modifiedTagName;
+    }
+    
+    if (feedbackReason) {
+      recommendation.feedbackReason = feedbackReason;
+    }
+
+    const saved = await this.recommendationRepo.save(recommendation);
+    
+    // 清除缓存
+    await this.invalidateCache(recommendation.customerId);
+    
+    this.logger.log(`Recommendation ${id} accepted by user ${userId}`);
+    return saved;
+  }
+
+  /**
+   * 拒绝推荐
+   */
+  async rejectRecommendation(
+    id: number,
+    userId: number,
+    feedbackReason?: string
+  ): Promise<TagRecommendation> {
+    const recommendation = await this.recommendationRepo.findOne({ where: { id } });
+    
+    if (!recommendation) {
+      throw new Error('推荐记录不存在');
+    }
+
+    recommendation.status = RecommendationStatus.REJECTED;
+    recommendation.isAccepted = false; // 向后兼容
+    recommendation.feedbackReason = feedbackReason;
+
+    const saved = await this.recommendationRepo.save(recommendation);
+    
+    // 清除缓存
+    await this.invalidateCache(recommendation.customerId);
+    
+    this.logger.log(`Recommendation ${id} rejected by user ${userId}`);
+    return saved;
+  }
+
+  /**
+   * 批量接受推荐
+   */
+  async batchAcceptRecommendations(
+    ids: number[],
+    userId: number
+  ): Promise<number> {
+    let successCount = 0;
+    
+    for (const id of ids) {
+      try {
+        await this.acceptRecommendation(id, userId);
+        successCount++;
+      } catch (error) {
+        this.logger.error(`Failed to accept recommendation ${id}:`, error);
+      }
+    }
+    
+    return successCount;
+  }
+
+  /**
+   * 批量拒绝推荐
+   */
+  async batchRejectRecommendations(
+    ids: number[],
+    userId: number
+  ): Promise<number> {
+    let successCount = 0;
+    
+    for (const id of ids) {
+      try {
+        await this.rejectRecommendation(id, userId);
+        successCount++;
+      } catch (error) {
+        this.logger.error(`Failed to reject recommendation ${id}:`, error);
+      }
+    }
+    
+    return successCount;
   }
 }

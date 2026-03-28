@@ -35,5 +35,5 @@ export const updateScore = async (customerId: number, data: any): Promise<Score>
 
 // 获取统计信息
 export const getStats = async (): Promise<any> => {
-  return apiClient.get('/scoring/stats');
+  return apiClient.get('/scores/stats/overview');
 };

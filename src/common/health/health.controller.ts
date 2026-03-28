@@ -8,6 +8,27 @@ export class HealthController {
   private readonly logger = new Logger(HealthController.name);
 
   /**
+   * API 根路径 - 欢迎页面
+   */
+  @Get()
+  @ApiOperation({ summary: 'API 欢迎页面' })
+  @ApiResponse({ status: 200, description: '返回 API 基本信息' })
+  welcome() {
+    return {
+      name: '客户标签智能推荐系统 API',
+      version: 'v1',
+      status: 'running',
+      timestamp: new Date().toISOString(),
+      endpoints: {
+        health: '/api/v1/health',
+        ready: '/api/v1/ready',
+        metrics: '/api/v1/metrics',
+        swagger: '/api/docs',
+      },
+    };
+  }
+
+  /**
    * 健康检查端点
    */
   @Get('health')

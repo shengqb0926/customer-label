@@ -107,7 +107,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 0' }}>
-        <Spin size="large" tip="加载中..." />
+        <Spin size="large" description="加载中..." />
       </div>
     );
   }
@@ -125,7 +125,7 @@ export default function Dashboard() {
               title="用户总数"
               value={stats.userCount || 0}
               prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff' } }}
             />
           </Card>
         </Col>
@@ -136,7 +136,7 @@ export default function Dashboard() {
               title="推荐记录"
               value={stats.recommendationCount || 0}
               prefix={<ExperimentOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
           </Card>
         </Col>
@@ -148,7 +148,7 @@ export default function Dashboard() {
               value={stats.avgScore || 0}
               precision={2}
               prefix={<TrophyOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14' } }}
             />
           </Card>
         </Col>
@@ -159,7 +159,7 @@ export default function Dashboard() {
               title="高分客户"
               value={stats.highScoreCount || 0}
               prefix={<DashboardOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1' } }}
             />
           </Card>
         </Col>
@@ -176,7 +176,7 @@ export default function Dashboard() {
           />
         ) : (
           <Alert
-            message="暂无推荐数据"
+            title="暂无推荐数据"
             description="请先为客户生成推荐标签"
             type="info"
             showIcon

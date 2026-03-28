@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsInt, IsEnum, Min, Max, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
+import { RecommendationStatus } from '../entities/tag-recommendation.entity';
 
 /**
  * 推荐来源枚举
@@ -49,6 +50,14 @@ export class GetRecommendationsDto {
   category?: string;
 
   @ApiPropertyOptional({
+    description: '按客户名称模糊查询',
+    example: '张三',
+  })
+  @IsOptional()
+  @IsString()
+  customerName?: string;
+
+  @ApiPropertyOptional({
     description: '按推荐来源过滤',
     enum: RecommendationSource,
     example: 'rule',
@@ -68,6 +77,39 @@ export class GetRecommendationsDto {
   @Min(0)
   @Max(1)
   minConfidence?: number;
+
+  @ApiPropertyOptional({
+    description: '按状态筛选',
+    enum: RecommendationStatus,
+    example: 'pending',
+  })
+  @IsOptional()
+  @IsEnum(RecommendationStatus)
+  status?: RecommendationStatus;
+
+  @ApiPropertyOptional({
+    description: '是否已接受（向后兼容）',
+    example: true,
+    deprecated: true,
+  })
+  @IsOptional()
+  isAccepted?: boolean | string;
+
+  @ApiPropertyOptional({
+    description: '开始日期（ISO 格式）',
+    example: '2026-03-01',
+  })
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: '结束日期（ISO 格式）',
+    example: '2026-03-31',
+  })
+  @IsOptional()
+  @IsString()
+  endDate?: string;
 
   @ApiPropertyOptional({
     description: '排序字段',

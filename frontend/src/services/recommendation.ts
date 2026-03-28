@@ -23,7 +23,11 @@ export interface GetRecommendationsParams {
 
 // 获取推荐列表
 export const getRecommendations = async (params?: GetRecommendationsParams): Promise<any> => {
-  return apiClient.get('/recommendations', { params });
+  const { customerId, ...otherParams } = params || {};
+  if (customerId) {
+    return apiClient.get(`/recommendations/customer/${customerId}`, { params: otherParams });
+  }
+  return apiClient.get('/recommendations/stats', { params: otherParams });
 };
 
 // 生成推荐

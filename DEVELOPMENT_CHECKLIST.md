@@ -99,21 +99,182 @@
 
 ## ✅ TypeScript 检查清单
 
-### 类型定义
-
-- [ ] 是否避免使用 `any` 类型
-- [ ] 对象类型是否使用 `interface`
-- [ ] 联合类型是否使用 `type`
-- [ ] 枚举值是否使用大写字母
-- [ ] 可选属性是否正确标注 `?`
+- [ ] 是否避免了使用 `any` 类型
+- [ ] 是否定义了清晰的接口和类型
 - [ ] 泛型使用是否恰当
+- [ ] 类型导入是否使用了 `import type`
+- [ ] 是否启用了严格的类型检查选项
+- [ ] 是否有未使用的变量或导入
+
+---
+
+## ✅ 规则引擎专项检查清单（新增）⭐
+
+### 核心功能实现
+
+- [ ] 规则解析器是否支持所有运算符（AND, OR, NOT, >, <, >=, <=, ==, !=, between, in, includes, startsWith, contains, endsWith）
+- [ ] 规则解析器是否能正确处理嵌套表达式
+- [ ] 规则评估器是否正确计算置信度分数
+- [ ] 规则引擎是否能正确加载活跃规则（按优先级排序）
+- [ ] 推荐生成是否自动去重（相同标签保留最高置信度）
+- [ ] 推荐结果是否按置信度降序排序
+- [ ] 推荐理由是否自动生成且清晰易懂
+- [ ] 命中次数统计是否正常工作
+
+### 数据模型验证
+
+- [ ] RecommendationRule 实体是否包含所有必需字段
+  - [ ] id（主键）
+  - [ ] name（唯一索引）
+  - [ ] description（可选）
+  - [ ] expression（JSON 格式）
+  - [ ] priority（1-100）
+  - [ ] tags（数组）
+  - [ ] isActive（布尔值）
+  - [ ] hitCount（计数器）
+  - [ ] createdAt/updatedAt（时间戳）
+- [ ] 数据库迁移脚本是否已创建
+- [ ] 是否添加了必要的索引（name, isActive, priority）
+
+### DTO 验证
+
+- [ ] CreateRuleDto 是否包含完整的验证装饰器
+  - [ ] @IsString() @IsNotEmpty() for name
+  - [ ] @ValidateNested() for expression
+  - [ ] @IsNumber() @Min(1) @Max(100) for priority
+  - [ ] @IsArray() @IsString({ each: true }) for tags
+  - [ ] @IsBoolean() for isActive
+- [ ] UpdateRuleDto 是否所有字段都是可选的
+- [ ] TestRuleDto 是否正确定义
+
+### API 端点完整性
+
+- [ ] GET /rules - 获取规则列表（支持分页、筛选）
+- [ ] GET /rules/:id - 获取规则详情
+- [ ] POST /rules - 创建新规则
+- [ ] PUT /rules/:id - 更新规则
+- [ ] DELETE /rules/:id - 删除规则
+- [ ] POST /rules/:id/activate - 激活规则
+- [ ] POST /rules/:id/deactivate - 停用规则
+- [ ] POST /rules/test - 测试规则
+- [ ] POST /rules/batch/import - 批量导入
+- [ ] GET /rules/batch/export - 批量导出
+
+### Swagger 文档
+
+- [ ] 所有 Controller 是否添加了 `@ApiTags`
+- [ ] 所有端点是否添加了 `@ApiOperation`
+- [ ] 所有端点是否添加了 `@ApiResponse`
+- [ ] 需要认证的端点是否添加了 `@ApiBearerAuth`
+- [ ] 查询参数是否添加了 `@ApiQuery`
+- [ ] 请求体是否添加了 `@ApiBody`
+- [ ] 路径参数是否在 `@ApiParam` 中声明
+- [ ] 响应示例是否提供
+
+### 单元测试覆盖
+
+- [ ] **RuleParser 测试** (至少 10 个用例)
+  - [ ] 简单条件解析
+  - [ ] AND 表达式解析
+  - [ ] OR 表达式解析
+  - [ ] 嵌套表达式解析
+  - [ ] 无效运算符检测
+  - [ ] 缺失 field 检测
+  - [ ] 缺失 value 检测
+  - [ ] 表达式序列化
+  - [ ] 表达式验证（有效）
+  - [ ] 表达式验证（无效）
+
+- [ ] **RuleEvaluator 测试** (至少 14 个用例)
+  - [ ] 数值比较（>, <, >=, <=, ==, !=）
+  - [ ] 范围判断（between）
+  - [ ] 数组操作（in, includes）
+  - [ ] 字符串匹配（startsWith, contains, endsWith）
+  - [ ] 嵌套字段访问
+  - [ ] 空值处理
+  - [ ] AND 表达式评估
+  - [ ] OR 表达式评估
+  - [ ] NOT 表达式评估
+  - [ ] 置信度计算
+  - [ ] 嵌套表达式评估
+  - [ ] 边界情况处理
+
+- [ ] **RuleEngineService 测试** (至少 9 个用例)
+  - [ ] 服务定义
+  - [ ] 规则测试（成功场景）
+  - [ ] 规则测试（失败场景）
+  - [ ] 获取规则列表
+  - [ ] 创建规则（成功）
+  - [ ] 创建规则（重复名称拒绝）
+  - [ ] 激活规则
+  - [ ] 停用规则
+  - [ ] 删除规则
+
+- [ ] **RuleEngineController 测试** (至少 10 个用例)
+  - [ ] 控制器定义
+  - [ ] 所有 API 端点测试
+  - [ ] 参数验证测试
+  - [ ] 响应格式测试
 
 ### 代码质量
 
-- [ ] 是否使用了可选链操作符（`?.`）
-- [ ] 是否使用了空值合并运算符（`??`）
-- [ ] 类型断言是否必要且安全
-- [ ] 是否启用了严格模式（strict）
+- [ ] 是否遵循分层架构（Parser → Evaluator → Engine）
+- [ ] 依赖注入是否正确配置
+- [ ] 错误处理是否完整
+- [ ] 日志输出是否清晰有用
+- [ ] 代码注释是否充分（JSDoc）
+- [ ] 命名是否符合规范
+- [ ] 是否有代码重复问题
+
+### 性能优化
+
+- [ ] 规则加载是否使用缓存
+- [ ] 数据库查询是否优化
+- [ ] 是否避免了 N+1 查询
+- [ ] 大批量数据处理时是否有性能保护
+
+### 安全性
+
+- [ ] 规则表达式是否经过严格验证
+- [ ] 是否防止了表达式注入攻击
+- [ ] 输入数据是否经过 sanitization
+- [ ] 权限控制是否正确配置
+
+### 预定义规则种子
+
+- [ ] 是否创建了默认规则种子文件
+- [ ] 高价值客户识别规则（优先级 90）
+- [ ] 流失风险预警规则（优先级 85）
+- [ ] 潜力客户挖掘规则（优先级 80）
+- [ ] 频繁购买者规则（优先级 75）
+- [ ] 种子数据是否可重复执行（幂等性）
+
+### 集成测试
+
+- [ ] 端到端测试是否覆盖主要流程
+- [ ] 规则创建 → 激活 → 评估 → 推荐生成全流程测试
+- [ ] 并发场景下的性能测试
+- [ ] 大数据量下的压力测试
+
+### 文档完整性
+
+- [ ] 任务计划文档（task-3.1.md）
+- [ ] 完成报告文档（task-3.1-complete.md）
+- [ ] 总结验收文档（TASK_3.1_SUMMARY.md）
+- [ ] 快速参考文档（task-3.1-quickref.md）
+- [ ] API 文档（Swagger）
+- [ ] 代码注释（JSDoc）
+
+### 验收标准
+
+- [ ] 所有单元测试通过（100%）
+- [ ] 测试覆盖率 > 90%
+- [ ] ESLint 检查通过
+- [ ] TypeScript 编译无错误
+- [ ] Swagger 文档可正常访问
+- [ ] 所有 API 端点功能正常
+- [ ] 预定义规则能正常工作
+- [ ] 性能满足要求（1000 客户 < 2 分钟）
 
 ---
 
@@ -243,7 +404,7 @@
 
 ### 开发新功能时
 
-```bash
+```
 # 1. 创建分支
 git checkout -b feature/new-feature
 
@@ -272,7 +433,7 @@ git push origin feature/new-feature
 
 ### Code Review 时
 
-```markdown
+```
 ## Review Checklist
 
 ### 功能正确性
@@ -297,7 +458,7 @@ git push origin feature/new-feature
 
 ### 常用命令
 
-```bash
+```
 # 后端
 npm run build          # 编译
 npm run start          # 启动
