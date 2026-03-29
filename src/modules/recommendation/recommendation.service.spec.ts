@@ -5,6 +5,8 @@ import { RecommendationService, CreateRecommendationDto, RecommendOptions } from
 import { TagRecommendation } from './entities/tag-recommendation.entity';
 import { RecommendationRule } from './entities/recommendation-rule.entity';
 import { ClusteringConfig } from './entities/clustering-config.entity';
+import { Customer } from './entities/customer.entity';
+import { CustomerTag } from './entities/customer-tag.entity';
 import { CacheService } from '../../infrastructure/redis';
 import { RuleEngineService } from './engines/rule-engine.service';
 import { ClusteringEngineService } from './engines/clustering-engine.service';
@@ -29,6 +31,20 @@ describe('RecommendationService', () => {
     save: jest.fn(),
     delete: jest.fn(),
     count: jest.fn(),
+    insert: jest.fn(),
+    findByIds: jest.fn(),
+    createQueryBuilder: jest.fn(() => ({
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
+      getMany: jest.fn(),
+      getOne: jest.fn(),
+      getManyAndCount: jest.fn(),
+      getCount: jest.fn(),
+    })),
   };
 
   const mockRuleRepo = {
@@ -36,9 +52,28 @@ describe('RecommendationService', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    createQueryBuilder: jest.fn(() => ({
+      where: jest.fn().mockReturnThis(),
+      getMany: jest.fn(),
+      getCount: jest.fn(),
+    })),
   };
 
   const mockConfigRepo = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockCustomerRepo = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockCustomerTagRepo = {
     find: jest.fn(),
     findOne: jest.fn(),
     create: jest.fn(),
@@ -94,6 +129,14 @@ describe('RecommendationService', () => {
         {
           provide: getRepositoryToken(ClusteringConfig),
           useValue: mockConfigRepo,
+        },
+        {
+          provide: getRepositoryToken(Customer),
+          useValue: mockCustomerRepo,
+        },
+        {
+          provide: getRepositoryToken(CustomerTag),
+          useValue: mockCustomerTagRepo,
         },
         {
           provide: CacheService,

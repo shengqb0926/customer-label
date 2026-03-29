@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { RuleEngineController } from './rule-engine.controller';
 import { RuleEngineService } from '../services/rule-engine.service';
 import { CreateRuleDto } from '../dto/create-rule.dto';
@@ -31,7 +33,12 @@ describe('RuleEngineController', () => {
           useValue: mockService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<RuleEngineController>(RuleEngineController);
     service = module.get<RuleEngineService>(RuleEngineService);
