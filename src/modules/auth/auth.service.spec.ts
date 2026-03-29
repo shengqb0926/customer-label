@@ -70,6 +70,44 @@ describe('AuthService', () => {
     });
   });
 
+  describe('validateToken', () => {
+    it('should return user for valid token', async () => {
+      const mockUser = {
+        id: 1,
+        username: 'testuser',
+        email: 'test@example.com',
+        roles: ['user'],
+      };
+
+      jest.spyOn(jwtService, 'verify').mockReturnValue({ sub: 1 } as any);
+      jest.spyOn((authService as any).userService, 'getUserById').mockResolvedValue(mockUser);
+
+      const result = await authService.validateToken('valid_token');
+
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should return null for invalid token', async () => {
+      jest.spyOn(jwtService, 'verify').mockImplementation(() => {
+        throw new Error('Invalid token');
+      });
+
+      const result = await authService.validateToken('invalid_token');
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null for expired token', async () => {
+      jest.spyOn(jwtService, 'verify').mockImplementation(() => {
+        throw new Error('Token expired');
+      });
+
+      const result = await authService.validateToken('expired_token');
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('login', () => {
     const mockUser = {
       id: 1,
