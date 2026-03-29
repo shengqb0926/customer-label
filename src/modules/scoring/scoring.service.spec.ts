@@ -30,7 +30,7 @@ describe('ScoringService', () => {
           useValue: {
             get: jest.fn(),
             set: jest.fn(),
-            del: jest.fn(),
+            delete: jest.fn(), // 使用 delete 而不是 del
           },
         },
       ],
@@ -292,11 +292,11 @@ describe('ScoringService', () => {
     });
 
     it('should clear tag scores cache', async () => {
-      jest.spyOn(cacheService, 'del').mockResolvedValue();
+      jest.spyOn(cacheService, 'delete').mockResolvedValue();
 
       await (service as any).clearTagScoresCache();
 
-      expect(cacheService.del).toHaveBeenCalledWith('tag_scores:all');
+      expect(cacheService.delete).toHaveBeenCalledWith('tag_scores:all');
     });
   });
 });

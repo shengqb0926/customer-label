@@ -44,27 +44,6 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('findByUsername', () => {
-    it('should return user by username', async () => {
-      jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUser as any);
-
-      const result = await service.findByUsername('testuser');
-
-      expect(result).toEqual(mockUser);
-      expect(userRepo.findOne).toHaveBeenCalledWith({
-        where: { username: 'testuser' },
-      });
-    });
-
-    it('should return null when user not found', async () => {
-      jest.spyOn(userRepo, 'findOne').mockResolvedValue(null);
-
-      const result = await service.findByUsername('nonexistent');
-
-      expect(result).toBeNull();
-    });
-  });
-
   describe('getUserById', () => {
     it('should return user by id', async () => {
       jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUser as any);
@@ -81,6 +60,29 @@ describe('UserService', () => {
       jest.spyOn(userRepo, 'findOne').mockResolvedValue(null);
 
       await expect(service.getUserById(999)).rejects.toThrow();
+    });
+  });
+
+  describe('getUsers', () => {
+    it('should return paginated users with filters', async () => {
+      const mockUsers = [mockUser];
+      jest.spyOn(userRepo, 'findAndCount').mockResolvedValue([mockUsers as any, 1]);
+
+      const result = await service.getUsers({ page: 1, limit: 20 } as any);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(20);
+    });
+
+    it('should handle empty results', async () => {
+      jest.spyOn(userRepo, 'findAndCount').mockResolvedValue([[], 0]);
+
+      const result = await service.getUsers({ page: 1, limit: 20 } as any);
+
+      expect(result.data).toHaveLength(0);
+      expect(result.total).toBe(0);
     });
   });
 

@@ -210,6 +210,41 @@ describe('RfmAnalysisService', () => {
     });
   });
 
+  describe('getRfmAnalysis', () => {
+    it('should return paginated RFM analysis results', async () => {
+      const mockAnalysis = [{
+        customerId: 1,
+        customerName: '客户 1',
+        rScore: 5,
+        fScore: 5,
+        mScore: 5,
+        totalScore: 15,
+        customerSegment: 'Champions',
+      }];
+
+      jest.spyOn(service as any, 'analyzeRfm').mockResolvedValue(mockAnalysis);
+
+      const result = await service.getRfmAnalysis({ page: 1, limit: 20 });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
+    });
+
+    it('should filter by segment', async () => {
+      const mockAnalysis = [
+        { customerId: 1, customerSegment: 'Champions', totalScore: 15 },
+        { customerId: 2, customerSegment: 'Loyal Customers', totalScore: 12 },
+      ];
+
+      jest.spyOn(service as any, 'analyzeRfm').mockResolvedValue(mockAnalysis as any);
+
+      const result = await service.getRfmAnalysis({ segment: 'Champions' });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].customerSegment).toBe('Champions');
+    });
+  });
+
   describe('executeRfmAnalysis', () => {
     it('should complete full RFM analysis workflow', async () => {
       jest.spyOn(customerRepo, 'find').mockResolvedValue(mockCustomers as any);

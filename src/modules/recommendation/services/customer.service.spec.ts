@@ -8,7 +8,7 @@ import { CreateCustomerDto, UpdateCustomerDto, GetCustomersDto } from '../dto/cu
 
 describe('CustomerService', () => {
   let service: CustomerService;
-  let repository: Repository<Customer>;
+  let customerRepo: Repository<Customer>;
 
   const mockCustomer: Customer = {
     id: 1,
@@ -43,13 +43,14 @@ describe('CustomerService', () => {
             update: jest.fn(),
             delete: jest.fn(),
             count: jest.fn(),
+            remove: jest.fn(),
           },
         },
       ],
     }).compile();
 
     service = module.get<CustomerService>(CustomerService);
-    repository = module.get<Repository<Customer>>(getRepositoryToken(Customer));
+    customerRepo = module.get<Repository<Customer>>(getRepositoryToken(Customer));
   });
 
   it('should be defined', () => {
@@ -70,21 +71,21 @@ describe('CustomerService', () => {
         totalAssets: 200000,
       };
 
-      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
-      jest.spyOn(repository, 'create').mockReturnValue(mockCustomer as any);
-      jest.spyOn(repository, 'save').mockResolvedValue(mockCustomer as any);
+      jest.spyOn(customerRepo, 'findOne').mockResolvedValue(null);
+      jest.spyOn(customerRepo, 'create').mockReturnValue(mockCustomer as any);
+      jest.spyOn(customerRepo, 'save').mockResolvedValue(mockCustomer as any);
 
       const result = await service.create(dto);
 
       expect(result).toEqual(mockCustomer);
-      expect(repository.findOne).toHaveBeenCalledWith({
+      expect(customerRepo.findOne).toHaveBeenCalledWith({
         where: [
           { email: dto.email },
           { phone: dto.phone },
         ],
       });
-      expect(repository.create).toHaveBeenCalledWith(dto);
-      expect(repository.save).toHaveBeenCalled();
+      expect(customerRepo.create).toHaveBeenCalledWith(dto);
+      expect(customerRepo.save).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if email already exists', async () => {
@@ -98,7 +99,7 @@ describe('CustomerService', () => {
         level: CustomerLevel.BRONZE,
       };
 
-      jest.spyOn(repository, 'findOne').mockResolvedValue(mockCustomer as any);
+      jest.spyOn(customerRepo, 'findOne').mockResolvedValue(mockCustomer as any);
 
       await expect(service.create(dto)).rejects.toThrow(BadRequestException);
       await expect(service.create(dto)).rejects.toThrow('邮箱或手机号已存在');
@@ -107,16 +108,16 @@ describe('CustomerService', () => {
 
   describe('findById', () => {
     it('should return customer by id', async () => {
-      jest.spyOn(repository, 'findOne').mockResolvedValue(mockCustomer as any);
+      jest.spyOn(customerRepo, 'findOne').mockResolvedValue(mockCustomer as any);
 
       const result = await service.findById(1);
 
       expect(result).toEqual(mockCustomer);
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(customerRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
     });
 
     it('should throw NotFoundException when customer not found', async () => {
-      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
+      jest.spyOn(customerRepo, 'findOne').mockResolvedValue(null);
 
       await expect(service.findById(999)).rejects.toThrow(NotFoundException);
       await expect(service.findById(999)).rejects.toThrow('客户 #999 不存在');
@@ -134,7 +135,7 @@ describe('CustomerService', () => {
       };
 
       const mockCustomers = [mockCustomer];
-      jest.spyOn(repository, 'findAndCount').mockResolvedValue([mockCustomers as any, 1]);
+      jest.spyOn(customerRepo, 'findAndCount').mockResolvedValue([mockCustomers as any, 1]);
 
       const result = await service.findAll(options);
 
@@ -147,7 +148,7 @@ describe('CustomerService', () => {
     it('should handle empty results', async () => {
       const options: GetCustomersDto = { page: 1, limit: 20 };
 
-      jest.spyOn(repository, 'findAndCount').mockResolvedValue([[], 0]);
+      jest.spyOn(customerRepo, 'findAndCount').mockResolvedValue([[], 0]);
 
       const result = await service.findAll(options);
 
@@ -165,41 +166,41 @@ describe('CustomerService', () => {
 
       const updatedCustomer = { ...mockCustomer, ...updateDto };
 
-      jest.spyOn(repository, 'findOne').mockResolvedValue(mockCustomer as any);
-      jest.spyOn(repository, 'update').mockResolvedValue({ affected: 1 } as any);
-      jest.spyOn(repository, 'save').mockResolvedValue(updatedCustomer as any);
+      jest.spyOn(customerRepo, 'findOne').mockResolvedValue(mockCustomer as any);
+      jest.spyOn(customerRepo, 'update').mockResolvedValue({ affected: 1 } as any);
+      jest.spyOn(customerRepo, 'save').mockResolvedValue(updatedCustomer as any);
 
       const result = await service.update(1, updateDto);
 
       expect(result.name).toBe('更新后的名字');
       expect(result.totalAssets).toBe(600000);
-      expect(repository.update).toHaveBeenCalledWith(1, updateDto);
+      expect(customerRepo.update).toHaveBeenCalledWith(1, updateDto);
     });
 
     it('should throw NotFoundException when updating non-existent customer', async () => {
       const updateDto: UpdateCustomerDto = { name: '新名字' };
 
-      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
+      jest.spyOn(customerRepo, 'findOne').mockResolvedValue(null);
 
       await expect(service.update(999, updateDto)).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('delete', () => {
-    it('should delete customer successfully', async () => {
-      jest.spyOn(repository, 'findOne').mockResolvedValue(mockCustomer as any);
-      jest.spyOn(repository, 'delete').mockResolvedValue({ affected: 1 } as any);
+  describe('remove', () => {
+    it('should remove customer successfully', async () => {
+      jest.spyOn(service, 'findById').mockResolvedValue(mockCustomer as any);
+      jest.spyOn(customerRepo, 'remove').mockResolvedValue(mockCustomer as any);
 
-      await service.delete(1);
+      await service.remove(1);
 
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(repository.delete).toHaveBeenCalledWith(1);
+      expect(service.findById).toHaveBeenCalledWith(1);
+      expect(customerRepo.remove).toHaveBeenCalledWith(mockCustomer);
     });
 
-    it('should throw NotFoundException when deleting non-existent customer', async () => {
-      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
+    it('should throw NotFoundException when removing non-existent customer', async () => {
+      jest.spyOn(service, 'findById').mockRejectedValue(new NotFoundException(`客户 #999 不存在`));
 
-      await expect(service.delete(999)).rejects.toThrow(NotFoundException);
+      await expect(service.remove(999)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -210,9 +211,9 @@ describe('CustomerService', () => {
         { name: '客户 2', email: 'c2@example.com', city: '上海', age: 25, gender: Gender.FEMALE, level: CustomerLevel.SILVER },
       ];
 
-      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
-      jest.spyOn(repository, 'create').mockReturnValue(mockCustomer as any);
-      jest.spyOn(repository, 'save').mockResolvedValue(mockCustomer as any);
+      jest.spyOn(customerRepo, 'findOne').mockResolvedValue(null);
+      jest.spyOn(customerRepo, 'create').mockReturnValue(mockCustomer as any);
+      jest.spyOn(customerRepo, 'save').mockResolvedValue(mockCustomer as any);
 
       const result = await service.batchCreate(dtos);
 
