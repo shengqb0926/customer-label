@@ -118,6 +118,33 @@ describe('ScoringService', () => {
     });
   });
 
+  describe('determineRecommendation', () => {
+    it('should return 强烈推荐 for score >= 0.85', () => {
+      expect(service.determineRecommendation(0.85)).toBe('强烈推荐');
+      expect(service.determineRecommendation(1.0)).toBe('强烈推荐');
+    });
+
+    it('should return 推荐 for score between 0.75 and 0.85', () => {
+      expect(service.determineRecommendation(0.75)).toBe('推荐');
+      expect(service.determineRecommendation(0.84)).toBe('推荐');
+    });
+
+    it('should return 中性 for score between 0.65 and 0.75', () => {
+      expect(service.determineRecommendation(0.65)).toBe('中性');
+      expect(service.determineRecommendation(0.74)).toBe('中性');
+    });
+
+    it('should return 不推荐 for score between 0.5 and 0.65', () => {
+      expect(service.determineRecommendation(0.5)).toBe('不推荐');
+      expect(service.determineRecommendation(0.64)).toBe('不推荐');
+    });
+
+    it('should return 禁用 for score < 0.5', () => {
+      expect(service.determineRecommendation(0.49)).toBe('禁用');
+      expect(service.determineRecommendation(0)).toBe('禁用');
+    });
+  });
+
   describe('generateRecommendation', () => {
     it('should recommend priority optimization for low coverage', () => {
       const dto = {

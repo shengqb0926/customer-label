@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { User, UserRole } from '../user/entities/user.entity';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -72,15 +73,16 @@ describe('AuthService', () => {
 
   describe('validateToken', () => {
     it('should return user for valid token', async () => {
-      const mockUser = {
+      const mockUser: Partial<User> = {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-        roles: ['user'],
+        password: 'hashed_password',
+        roles: [UserRole.USER],
       };
 
       jest.spyOn(jwtService, 'verify').mockReturnValue({ sub: 1 } as any);
-      jest.spyOn((authService as any).userService, 'getUserById').mockResolvedValue(mockUser);
+      jest.spyOn((authService as any).userService, 'getUserById').mockResolvedValue(mockUser as User);
 
       const result = await authService.validateToken('valid_token');
 
@@ -109,11 +111,12 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    const mockUser = {
+    const mockUser: Partial<User> = {
       id: 1,
       username: 'testuser',
       email: 'test@example.com',
-      roles: ['user'],
+      password: 'hashed_password',
+      roles: [UserRole.USER],
     };
 
     it('should return access token and user info', async () => {
@@ -149,7 +152,7 @@ describe('AuthService', () => {
   });
 
   describe('refreshToken', () => {
-    const mockUser = {
+    const mockUser: Partial<User> = {
       id: 1,
       username: 'testuser',
       email: 'test@example.com',

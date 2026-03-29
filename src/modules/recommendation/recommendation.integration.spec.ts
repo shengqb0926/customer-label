@@ -5,7 +5,7 @@ import { RecommendationService } from './recommendation.service';
 import { TagRecommendation } from './entities/tag-recommendation.entity';
 import { RecommendationRule } from './entities/recommendation-rule.entity';
 import { ClusteringConfig } from './entities/clustering-config.entity';
-import { Customer } from '../customer/entities/customer.entity';
+import { Customer, CustomerLevel, RiskLevel, Gender } from './entities/customer.entity';
 import { CustomerTag } from './entities/customer-tag.entity';
 import { CacheService } from '../../infrastructure/redis';
 import { RuleEngineService } from './engines/rule-engine.service';

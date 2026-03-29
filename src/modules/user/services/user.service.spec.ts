@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserService } from './user.service';
 import { User } from '../entities/user.entity';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 
 describe('UserService', () => {
   let service: UserService;
