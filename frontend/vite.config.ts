@@ -32,10 +32,4 @@ export default defineConfig({
     force: true, // 强制预构建依赖
     include: ['@ant-design/charts'], // 强制包含图表库
   },
-  // 添加自定义头来防止缓存
-  headers: {
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
-  },
 })

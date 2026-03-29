@@ -394,7 +394,7 @@ export const associationConfigService = {
   /**
    * 运行配置（用于批量操作）
    */
-  async runConfig(id: string): Promise<{ success: boolean; message: string }> {
-    return this.runAssociation(Number(id));
+  async runConfig(id: number): Promise<{ success: boolean; message: string }> {
+    return this.runAssociation(id);
   },
 };

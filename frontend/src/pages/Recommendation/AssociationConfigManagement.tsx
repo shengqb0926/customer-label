@@ -258,12 +258,13 @@ const AssociationConfigManagement: React.FC = () => {
             minLift: values.minLift,
             maxItems: values.maxItems,
           },
+          featureWeights: values.featureWeights,
           isActive: values.isActive,
         };
         await associationConfigService.updateConfig(editingConfig.id, updatedConfig);
         message.success('配置更新成功');
       } else {
-        const newConfig: CreateAssociationConfigDto = {
+        const newDto: CreateAssociationConfigDto = {
           configName: values.configName,
           description: values.description,
           algorithm: values.algorithm,
@@ -273,9 +274,10 @@ const AssociationConfigManagement: React.FC = () => {
             minLift: values.minLift,
             maxItems: values.maxItems,
           },
+          featureWeights: values.featureWeights,
           isActive: values.isActive,
         };
-        await associationConfigService.createConfig(newConfig);
+        await associationConfigService.createConfig(newDto);
         message.success('配置创建成功');
       }
       fetchConfigs();
@@ -285,7 +287,7 @@ const AssociationConfigManagement: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await associationConfigService.deleteConfig(id);
       message.success('配置删除成功');
@@ -296,7 +298,7 @@ const AssociationConfigManagement: React.FC = () => {
   };
 
   // 运行关联规则挖掘任务
-  const handleRun = async (id: string) => {
+  const handleRun = async (id: number) => {
     try {
       const result = await associationConfigService.runConfig(id);
       message.success(result?.message || '配置运行成功');
@@ -340,7 +342,7 @@ const AssociationConfigManagement: React.FC = () => {
         setBatchRunning(true);
         try {
           const promises = selectedRowKeys.map((key) =>
-            associationConfigService.runConfig(String(key))
+            associationConfigService.runConfig(key)
           );
           
           const results = await Promise.allSettled(promises);
@@ -378,7 +380,7 @@ const AssociationConfigManagement: React.FC = () => {
       onOk: async () => {
         try {
           const promises = selectedRowKeys.map((key) =>
-            associationConfigService.deleteConfig(String(key))
+            associationConfigService.deleteConfig(Number(key))
           );
           
           await Promise.all(promises);
@@ -402,7 +404,7 @@ const AssociationConfigManagement: React.FC = () => {
 
     try {
       const promises = selectedRowKeys.map((key) => {
-        const config = configs.find(c => c.id === String(key));
+        const config = configs.find(c => c.id === Number(key));
         if (!config) return Promise.resolve();
         
         const updateDto: UpdateAssociationConfigDto = {
@@ -412,7 +414,7 @@ const AssociationConfigManagement: React.FC = () => {
           parameters: config.parameters,
           isActive: activate,
         };
-        return associationConfigService.updateConfig(String(key), updateDto);
+        return associationConfigService.updateConfig(Number(key), updateDto);
       });
       
       await Promise.all(promises);
@@ -428,23 +430,6 @@ const AssociationConfigManagement: React.FC = () => {
   const handleView = (config: AssociationConfig) => {
     setSelectedConfig(config);
     setDetailVisible(true);
-  };
-
-  const handleBatchRun = async () => {
-    if (selectedRowKeys.length === 0) {
-      message.warning('请选择要运行的配置');
-      return;
-    }
-    setBatchRunning(true);
-    try {
-      await associationConfigService.batchRunConfigs(selectedRowKeys);
-      message.success('批量运行成功');
-      fetchConfigs();
-    } catch (error) {
-      message.error('批量运行失败');
-    } finally {
-      setBatchRunning(false);
-    }
   };
 
   // Table 行选择配置
