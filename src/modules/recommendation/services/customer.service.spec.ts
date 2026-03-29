@@ -44,6 +44,17 @@ describe('CustomerService', () => {
             delete: jest.fn(),
             count: jest.fn(),
             remove: jest.fn(),
+            createQueryBuilder: jest.fn().mockReturnValue({
+              andWhere: jest.fn().mockReturnThis(),
+              orWhere: jest.fn().mockReturnThis(),
+              orderBy: jest.fn().mockReturnThis(),
+              skip: jest.fn().mockReturnThis(),
+              take: jest.fn().mockReturnThis(),
+              getMany: jest.fn().mockResolvedValue([]),
+              getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+              getOne: jest.fn().mockResolvedValue(null),
+              where: jest.fn().mockReturnThis(),
+            }),
           },
         },
       ],
@@ -131,11 +142,18 @@ describe('CustomerService', () => {
         limit: 20,
         keyword: '测试',
         city: '北京',
-        level: 'gold',
+        level: CustomerLevel.GOLD,
       };
 
       const mockCustomers = [mockCustomer];
-      jest.spyOn(customerRepo, 'findAndCount').mockResolvedValue([mockCustomers as any, 1]);
+      const queryBuilderMock: any = {
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([mockCustomers as any, 1]),
+      };
+      jest.spyOn(customerRepo, 'createQueryBuilder').mockReturnValue(queryBuilderMock);
 
       const result = await service.findAll(options);
 
@@ -148,7 +166,14 @@ describe('CustomerService', () => {
     it('should handle empty results', async () => {
       const options: GetCustomersDto = { page: 1, limit: 20 };
 
-      jest.spyOn(customerRepo, 'findAndCount').mockResolvedValue([[], 0]);
+      const queryBuilderMock: any = {
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
+      };
+      jest.spyOn(customerRepo, 'createQueryBuilder').mockReturnValue(queryBuilderMock);
 
       const result = await service.findAll(options);
 
@@ -167,14 +192,13 @@ describe('CustomerService', () => {
       const updatedCustomer = { ...mockCustomer, ...updateDto };
 
       jest.spyOn(customerRepo, 'findOne').mockResolvedValue(mockCustomer as any);
-      jest.spyOn(customerRepo, 'update').mockResolvedValue({ affected: 1 } as any);
       jest.spyOn(customerRepo, 'save').mockResolvedValue(updatedCustomer as any);
 
       const result = await service.update(1, updateDto);
 
       expect(result.name).toBe('更新后的名字');
       expect(result.totalAssets).toBe(600000);
-      expect(customerRepo.update).toHaveBeenCalledWith(1, updateDto);
+      expect(customerRepo.save).toHaveBeenCalledWith(expect.objectContaining(updateDto));
     });
 
     it('should throw NotFoundException when updating non-existent customer', async () => {
