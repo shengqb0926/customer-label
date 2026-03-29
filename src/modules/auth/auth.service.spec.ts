@@ -116,7 +116,7 @@ describe('AuthService', () => {
       username: 'testuser',
       email: 'test@example.com',
       password: 'hashed_password',
-      roles: [UserRole.USER],
+      roles: [UserRole.USER] as any,
     };
 
     it('should return access token and user info', async () => {

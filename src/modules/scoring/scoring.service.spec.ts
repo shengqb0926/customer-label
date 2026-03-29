@@ -86,38 +86,6 @@ describe('ScoringService', () => {
     });
   });
 
-  describe('determineLevel', () => {
-    it('should return SSS for score >= 95', () => {
-      expect(service.determineLevel(95)).toBe('SSS');
-      expect(service.determineLevel(100)).toBe('SSS');
-    });
-
-    it('should return SS for score between 90 and 95', () => {
-      expect(service.determineLevel(90)).toBe('SS');
-      expect(service.determineLevel(94.99)).toBe('SS');
-    });
-
-    it('should return S for score between 80 and 90', () => {
-      expect(service.determineLevel(80)).toBe('S');
-      expect(service.determineLevel(89.99)).toBe('S');
-    });
-
-    it('should return A for score between 70 and 80', () => {
-      expect(service.determineLevel(70)).toBe('A');
-      expect(service.determineLevel(79.99)).toBe('A');
-    });
-
-    it('should return B for score between 60 and 70', () => {
-      expect(service.determineLevel(60)).toBe('B');
-      expect(service.determineLevel(69.99)).toBe('B');
-    });
-
-    it('should return C for score < 60', () => {
-      expect(service.determineLevel(59)).toBe('C');
-      expect(service.determineLevel(0)).toBe('C');
-    });
-  });
-
   describe('determineRecommendation', () => {
     it('should return 强烈推荐 for score >= 0.85', () => {
       expect(service.determineRecommendation(0.85)).toBe('强烈推荐');

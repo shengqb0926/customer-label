@@ -23,8 +23,8 @@ describe('CustomerService', () => {
     totalAssets: 500000,
     orderCount: 50,
     annualSpend: 100000,
-    lastOrderDate: new Date(),
-    registerDate: new Date(),
+    registerDays: 365,
+    lastLoginDays: 7,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

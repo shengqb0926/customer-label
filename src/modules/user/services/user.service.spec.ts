@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { UserService } from './user.service';
 import { User } from '../entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { UserRole } from '../enums/user-role.enum';
 
 describe('UserService', () => {
   let service: UserService;
@@ -14,9 +15,7 @@ describe('UserService', () => {
     username: 'testuser',
     email: 'test@example.com',
     password: 'hashed_password',
-    roles: ['user'],
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    roles: [UserRole.USER] as any,
   };
 
   beforeEach(async () => {

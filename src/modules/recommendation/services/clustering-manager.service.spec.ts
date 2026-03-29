@@ -1,20 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository } from 'typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { AssociationManagerService } from './association-manager.service';
-import { AssociationConfig } from '../entities/association-config.entity';
+import { ClusteringManagerService } from './clustering-manager.service';
+import { ClusteringConfig } from '../entities/clustering-config.entity';
 
-describe('AssociationManagerService', () => {
-  let service: AssociationManagerService;
-  let configRepo: Repository<AssociationConfig>;
+describe('ClusteringManagerService', () => {
+  let service: ClusteringManagerService;
+  let configRepo: Repository<ClusteringConfig>;
 
-  const mockAssociationConfig: Partial<AssociationConfig> = {
+  const mockClusteringConfig: Partial<ClusteringConfig> = {
     id: 1,
-    configName: '测试配置',
+    configName: '测试聚类配置',
     description: '测试描述',
-    algorithm: 'apriori',
-    parameters: { minSupport: 0.5, minConfidence: 0.7, minLift: 1.0 },
+    algorithm: 'kmeans',
+    parameters: { k: 5, maxIter: 100 },
+    featureWeights: { rfmscore: 0.4, age: 0.3, income: 0.3 },
     isActive: true,
     runCount: 0,
     createdAt: new Date(),
@@ -24,9 +25,9 @@ describe('AssociationManagerService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AssociationManagerService,
+        ClusteringManagerService,
         {
-          provide: getRepositoryToken(AssociationConfig),
+          provide: getRepositoryToken(ClusteringConfig),
           useValue: {
             findOne: jest.fn(),
             create: jest.fn(),
@@ -38,8 +39,8 @@ describe('AssociationManagerService', () => {
       ],
     }).compile();
 
-    service = module.get<AssociationManagerService>(AssociationManagerService);
-    configRepo = module.get<Repository<AssociationConfig>>(getRepositoryToken(AssociationConfig));
+    service = module.get<ClusteringManagerService>(ClusteringManagerService);
+    configRepo = module.get<Repository<ClusteringConfig>>(getRepositoryToken(ClusteringConfig));
   });
 
   it('should be defined', () => {
@@ -49,20 +50,20 @@ describe('AssociationManagerService', () => {
   describe('createConfig', () => {
     it('should create config successfully', async () => {
       const dto = {
-        configName: '新配置',
+        configName: '新聚类配置',
         description: '新描述',
-        algorithm: 'apriori' as const,
-        parameters: { minSupport: 0.3, minConfidence: 0.5, minLift: 1.0 },
+        algorithm: 'kmeans' as const,
+        parameters: { k: 5 },
         isActive: true,
       };
 
       jest.spyOn(configRepo, 'findOne').mockResolvedValue(null);
       jest.spyOn(configRepo, 'create').mockReturnValue(dto as any);
-      jest.spyOn(configRepo, 'save').mockResolvedValue(mockAssociationConfig as any);
+      jest.spyOn(configRepo, 'save').mockResolvedValue(mockClusteringConfig as any);
 
       const result = await service.createConfig(dto);
 
-      expect(result).toEqual(mockAssociationConfig);
+      expect(result).toEqual(mockClusteringConfig);
       expect(configRepo.findOne).toHaveBeenCalledWith({
         where: { configName: dto.configName },
       });
@@ -71,11 +72,11 @@ describe('AssociationManagerService', () => {
     it('should throw BadRequestException if config name exists', async () => {
       const dto = { 
         configName: '已存在', 
-        algorithm: 'apriori' as const,
-        parameters: { minSupport: 0.5, minConfidence: 0.7, minLift: 1.0 }
+        algorithm: 'kmeans' as const,
+        parameters: { k: 5 }
       };
 
-      jest.spyOn(configRepo, 'findOne').mockResolvedValue(mockAssociationConfig as any);
+      jest.spyOn(configRepo, 'findOne').mockResolvedValue(mockClusteringConfig as any);
 
       await expect(service.createConfig(dto)).rejects.toThrow(BadRequestException);
     });
@@ -83,10 +84,10 @@ describe('AssociationManagerService', () => {
 
   describe('getConfigs', () => {
     it('should return paginated configs', async () => {
-      const mockConfigs = [mockAssociationConfig];
+      const mockConfigs = [mockClusteringConfig];
       jest.spyOn(configRepo, 'findAndCount').mockResolvedValue([mockConfigs as any, 1]);
 
-      const result = await service.getConfigs({ page: 1, limit: 10 } as any);
+      const result = await service.getConfigs({ page: 1, limit: 10 });
 
       expect(result.data).toHaveLength(1);
       expect(result.total).toBe(1);
@@ -97,7 +98,7 @@ describe('AssociationManagerService', () => {
     it('should filter by configName', async () => {
       jest.spyOn(configRepo, 'findAndCount').mockResolvedValue([[], 0]);
 
-      await service.getConfigs({ configName: '测试' } as any);
+      await service.getConfigs({ configName: '测试' });
 
       expect(configRepo.findAndCount).toHaveBeenCalledWith({
         where: expect.objectContaining({
@@ -109,11 +110,11 @@ describe('AssociationManagerService', () => {
 
   describe('getConfigById', () => {
     it('should return config by id', async () => {
-      jest.spyOn(configRepo, 'findOne').mockResolvedValue(mockAssociationConfig as any);
+      jest.spyOn(configRepo, 'findOne').mockResolvedValue(mockClusteringConfig as any);
 
       const result = await service.getConfigById(1);
 
-      expect(result).toEqual(mockAssociationConfig);
+      expect(result).toEqual(mockClusteringConfig);
     });
 
     it('should throw NotFoundException when config not found', async () => {
@@ -127,8 +128,8 @@ describe('AssociationManagerService', () => {
     it('should update config successfully', async () => {
       const dto = { description: '更新后的描述' };
 
-      jest.spyOn(service, 'getConfigById').mockResolvedValue(mockAssociationConfig as any);
-      jest.spyOn(configRepo, 'save').mockResolvedValue({ ...mockAssociationConfig, ...dto } as any);
+      jest.spyOn(service, 'getConfigById').mockResolvedValue(mockClusteringConfig as any);
+      jest.spyOn(configRepo, 'save').mockResolvedValue({ ...mockClusteringConfig, ...dto } as any);
 
       const result = await service.updateConfig(1, dto);
 
@@ -144,7 +145,7 @@ describe('AssociationManagerService', () => {
 
   describe('deleteConfig', () => {
     it('should delete config successfully', async () => {
-      jest.spyOn(service, 'getConfigById').mockResolvedValue(mockAssociationConfig as any);
+      jest.spyOn(service, 'getConfigById').mockResolvedValue(mockClusteringConfig as any);
       jest.spyOn(configRepo, 'delete').mockResolvedValue({ affected: 1 } as any);
 
       await service.deleteConfig(1);
@@ -156,6 +157,28 @@ describe('AssociationManagerService', () => {
       jest.spyOn(service, 'getConfigById').mockRejectedValue(new NotFoundException());
 
       await expect(service.deleteConfig(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('activateConfig', () => {
+    it('should activate config successfully', async () => {
+      jest.spyOn(service, 'getConfigById').mockResolvedValue(mockClusteringConfig as any);
+      jest.spyOn(configRepo, 'save').mockResolvedValue({ ...mockClusteringConfig, isActive: true } as any);
+
+      const result = await service.activateConfig(1);
+
+      expect(result.isActive).toBe(true);
+    });
+  });
+
+  describe('deactivateConfig', () => {
+    it('should deactivate config successfully', async () => {
+      jest.spyOn(service, 'getConfigById').mockResolvedValue(mockClusteringConfig as any);
+      jest.spyOn(configRepo, 'save').mockResolvedValue({ ...mockClusteringConfig, isActive: false } as any);
+
+      const result = await service.deactivateConfig(1);
+
+      expect(result.isActive).toBe(false);
     });
   });
 });

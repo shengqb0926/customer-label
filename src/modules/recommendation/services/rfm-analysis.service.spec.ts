@@ -17,7 +17,6 @@ describe('RfmAnalysisService', () => {
       totalAssets: 1000000,
       orderCount: 50,
       annualSpend: 200000,
-      lastOrderDate: new Date('2024-01-15'),
     },
     {
       id: 2,
@@ -25,7 +24,6 @@ describe('RfmAnalysisService', () => {
       totalAssets: 500000,
       orderCount: 20,
       annualSpend: 80000,
-      lastOrderDate: new Date('2024-02-20'),
     },
     {
       id: 3,
@@ -33,7 +31,6 @@ describe('RfmAnalysisService', () => {
       totalAssets: 2000000,
       orderCount: 100,
       annualSpend: 500000,
-      lastOrderDate: new Date('2024-03-01'),
     },
   ];
 
