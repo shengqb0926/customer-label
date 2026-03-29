@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RecommendationService } from './recommendation.service';
-import { TagRecommendation } from './entities/tag-recommendation.entity';
+import { TagRecommendation, RecommendationStatus } from './entities/tag-recommendation.entity';
 import { RecommendationRule } from './entities/recommendation-rule.entity';
 import { ClusteringConfig } from './entities/clustering-config.entity';
 import { Customer, CustomerLevel, RiskLevel, Gender } from './entities/customer.entity';
@@ -432,9 +432,18 @@ describe('RecommendationService Integration Tests', () => {
             tagName: `Tag ${customerId}`,
             tagCategory: '批量标签',
             confidence: 0.8,
-            source: 'RULE',
+            source: 'rule' as const,
             reason: 'Batch test',
+            scoreOverall: 0.85,
+            status: RecommendationStatus.PENDING,
+            isAccepted: false,
+            acceptedAt: null,
+            acceptedBy: null,
+            modifiedTagName: null,
+            feedbackReason: null,
             createdAt: new Date(),
+            expiresAt: null,
+            updatedAt: new Date(),
           }];
         });
 

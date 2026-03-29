@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { RuleEngineController } from './rule-engine.controller';
-import { RuleEngineService } from '../services/rule-engine.service';
+import { RuleEngineService } from '../engines/rule-engine.service';
 import { CreateRuleDto } from '../dto/create-rule.dto';
 import { UpdateRuleDto } from '../dto/update-rule.dto';
 import { TestRuleDto } from '../dto/test-rule.dto';
