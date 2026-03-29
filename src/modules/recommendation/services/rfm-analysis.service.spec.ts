@@ -65,11 +65,11 @@ describe('RfmAnalysisService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('calculateRFMScores', () => {
-    it('should calculate RFM scores for customers', async () => {
+  describe('analyzeRfm', () => {
+    it('should analyze RFM for all customers', async () => {
       jest.spyOn(customerRepo, 'find').mockResolvedValue(mockCustomers as any);
 
-      const result = await service.calculateRFMScores();
+      const result = await service.analyzeRfm();
 
       expect(result).toHaveLength(3);
       expect(customerRepo.find).toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe('RfmAnalysisService', () => {
     it('should handle empty customer list', async () => {
       jest.spyOn(customerRepo, 'find').mockResolvedValue([]);
 
-      const result = await service.calculateRFMScores();
+      const result = await service.analyzeRfm();
 
       expect(result).toHaveLength(0);
     });

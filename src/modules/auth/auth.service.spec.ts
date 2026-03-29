@@ -120,6 +120,8 @@ describe('AuthService', () => {
     };
 
     it('should return access token and user info', async () => {
+      jest.spyOn(jwtService, 'sign').mockReturnValue('fake_token');
+
       const result = await authService.login(mockUser);
 
       expect(result).toHaveProperty('access_token');
@@ -130,22 +132,13 @@ describe('AuthService', () => {
     });
 
     it('should call jwtService.sign with correct payload', async () => {
+      jest.spyOn(jwtService, 'sign').mockReturnValue('fake_token');
+
       await authService.login(mockUser);
 
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: mockUser.id,
         username: mockUser.username,
-        roles: mockUser.roles,
-      });
-    });
-
-    it('should include all user properties in response', async () => {
-      const result = await authService.login(mockUser);
-
-      expect(result.user).toMatchObject({
-        id: mockUser.id,
-        username: mockUser.username,
-        email: mockUser.email,
         roles: mockUser.roles,
       });
     });

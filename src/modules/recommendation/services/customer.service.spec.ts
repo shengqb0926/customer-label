@@ -10,7 +10,7 @@ describe('CustomerService', () => {
   let service: CustomerService;
   let customerRepo: Repository<Customer>;
 
-  const mockCustomer: Customer = {
+  const mockCustomer: Partial<Customer> = {
     id: 1,
     name: '测试客户',
     email: 'test@example.com',

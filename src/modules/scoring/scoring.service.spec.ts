@@ -195,7 +195,7 @@ describe('ScoringService', () => {
     });
   });
 
-  describe('updateTagScores', () => {
+  describe('updateTagScore', () => {
     it('should update tag score successfully', async () => {
       const dto: UpdateTagScoreDto = {
         tagId: 1,

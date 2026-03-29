@@ -13,9 +13,9 @@ describe('ClusteringManagerService', () => {
     id: 1,
     configName: '测试聚类配置',
     description: '测试描述',
-    algorithm: 'kmeans',
+    algorithm: 'k-means',
     parameters: { k: 5, maxIter: 100 },
-    featureWeights: { rfmscore: 0.4, age: 0.3, income: 0.3 },
+    featureWeights: { transactionFeatures: 0.4, timeFeatures: 0.3, otherFeatures: 0.3 },
     isActive: true,
     runCount: 0,
     createdAt: new Date(),
@@ -52,7 +52,7 @@ describe('ClusteringManagerService', () => {
       const dto = {
         configName: '新聚类配置',
         description: '新描述',
-        algorithm: 'kmeans' as const,
+        algorithm: 'k-means' as const,
         parameters: { k: 5 },
         isActive: true,
       };
@@ -72,7 +72,7 @@ describe('ClusteringManagerService', () => {
     it('should throw BadRequestException if config name exists', async () => {
       const dto = { 
         configName: '已存在', 
-        algorithm: 'kmeans' as const,
+        algorithm: 'k-means' as const,
         parameters: { k: 5 }
       };
 
@@ -126,14 +126,14 @@ describe('ClusteringManagerService', () => {
 
   describe('updateConfig', () => {
     it('should update config successfully', async () => {
-      const dto = { description: '更新后的描述' };
+      const dto: UpdateClusteringConfigDto = { configName: '更新后的名称' };
 
       jest.spyOn(service, 'getConfigById').mockResolvedValue(mockClusteringConfig as any);
       jest.spyOn(configRepo, 'save').mockResolvedValue({ ...mockClusteringConfig, ...dto } as any);
 
       const result = await service.updateConfig(1, dto);
 
-      expect(result.description).toBe('更新后的描述');
+      expect(result.configName).toBe('更新后的名称');
     });
 
     it('should throw NotFoundException when updating non-existent config', async () => {
