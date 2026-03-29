@@ -243,28 +243,28 @@ async function testCoreAPIs() {
   await testCase('api', 'RFM 分析接口', async () => {
     const res = await request('/customers/rfm-analysis', 'POST', {}, true);
     assert([200, 201].includes(res.statusCode), `状态码 ${res.statusCode} 不在预期范围内`);
-    // RFM 分析可能返回空数组或分页对象
-    const validData = Array.isArray(res.data) || (res.data && Array.isArray(res.data.data));
-    assert(validData, 'RFM 数据格式错误');
+    // RFM 分析返回分页对象 { data: [], total: number }
+    assert(res.data && (Array.isArray(res.data) || Array.isArray(res.data.data)), 'RFM 数据格式错误');
     assertDuration(res, 2000);
   });
 
   // 1.5 RFM 汇总统计
   await testCase('api', 'RFM 汇总统计', async () => {
-    const res = await request('/customers/rfm-summary', 'GET', null, true);
+    const res = await request('/customers/rfm-summary', 'POST', {}, true);
     assert([200, 201].includes(res.statusCode), `状态码 ${res.statusCode} 不在预期范围内`);
-    // 验证返回数据结构（允许部分字段缺失）
+    // 验证返回数据结构
     assert(res.data, '响应数据为空');
+    assert(res.data.totalCustomers !== undefined, '缺少 totalCustomers 字段');
+    assert(res.data.segmentDistribution !== undefined, '缺少 segmentDistribution 字段');
     assertDuration(res, 1500);
   });
 
   // 1.6 高价值客户
   await testCase('api', '高价值客户筛选', async () => {
-    const res = await request('/customers/rfm-high-value', 'GET', null, true);
+    const res = await request('/customers/rfm-high-value', 'POST', { limit: 50 }, true);
     assert([200, 201].includes(res.statusCode), `状态码 ${res.statusCode} 不在预期范围内`);
-    // 可能是数组或包含 customers 属性的对象
-    const validData = Array.isArray(res.data) || (res.data && Array.isArray(res.data.customers));
-    assert(validData, '高价值客户列表格式错误');
+    // 高价值客户返回数组
+    assert(Array.isArray(res.data), '高价值客户列表格式错误');
     assertDuration(res, 1500);
   });
 

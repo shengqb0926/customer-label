@@ -70,11 +70,11 @@ describe('RuleEngineController', () => {
   describe('createRule()', () => {
     it('应创建新规则', async () => {
       const dto: CreateRuleDto = {
-        name: '新规则',
+        ruleName: '新规则',
         description: '测试规则',
-        expression: { operator: 'AND', conditions: [] },
+        ruleExpression: JSON.stringify({ operator: 'AND', conditions: [] }),
         priority: 80,
-        tags: ['标签 1'],
+        tagTemplate: ['标签 1'],
         isActive: true,
       };
 
@@ -91,7 +91,7 @@ describe('RuleEngineController', () => {
 
   describe('updateRule()', () => {
     it('应更新规则', async () => {
-      const dto: UpdateRuleDto = { name: '更新后的名称', priority: 90 };
+      const dto: UpdateRuleDto = { ruleName: '更新后的名称', priority: 90 };
       const updatedRule = { id: 1, ...dto };
       
       mockService.updateRule.mockResolvedValue(updatedRule);

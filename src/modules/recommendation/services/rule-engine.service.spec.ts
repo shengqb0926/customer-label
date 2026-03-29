@@ -115,15 +115,15 @@ describe('RuleEngineService', () => {
   describe('createRule()', () => {
     it('应创建新规则', async () => {
       const dto: CreateRuleDto = {
-        name: '新规则',
+        ruleName: '新规则',
         description: '测试规则',
-        expression: { operator: 'AND', conditions: [] },
+        ruleExpression: JSON.stringify({ operator: 'AND', conditions: [] }),
         priority: 80,
-        tags: ['标签 1'],
+        tagTemplate: ['标签 1'],
         isActive: true,
       };
 
-      const createdRule = { ...dto, id: 1 };
+      const createdRule = { ...dto, id: 1, ruleName: '新规则' };
 
       mockRuleRepository.findOne.mockResolvedValue(null); // 不存在同名规则
       mockRuleRepository.create.mockReturnValue(createdRule);
@@ -131,22 +131,22 @@ describe('RuleEngineService', () => {
 
       const result = await service.createRule(dto);
 
-      expect(result.name).toBe('新规则');
+      expect(result.ruleName).toBe('新规则');
       expect(mockRuleRepository.create).toHaveBeenCalledWith(dto);
       expect(mockRuleRepository.save).toHaveBeenCalled();
     });
 
     it('应拒绝重复的规则名称', async () => {
       const dto: CreateRuleDto = {
-        name: '已存在规则',
+        ruleName: '已存在规则',
         description: '测试',
-        expression: { operator: 'AND', conditions: [] },
+        ruleExpression: JSON.stringify({ operator: 'AND', conditions: [] }),
         priority: 80,
-        tags: ['标签'],
+        tagTemplate: ['标签'],
         isActive: true,
       };
 
-      mockRuleRepository.findOne.mockResolvedValue({ id: 1, name: '已存在规则' });
+      mockRuleRepository.findOne.mockResolvedValue({ id: 1, ruleName: '已存在规则' });
 
       await expect(service.createRule(dto)).rejects.toThrow('已存在');
     });
