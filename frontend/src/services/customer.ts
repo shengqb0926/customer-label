@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+import apiClient from './api';
 
 // 客户等级枚举
 export enum CustomerLevel {
@@ -108,73 +106,97 @@ export interface CustomerStatistics {
  * 客户管理服务
  */
 export const customerService = {
-  /**
-   * 创建客户
-   */
   async create(data: CreateCustomerDto): Promise<Customer> {
-    const response = await axios.post(`${API_BASE_URL}/customers`, data);
-    return response.data;
+    return apiClient.post('/customers', data);
   },
 
-  /**
-   * 批量创建客户
-   */
   async batchCreate(customers: CreateCustomerDto[]): Promise<Customer[]> {
-    const response = await axios.post(`${API_BASE_URL}/customers/batch`, { customers });
-    return response.data;
+    return apiClient.post('/customers/batch', { customers });
   },
 
-  /**
-   * 随机生成客户数据
-   */
   async generateRandom(params: GenerateRandomParams): Promise<Customer[]> {
-    const response = await axios.post(`${API_BASE_URL}/customers/generate`, params);
-    return response.data;
+    return apiClient.post('/customers/generate', params);
   },
 
-  /**
-   * 获取客户列表
-   */
   async getList(params: GetCustomersParams): Promise<PaginatedResponse<Customer>> {
-    const response = await axios.get(`${API_BASE_URL}/customers`, { params });
-    return response.data;
+    return apiClient.get('/customers', { params });
   },
 
-  /**
-   * 获取客户统计信息
-   */
   async getStatistics(): Promise<CustomerStatistics> {
-    const response = await axios.get(`${API_BASE_URL}/customers/statistics`);
-    return response.data;
+    return apiClient.get('/customers/statistics');
   },
 
-  /**
-   * 获取客户详情
-   */
   async getById(id: number): Promise<Customer> {
-    const response = await axios.get(`${API_BASE_URL}/customers/${id}`);
-    return response.data;
+    return apiClient.get(`/customers/${id}`);
   },
 
-  /**
-   * 更新客户信息
-   */
   async update(id: number, data: Partial<Customer>): Promise<Customer> {
-    const response = await axios.put(`${API_BASE_URL}/customers/${id}`, data);
-    return response.data;
+    return apiClient.put(`/customers/${id}`, data);
   },
 
-  /**
-   * 删除客户
-   */
   async remove(id: number): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/customers/${id}`);
+    return apiClient.delete(`/customers/${id}`);
+  },
+
+  async batchRemove(ids: number[]): Promise<void> {
+    return apiClient.post('/customers/batch-delete', { ids });
+  },
+
+  async batchImport(formData: FormData): Promise<{ imported: number; skipped: number }> {
+    return apiClient.post('/customers/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // RFM 分析相关 API
+  /**
+   * 获取客户 RFM 分析结果
+   * 使用 POST 请求避免 Query 参数类型转换问题
+   */
+  async getRfmAnalysis(params?: {
+    page?: number;
+    limit?: number;
+    segment?: string;
+    minTotalScore?: number;
+    maxTotalScore?: number;
+  }): Promise<{ data: any[]; total: number }> {
+    // 使用 POST 请求，将参数放在 body 中
+    return apiClient.post('/customers/rfm-analysis', params || {});
+  },
+
+  async getRfmSummary(): Promise<any> {
+    // 使用 POST 请求避免 Query 参数类型转换问题
+    return apiClient.post('/customers/rfm-summary', {});
+  },
+
+  async getHighValueCustomers(limit?: number): Promise<any[]> {
+    // 使用 POST 请求避免 Query 参数类型转换问题
+    return apiClient.post('/customers/rfm-high-value', { limit: limit || 50 });
+  },
+
+  async getRfmBySegment(segment: string): Promise<any[]> {
+    // 使用 POST 请求避免 Query 参数类型转换问题
+    return apiClient.post('/customers/rfm-segment/' + segment, {});
   },
 
   /**
-   * 批量删除客户
+   * 触发推荐引擎
+   * @param customerId 客户 ID
+   * @param mode 引擎类型：rule=规则引擎，clustering=聚合引擎，association=关联引擎，all=全部引擎
    */
-  async batchRemove(ids: number[]): Promise<void> {
-    await axios.post(`${API_BASE_URL}/customers/batch-delete`, { ids });
+  async triggerRecommendationEngine(
+    customerId: number,
+    mode: 'rule' | 'clustering' | 'association' | 'all' = 'all'
+  ): Promise<{
+    success: boolean;
+    count: number;
+    recommendations: any[];
+    message: string;
+  }> {
+    return apiClient.post(`/recommendations/generate/${customerId}`, { mode });
   },
 };
+
+export default customerService;

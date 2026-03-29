@@ -141,7 +141,8 @@ export class CustomerService {
     }
 
     // 排序
-    queryBuilder.orderBy(`customer.${sortBy}`, sortOrder.toUpperCase());
+    const orderDirection = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    queryBuilder.orderBy(`customer.${sortBy}`, orderDirection);
 
     // 分页
     queryBuilder.skip((page - 1) * limit).take(limit);
@@ -323,13 +324,23 @@ export class CustomerService {
       .select('AVG(customer.totalAssets)', 'avg')
       .getRawOne();
 
+    // 转换数据格式，确保字段名称正确
     return {
       total,
       activeCount,
       inactiveCount: total - activeCount,
-      levelStats,
-      riskStats,
-      cityStats,
+      levelStats: levelStats.map((item: any) => ({
+        level: item.level,
+        count: Number(item.count), // 确保 count 是数字
+      })),
+      riskStats: riskStats.map((item: any) => ({
+        riskLevel: item.riskLevel,
+        count: Number(item.count), // 确保 count 是数字
+      })),
+      cityStats: cityStats.map((item: any) => ({
+        city: item.city,
+        count: Number(item.count), // 确保 count 是数字
+      })),
       avgAssets: parseFloat(avgAssets.avg) || 0,
     };
   }

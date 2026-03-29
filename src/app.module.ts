@@ -22,30 +22,30 @@ import { entities } from './entities.js';
       envFilePath: '.env',
     }),
 
-    // 频率限制模块
-    ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        throttlers: [
-          {
-            name: 'short',
-            ttl: config.get<number>('THROTTLE_TTL_SHORT', 1000), // 1 秒
-            limit: config.get<number>('THROTTLE_LIMIT_SHORT', 5), // 每秒最多 5 次
-          },
-          {
-            name: 'medium',
-            ttl: config.get<number>('THROTTLE_TTL_MEDIUM', 60000), // 1 分钟
-            limit: config.get<number>('THROTTLE_LIMIT_MEDIUM', 30), // 每分钟最多 30 次
-          },
-          {
-            name: 'long',
-            ttl: config.get<number>('THROTTLE_TTL_LONG', 3600000), // 1 小时
-            limit: config.get<number>('THROTTLE_LIMIT_LONG', 500), // 每小时最多 500 次
-          },
-        ],
-      }),
-    }),
+    // 频率限制模块 - 临时禁用排查问题
+    // ThrottlerModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: (config: ConfigService) => ({
+    //     throttlers: [
+    //       {
+    //         name: 'short',
+    //         ttl: config.get<number>('THROTTLE_TTL_SHORT', 1000), // 1 秒
+    //         limit: config.get<number>('THROTTLE_LIMIT_SHORT', 5), // 每秒最多 5 次
+    //       },
+    //       {
+    //         name: 'medium',
+    //         ttl: config.get<number>('THROTTLE_TTL_MEDIUM', 60000), // 1 分钟
+    //         limit: config.get<number>('THROTTLE_LIMIT_MEDIUM', 30), // 每分钟最多 30 次
+    //       },
+    //       {
+    //         name: 'long',
+    //         ttl: config.get<number>('THROTTLE_TTL_LONG', 3600000), // 1 小时
+    //         limit: config.get<number>('THROTTLE_LIMIT_LONG', 500), // 每小时最多 500 次
+    //       },
+    //     ],
+    //   }),
+    // }),
 
     // 数据库模块
     TypeOrmModule.forRoot({

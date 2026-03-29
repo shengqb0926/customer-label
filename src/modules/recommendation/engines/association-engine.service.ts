@@ -29,6 +29,10 @@ export class AssociationEngineService {
   private minSupport = 0.01;     // 最小支持度
   private minConfidence = 0.6;   // 最小置信度
   private minLift = 1.2;         // 最小提升度
+  
+  // 性能优化参数
+  private maxTransactions = 10000;    // 最大事务数（超过则采样）
+  private minTransactionSize = 2;     // 最小标签数（少于该数量的客户不参与挖掘）
 
   /**
    * 为客户生成推荐（关联引擎）
@@ -75,211 +79,184 @@ export class AssociationEngineService {
   }
 
   /**
-   * 使用 Apriori 算法挖掘关联规则
+   * 使用 Apriori 算法挖掘关联规则（带性能优化）
    */
   private async mineAssociationRules(
     allCustomerTags: Map<number, string[]>
   ): Promise<AssociationRule[]> {
-    const transactions = Array.from(allCustomerTags.values());
-    const totalTransactions = transactions.length;
+    let transactions = Array.from(allCustomerTags.values());
+    const totalOriginalTransactions = transactions.length;
 
-    if (totalTransactions === 0) {
+    if (totalOriginalTransactions === 0) {
       return [];
     }
 
-    this.logger.debug(`Mining association rules from ${totalTransactions} transactions`);
+    // 性能优化 1: 过滤标签数过少的客户
+    transactions = transactions.filter(tags => tags.length >= this.minTransactionSize);
+    
+    this.logger.debug(`Mining association rules from ${transactions.length}/${totalOriginalTransactions} valid transactions`);
+
+    // 性能优化 2: 数据量过大时进行采样
+    let sampled = false;
+    if (transactions.length > this.maxTransactions) {
+      this.logger.warn(`Data volume (${transactions.length}) exceeds threshold (${this.maxTransactions}), applying random sampling`);
+      transactions = this.randomSample(transactions, this.maxTransactions);
+      sampled = true;
+    }
+
+    const totalTransactions = transactions.length;
 
     // 1. 找出所有频繁 1-项集
-    let frequentItemSets: FrequentItemSet[] = [];
-    let k = 1;
-    let prevFrequentSets: string[][] = [];
+    const frequent1ItemSets = this.findFrequent1ItemSets(transactions, totalTransactions);
+    this.logger.debug(`Found ${frequent1ItemSets.length} frequent 1-itemsets`);
 
-    while (true) {
-      // 计算候选项集的支持度
-      const candidateCounts = this.countCandidates(transactions, k, prevFrequentSets);
-      
-      // 过滤出频繁项集
-      const frequentSets: string[][] = [];
-      
-      for (const [items, count] of candidateCounts.entries()) {
-        const support = count / totalTransactions;
-        
-        if (support >= this.minSupport) {
-          frequentItemSets.push({
-            items: items.split('|'),
-            support,
-            count,
-          });
-          frequentSets.push(items.split('|'));
-        }
-      }
+    // 2. 生成候选 k-项集
+    let candidateItemSets = frequent1ItemSets.map(itemSet => itemSet.items);
+    let frequentItemSets: FrequentItemSet[] = frequent1ItemSets;
 
-      if (frequentSets.length === 0) {
-        break;
-      }
+    while (candidateItemSets.length > 0) {
+      // 3. 计算候选 k-项集的支持度
+      const itemSetSupportCounts = this.calculateSupportCounts(candidateItemSets, transactions);
+      const frequentKItemSets = this.filterFrequentItemSets(itemSetSupportCounts, totalTransactions);
 
-      prevFrequentSets = frequentSets;
-      k++;
-
-      // 限制最大项集大小
-      if (k > 5) {
-        break;
-      }
+      // 4. 生成候选 (k+1)-项集
+      candidateItemSets = this.generateCandidateItemSets(frequentKItemSets);
+      frequentItemSets = frequentItemSets.concat(frequentKItemSets);
     }
 
-    this.logger.log(`Found ${frequentItemSets.length} frequent item sets`);
+    this.logger.debug(`Found ${frequentItemSets.length} frequent itemsets`);
 
-    // 2. 从频繁项集生成关联规则
-    const rules: AssociationRule[] = [];
+    // 5. 生成关联规则
+    const rules = this.generateAssociationRules(frequentItemSets);
+    this.logger.debug(`Generated ${rules.length} association rules`);
 
-    for (const itemSet of frequentItemSets) {
-      if (itemSet.items.length < 2) continue;
-
-      // 为每个频繁项集生成所有可能的规则
-      const subsetRules = this.generateRulesFromItemSet(itemSet, totalTransactions);
-      rules.push(...subsetRules);
-    }
-
-    // 3. 过滤低质量规则
-    const filteredRules = rules.filter(rule => 
-      rule.confidence >= this.minConfidence && rule.lift >= this.minLift
-    );
-
+    // 6. 过滤低质量规则
+    const filteredRules = rules.filter(rule => rule.confidence >= this.minConfidence && rule.lift >= this.minLift);
     this.logger.log(`Generated ${filteredRules.length} high-quality association rules`);
+    
+    if (sampled) {
+      this.logger.warn(`Results based on sampled data (${this.maxTransactions}/${totalOriginalTransactions} transactions)`);
+    }
+    
     return filteredRules;
   }
 
   /**
-   * 计算候选项集的计数
+   * 随机采样
    */
-  private countCandidates(
-    transactions: string[][],
-    k: number,
-    prevFrequentSets: string[][]
-  ): Map<string, number> {
-    const counts = new Map<string, number>();
+  private randomSample<T>(items: T[], sampleSize: number): T[] {
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, sampleSize);
+  }
 
-    if (k === 1) {
-      // 1-项集：统计每个单独项的出现次数
-      for (const transaction of transactions) {
-        const uniqueItems = new Set(transaction);
-        for (const item of uniqueItems) {
-          const key = item;
-          counts.set(key, (counts.get(key) || 0) + 1);
-        }
+  /**
+   * 找出所有频繁 1-项集
+   */
+  private findFrequent1ItemSets(transactions: string[][], totalTransactions: number): FrequentItemSet[] {
+    const itemSupportCounts: { [item: string]: number } = {};
+
+    for (const transaction of transactions) {
+      for (const item of transaction) {
+        itemSupportCounts[item] = (itemSupportCounts[item] || 0) + 1;
       }
-    } else {
-      // K-项集：使用 Apriori 性质剪枝
-      const candidates = this.generateCandidates(prevFrequentSets, k);
-      
-      for (const transaction of transactions) {
-        const transactionSet = new Set(transaction);
-        for (const candidate of candidates) {
-          if (candidate.every(item => transactionSet.has(item))) {
-            const key = candidate.join('|');
-            counts.set(key, (counts.get(key) || 0) + 1);
-          }
+    }
+
+    const frequent1ItemSets: FrequentItemSet[] = [];
+    for (const item in itemSupportCounts) {
+      const support = itemSupportCounts[item] / totalTransactions;
+      if (support >= this.minSupport) {
+        frequent1ItemSets.push({ items: [item], support, count: itemSupportCounts[item] });
+      }
+    }
+
+    return frequent1ItemSets;
+  }
+
+  /**
+   * 计算候选 k-项集的支持度
+   */
+  private calculateSupportCounts(candidateItemSets: string[][], transactions: string[][]): { [itemSet: string]: number } {
+    const itemSetSupportCounts: { [itemSet: string]: number } = {};
+
+    for (const transaction of transactions) {
+      const transactionItems = new Set(transaction);
+
+      for (const itemSet of candidateItemSets) {
+        if (itemSet.every(item => transactionItems.has(item))) {
+          const itemSetKey = itemSet.join(',');
+          itemSetSupportCounts[itemSetKey] = (itemSetSupportCounts[itemSetKey] || 0) + 1;
         }
       }
     }
 
-    return counts;
+    return itemSetSupportCounts;
   }
 
   /**
-   * 生成 K-项集候选
+   * 过滤频繁项集
    */
-  private generateCandidates(
-    prevFrequentSets: string[][],
-    k: number
-  ): string[][] {
-    const candidates: string[][] = [];
+  private filterFrequentItemSets(itemSetSupportCounts: { [itemSet: string]: number }, totalTransactions: number): FrequentItemSet[] {
+    const frequentItemSets: FrequentItemSet[] = [];
 
-    for (let i = 0; i < prevFrequentSets.length; i++) {
-      for (let j = i + 1; j < prevFrequentSets.length; j++) {
-        const set1 = [...prevFrequentSets[i]].sort();
-        const set2 = [...prevFrequentSets[j]].sort();
+    for (const itemSetKey in itemSetSupportCounts) {
+      const count = itemSetSupportCounts[itemSetKey];
+      const support = count / totalTransactions;
 
-        // 对于 k=2，直接从 1-项集生成
-        if (k === 2 && set1.length === 1 && set2.length === 1) {
-          candidates.push([set1[0], set2[0]]);
-          continue;
-        }
+      if (support >= this.minSupport) {
+        frequentItemSets.push({ items: itemSetKey.split(','), support, count });
+      }
+    }
 
-        // 检查前 k-2 项是否相同
-        const prefix1 = set1.slice(0, k - 2);
-        const prefix2 = set2.slice(0, k - 2);
+    return frequentItemSets;
+  }
 
-        if (prefix1.every((val, idx) => val === prefix2[idx])) {
-          // 合并生成候选
-          const union = new Set([...set1, ...set2]);
-          
-          if (union.size === k) {
-            // 验证所有 k-1 子集都是频繁的（Apriori 剪枝）
-            const subsets = this.getSubsets(Array.from(union), k - 1);
-            const allFrequent = subsets.every(subset =>
-              prevFrequentSets.some(fs =>
-                fs.length === subset.length &&
-                fs.every(item => subset.includes(item))
-              )
-            );
+  /**
+   * 生成候选 (k+1)-项集
+   */
+  private generateCandidateItemSets(frequentItemSets: FrequentItemSet[]): string[][] {
+    const candidateItemSets: string[][] = [];
 
-            if (allFrequent) {
-              candidates.push(Array.from(union).sort());
-            }
-          }
+    for (let i = 0; i < frequentItemSets.length; i++) {
+      for (let j = i + 1; j < frequentItemSets.length; j++) {
+        const itemSet1 = frequentItemSets[i].items;
+        const itemSet2 = frequentItemSets[j].items;
+
+        if (this.canCombine(itemSet1, itemSet2)) {
+          const newItemSet = itemSet1.concat(itemSet2.slice(-1));
+          candidateItemSets.push(newItemSet);
         }
       }
     }
 
-    return candidates;
+    return candidateItemSets;
   }
 
   /**
-   * 从频繁项集生成规则
+   * 判断两个项集是否可以合并
    */
-  private generateRulesFromItemSet(
-    itemSet: FrequentItemSet,
-    totalTransactions: number
-  ): AssociationRule[] {
+  private canCombine(itemSet1: string[], itemSet2: string[]): boolean {
+    for (let i = 0; i < itemSet1.length - 1; i++) {
+      if (itemSet1[i] !== itemSet2[i]) {
+        return false;
+      }
+    }
+
+    return itemSet1[itemSet1.length - 1] < itemSet2[itemSet2.length - 1];
+  }
+
+  /**
+   * 生成关联规则
+   */
+  private generateAssociationRules(frequentItemSets: FrequentItemSet[]): AssociationRule[] {
     const rules: AssociationRule[] = [];
-    const items = itemSet.items;
 
-    // 生成所有可能的前件和后件组合
-    for (let i = 1; i < items.length; i++) {
-      const antecedents = this.getSubsets(items, i);
-      
-      for (const antecedent of antecedents) {
-        const consequent = items.filter(item => !antecedent.includes(item));
-        
-        if (consequent.length === 1) {
-          // 计算规则指标
-          const antecedentCount = this.countItemSetOccurrences(transactions => 
-            antecedent.every(item => transactions.includes(item))
-          );
-          
-          const ruleCount = this.countItemSetOccurrences(transactions => 
-            [...antecedent, ...consequent].every(item => transactions.includes(item))
-          );
-
-          const consequentCount = this.countItemSetOccurrences(transactions => 
-            transactions.includes(consequent[0])
-          );
-
-          const support = itemSet.support;
-          const confidence = ruleCount / antecedentCount;
-          const lift = confidence / (consequentCount / totalTransactions);
-
-          if (!isNaN(confidence) && !isNaN(lift)) {
-            rules.push({
-              antecedent,
-              consequent: consequent[0],
-              support,
-              confidence,
-              lift,
-            });
-          }
-        }
+    for (const itemSet of frequentItemSets) {
+      if (itemSet.items.length > 1) {
+        this.generateRules(itemSet.items, [], rules, frequentItemSets);
       }
     }
 
@@ -287,145 +264,39 @@ export class AssociationEngineService {
   }
 
   /**
-   * 统计项集出现次数
+   * 递归生成关联规则
    */
-  private countItemSetOccurrences(
-    predicate: (transaction: string[]) => boolean
-  ): number {
-    // 这里需要从数据源获取，简化实现返回一个估计值
-    // TODO: 传入完整的交易数据
-    return 1;
+  private generateRules(itemSet: string[], antecedent: string[], rules: AssociationRule[], frequentItemSets: FrequentItemSet[]): void {
+    const consequent = itemSet.filter(item => !antecedent.includes(item));
+
+    if (consequent.length > 0) {
+      const antecedentSupport = this.findFrequentItemSet(antecedent, frequentItemSets).support;
+      const itemSetSupport = this.findFrequentItemSet(itemSet, frequentItemSets).support;
+
+      const confidence = itemSetSupport / antecedentSupport;
+      const lift = confidence / this.findFrequentItemSet(consequent, frequentItemSets).support;
+
+      rules.push({ antecedent, consequent: consequent[0], support: itemSetSupport, confidence, lift });
+    }
+
+    for (let i = 0; i < itemSet.length; i++) {
+      const newAntecedent = antecedent.concat(itemSet[i]);
+      this.generateRules(itemSet.slice(i + 1), newAntecedent, rules, frequentItemSets);
+    }
   }
 
   /**
-   * 检查标签是否匹配前件
+   * 查找频繁项集
+   */
+  private findFrequentItemSet(items: string[], frequentItemSets: FrequentItemSet[]): FrequentItemSet {
+    const itemSetKey = items.join(',');
+    return frequentItemSets.find(itemSet => itemSetKey === itemSet.items.join(','));
+  }
+
+  /**
+   * 匹配前件
    */
   private matchesAntecedent(antecedent: string[], existingTags: string[]): boolean {
     return antecedent.every(tag => existingTags.includes(tag));
-  }
-
-  /**
-   * 获取集合的所有指定大小的子集
-   */
-  private getSubsets<T>(array: T[], size: number): T[][] {
-    const results: T[][] = [];
-
-    const backtrack = (start: number, current: T[]) => {
-      if (current.length === size) {
-        results.push([...current]);
-        return;
-      }
-
-      for (let i = start; i < array.length; i++) {
-        current.push(array[i]);
-        backtrack(i + 1, current);
-        current.pop();
-      }
-    };
-
-    backtrack(0, []);
-    return results;
-  }
-
-  /**
-   * 增量更新关联规则（简化版）
-   */
-  async updateRulesIncrementally(
-    newTransactions: string[][],
-    existingRules: AssociationRule[]
-  ): Promise<AssociationRule[]> {
-    this.logger.log(`Incrementally updating rules with ${newTransactions.length} new transactions`);
-
-    // TODO: 实现增量更新逻辑
-    // 目前简单重新挖掘所有规则
-    const allTransactions = newTransactions; // 实际应该合并旧数据
-    return await this.mineAssociationRules(new Map(allTransactions.map((tags, i) => [i, tags])));
-  }
-
-  /**
-   * 设置算法参数
-   */
-  setParameters(params: {
-    minSupport?: number;
-    minConfidence?: number;
-    minLift?: number;
-  }) {
-    if (params.minSupport) this.minSupport = params.minSupport;
-    if (params.minConfidence) this.minConfidence = params.minConfidence;
-    if (params.minLift) this.minLift = params.minLift;
-    
-    this.logger.log(`Updated parameters: minSupport=${this.minSupport}, minConfidence=${this.minConfidence}, minLift=${this.minLift}`);
-  }
-
-  /**
-   * 过滤满足最小支持度的项集（公共方法用于测试）
-   */
-  filterBySupport(
-    candidateCounts: Map<string, number>,
-    minSupport: number,
-    totalTransactions: number
-  ): Array<{ items: string[]; support: number; count: number }> {
-    const frequentSets: Array<{ items: string[]; support: number; count: number }> = [];
-    const minCount = minSupport * totalTransactions;
-
-    for (const [itemSet, count] of candidateCounts.entries()) {
-      if (count >= minCount) {
-        const support = count / totalTransactions;
-        frequentSets.push({
-          items: itemSet.split('|'),
-          support,
-          count,
-        });
-      }
-    }
-
-    return frequentSets;
-  }
-
-  /**
-   * 从频繁项集生成关联规则（公共方法用于测试）
-   */
-  async generateRulesFromItemSets(
-    frequentItemSets: Array<{ items: string[]; support: number; count: number }>
-  ): Promise<AssociationRule[]> {
-    const rules: AssociationRule[] = [];
-    const totalTransactions = 100; // 假设值，实际应从数据源获取
-
-    for (const itemSet of frequentItemSets) {
-      const itemSetRules = this.generateRulesFromItemSet(itemSet, totalTransactions);
-      rules.push(...itemSetRules);
-    }
-
-    return rules;
-  }
-
-  /**
-   * 计算置信度（公共方法用于测试）
-   */
-  calculateConfidence(antecedentCount: number, ruleCount: number): number {
-    if (antecedentCount === 0) return 0;
-    return ruleCount / antecedentCount;
-  }
-
-  /**
-   * 计算提升度（公共方法用于测试）
-   */
-  calculateLift(confidence: number, consequentSupport: number): number {
-    if (consequentSupport === 0) return Infinity;
-    return confidence / consequentSupport;
-  }
-
-  /**
-   * 获取所有非空真子集（公共方法用于测试）
-   */
-  getSubsetsPublic<T>(array: T[]): T[][] {
-    const results: T[][] = [];
-
-    // 生成所有可能的子集大小（1 到 length-1）
-    for (let size = 1; size < array.length; size++) {
-      results.push(...this.getSubsets(array, size));
-    }
-
-    return results;
   }
 }

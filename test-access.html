@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客户管理模块访问性测试</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #1890ff;
+    }
+    h2 {
+      color: #333;
+      font-size: 18px;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+    button {
+      background: #1890ff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #40a9ff;
+    }
+    pre {
+      background: #f6f8fa;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .checklist {
+      list-style: none;
+      padding: 0;
+    }
+    .checklist li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .checklist li:before {
+      content: "☐ ";
+      color: #1890ff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 客户管理模块访问性测试</h1>
+  
+  <div class="card">
+    <h2>✅ 后端 API 验证状态 <span class="status success">通过</span></h2>
+    <p><strong>admin 用户:</strong> 登录成功 - 角色 ['admin', 'user', 'analyst']</p>
+    <p><strong>business_user 用户:</strong> 登录成功 - 角色 ['analyst', 'user']</p>
+    <p><strong>客户列表 API:</strong> ✅ 正常 (250 条数据)</p>
+    <p><strong>统计分析 API:</strong> ✅ 正常</p>
+  </div>
+
+  <div class="card">
+    <h2>🚀 前端测试步骤</h2>
+    <ol>
+      <li><strong>清理浏览器缓存</strong> (Ctrl+Shift+Delete)</li>
+      <li><strong>强制刷新页面</strong> (Ctrl+F5)</li>
+      <li>访问 <a href="http://localhost:5176/" target="_blank">http://localhost:5176/</a></li>
+      <li>使用以下账号测试：</li>
+    </ol>
+    
+    <pre>
+账号 1: admin / admin123
+- 角色：['admin', 'user', 'analyst']
+- 预期：可以看到并访问"客户管理"
+
+账号 2: business_user / Business123
+- 角色：['analyst', 'user']
+- 预期：可以看到并访问"客户管理"</pre>
+  </div>
+
+  <div class="card">
+    <h2>📋 验证清单</h2>
+    <ul class="checklist">
+      <li>浏览器缓存已清理</li>
+      <li>admin 用户可以看到"客户管理"菜单</li>
+      <li>admin 用户可以访问"统计分析"Tab</li>
+      <li>business_user 用户可以看到"客户管理"菜单</li>
+      <li>business_user 用户可以访问"统计分析"Tab</li>
+      <li>统计分析页面显示图表（非空白）</li>
+      <li>URL 与 Tab 状态一致</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>⚠️ 常见问题</h2>
+    <p><strong>问题 1:</strong> 看不到"客户管理"菜单<br>
+    <strong>解决:</strong> 清理浏览器缓存后硬刷新 (Ctrl+F5)</p>
+    
+    <p><strong>问题 2:</strong> 点击"统计分析"跳转到首页<br>
+    <strong>解决:</strong> 检查 F12 Console 错误，查看 Network 请求</p>
+    
+    <p><strong>问题 3:</strong> 菜单显示但无法点击<br>
+    <strong>解决:</strong> 检查菜单项配置和路由匹配</p>
+  </div>
+
+  <div class="card">
+    <h2>🔧 调试信息</h2>
+    <button onclick="checkUser()">检查当前用户</button>
+    <button onclick="checkMenu()">检查菜单配置</button>
+    <button onclick="checkRoute()">检查路由状态</button>
+    
+    <pre id="debug-output">点击按钮查看调试信息...</pre>
+  </div>
+
+  <script>
+    function log(message) {
+      const output = document.getElementById('debug-output');
+      output.innerHTML += '\n' + message;
+    }
+
+    function clearLog() {
+      document.getElementById('debug-output').innerHTML = '';
+    }
+
+    function checkUser() {
+      clearLog();
+      log('检查当前用户状态...\n');
+      
+      // 尝试从 localStorage 获取用户信息
+      const userInfo = localStorage.getItem('user_info');
+      if (userInfo) {
+        try {
+          const user = JSON.parse(userInfo);
+          log('✅ 用户信息:');
+          log('  用户名：' + user.username);
+          log('  角色：' + JSON.stringify(user.roles));
+          log('  邮箱：' + user.email);
+        } catch (e) {
+          log('❌ 解析用户信息失败：' + e.message);
+        }
+      } else {
+        log('⚠️ 未找到用户信息（可能未登录）');
+      }
+      
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        log('\n✅ Token 存在：' + token.substring(0, 50) + '...');
+      } else {
+        log('\n⚠️ 未找到 Token');
+      }
+    }
+
+    function checkMenu() {
+      clearLog();
+      log('检查菜单配置...\n');
+      
+      // 延迟执行以确保 React 已加载
+      setTimeout(() => {
+        try {
+          const menuItems = document.querySelectorAll('.ant-menu-item');
+          log(`找到 ${menuItems.length} 个菜单项:`);
+          
+          menuItems.forEach((item, index) => {
+            const text = item.textContent.trim();
+            log(`  ${index + 1}. ${text}`);
+            
+            if (text.includes('客户管理')) {
+              log('     ✅ 发现"客户管理"菜单项');
+            }
+          });
+        } catch (e) {
+          log('❌ 检查失败：' + e.message);
+        }
+      }, 1000);
+    }
+
+    function checkRoute() {
+      clearLog();
+      log('检查路由状态...\n');
+      log('当前 URL: ' + window.location.pathname);
+      
+      if (window.location.pathname === '/customers') {
+        log('✅ 当前在客户管理页面');
+      } else if (window.location.pathname === '/customers/statistics') {
+        log('✅ 当前在统计分析页面');
+      } else {
+        log('⚠️ 当前不在客户管理相关页面');
+      }
+    }
+
+    // 自动运行一次检查
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        checkUser();
+        log('\n---\n提示：请点击上方按钮进行详细检查');
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

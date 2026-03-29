@@ -7,12 +7,17 @@ import {
   SettingOutlined,
   ExperimentOutlined,
   ClusterOutlined,
+  TeamOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  ThunderboltOutlined,
+  MonitorOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useUserStore } from '@/stores/userStore';
+import { UserRole } from '@/types';
 import './index.css';
 
 const { Header, Sider, Content } = Layout;
@@ -38,19 +43,37 @@ export default function BasicLayout() {
       icon: <ExperimentOutlined />,
       label: '推荐结果',
     },
-    ...(hasRole(['admin', 'analyst']) ? [
+    {
+      key: '/engine-monitor',
+      icon: <MonitorOutlined />,
+      label: '引擎监控',
+    },
+    // 客户管理 - 所有登录用户可访问
+    {
+      key: '/customers',
+      icon: <TeamOutlined />,
+      label: '客户管理',
+    },
+    // 规则管理和配置管理 - 需要分析师或管理员权限
+    ...(hasRole([UserRole.ADMIN, UserRole.ANALYST]) ? [
       {
         key: '/rules',
         icon: <SettingOutlined />,
         label: '规则管理',
       },
       {
-        key: '/clustering',
+        key: '/clustering-configs',
         icon: <ClusterOutlined />,
         label: '聚类配置',
       },
+      {
+        key: '/association-configs',
+        icon: <LinkOutlined />,
+        label: '关联规则',
+      },
     ] : []),
-    ...(hasRole('admin') ? [
+    // 用户管理 - 仅管理员权限
+    ...(hasRole(UserRole.ADMIN) ? [
       {
         key: '/users',
         icon: <UserOutlined />,

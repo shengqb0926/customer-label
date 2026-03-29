@@ -357,14 +357,14 @@ const RecommendationList: React.FC = () => {
   const columns: ColumnsType<Recommendation> = [
     {
       title: '客户',
-      dataIndex: 'customerId',
-      key: 'customerId',
+      dataIndex: 'customerName',
+      key: 'customerName',
       width: 200,
       fixed: 'left',
       ellipsis: true,
-      render: (customerId: number) => (
+      render: (customerName: string, record: Recommendation) => (
         <Text strong style={{ color: '#1890ff' }}>
-          客户 #{customerId}
+          {customerName || `客户 #${record.customerId}`}
         </Text>
       ),
     },
@@ -388,6 +388,7 @@ const RecommendationList: React.FC = () => {
         { text: '行为偏好', value: '行为偏好' },
         { text: '风险特征', value: '风险特征' },
         { text: '基础属性', value: '基础属性' },
+        { text: '新推荐的客户', value: '新推荐的客户' },
       ],
       onFilter: (value, record) => record.tagCategory === value,
       render: (text: string) => {
@@ -396,6 +397,7 @@ const RecommendationList: React.FC = () => {
           '行为偏好': 'blue',
           '风险特征': 'red',
           '基础属性': 'green',
+          '新推荐的客户': 'purple',
         };
         return <Tag color={categoryColors[text] || 'default'}>{text}</Tag>;
       },

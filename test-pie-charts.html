@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>饼图调试页面</title>
+    <script src="https://unpkg.com/@ant-design/charts@latest/dist/index.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .chart-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🥧 饼图数据调试</h1>
+    
+    <div id="status"></div>
+    
+    <div class="chart-container">
+        <h2>客户等级分布</h2>
+        <div id="levelChart"></div>
+        <pre id="levelData"></pre>
+    </div>
+    
+    <div class="chart-container">
+        <h2>风险等级分布</h2>
+        <div id="riskChart"></div>
+        <pre id="riskData"></pre>
+    </div>
+    
+    <div class="chart-container">
+        <h2>RFM 价值分布</h2>
+        <div id="rfmChart"></div>
+        <pre id="rfmData"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api/v1';
+        
+        // 获取统计数据
+        async function fetchStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/customers/statistics`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('获取统计数据失败:', error);
+                throw error;
+            }
+        }
+        
+        // 获取 RFM 汇总
+        async function fetchRfmSummary() {
+            try {
+                const response = await fetch(`${API_BASE}/customers/rfm-summary`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('获取 RFM 汇总失败:', error);
+                throw error;
+            }
+        }
+        
+        // 渲染饼图
+        function renderPieChart(containerId, data, title) {
+            console.log(`=== ${title} 数据 ===`, data);
+            
+            // 显示原始数据
+            const preElement = document.getElementById(containerId.replace('Chart', 'Data'));
+            if (preElement) {
+                preElement.textContent = JSON.stringify(data, null, 2);
+            }
+            
+            // 验证数据
+            const hasError = data.some(item => {
+                return !item.name || item.name === 'undefined' || typeof item.value !== 'number';
+            });
+            
+            if (hasError) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = '❌ 数据格式错误！请检查 Console 日志';
+                document.getElementById(containerId).appendChild(errorDiv);
+                
+                data.forEach((item, index) => {
+                    console.error(`第${index + 1}条数据:`, item);
+                    if (!item.name || item.name === 'undefined') {
+                        console.error(`  - name 字段无效: "${item.name}"`);
+                    }
+                    if (typeof item.value !== 'number') {
+                        console.error(`  - value 字段不是数字: ${item.value} (${typeof item.value})`);
+                    }
+                });
+                return;
+            }
+            
+            // 渲染图表
+            const { Pie } = charts;
+            const chart = new Pie(containerId, {
+                appendPadding: 10,
+                data: data,
+                angleField: 'value',
+                colorField: 'name',
+                radius: 0.8,
+                label: {
+                    content: (datum) => {
+                        console.log(`${title} datum:`, datum);
+                        return `${datum.name}: ${(datum.percent * 100).toFixed(1)}%`;
+                    },
+                },
+                interactions: [{ type: 'element-active' }],
+                tooltip: {
+                    showMarkers: true,
+                    shared: true,
+                    formatter: (datum) => {
+                        return {
+                            name: datum.name,
+                            value: `${datum.value}人`,
+                        };
+                    },
+                },
+            });
+            chart.render();
+            
+            console.log(`✅ ${title} 渲染成功`);
+        }
+        
+        // 主函数
+        async function init() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<p>正在加载数据...</p>';
+            
+            try {
+                // 加载统计数据
+                const stats = await fetchStatistics();
+                console.log('=== 统计数据 ===', stats);
+                
+                // 准备等级分布数据
+                const levelChartData = stats.levelStats.map(item => ({
+                    name: item.level === 'BRONZE' ? '青铜' : 
+                           item.level === 'SILVER' ? '白银' : 
+                           item.level === 'GOLD' ? '黄金' : 
+                           item.level === 'PLATINUM' ? '铂金' : '钻石',
+                    value: Number(item.count),
+                }));
+                
+                // 准备风险分布数据
+                const riskChartData = stats.riskStats.map(item => ({
+                    name: item.riskLevel === 'LOW' ? '低风险' : 
+                           item.riskLevel === 'MEDIUM' ? '中风险' : '高风险',
+                    value: Number(item.count),
+                }));
+                
+                // 加载 RFM 汇总
+                const rfmSummary = await fetchRfmSummary();
+                console.log('=== RFM 汇总 ===', rfmSummary);
+                
+                // 准备 RFM 分布数据
+                const rfmChartData = rfmSummary.segmentDistribution ? 
+                    Object.entries(rfmSummary.segmentDistribution).map(([key, value]) => ({
+                        name: key,
+                        value: Number(value),
+                    })) : [];
+                
+                // 更新状态
+                statusDiv.innerHTML = '<p class="success">✅ 数据加载成功！</p>';
+                
+                // 渲染图表
+                setTimeout(() => {
+                    renderPieChart('levelChart', levelChartData, '客户等级分布');
+                    renderPieChart('riskChart', riskChartData, '风险等级分布');
+                    renderPieChart('rfmChart', rfmChartData, 'RFM 价值分布');
+                }, 100);
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<p class="error">❌ 加载失败：${error.message}</p>`;
+                console.error('初始化失败:', error);
+            }
+        }
+        
+        // 启动
+        init();
+    </script>
+</body>
+</html>

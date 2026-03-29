@@ -65,37 +65,37 @@ export class Customer {
   @Column({ type: 'varchar', length: 100, nullable: true })
   address: string;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'total_assets' })
   totalAssets: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'monthly_income' })
   monthlyIncome: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, name: 'annual_spend' })
   annualSpend: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'int', default: 0, name: 'order_count' })
   orderCount: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'int', default: 0, name: 'product_count' })
   productCount: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'int', default: 0, name: 'register_days' })
   registerDays: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'int', default: 0, name: 'last_login_days' })
   lastLoginDays: number;
 
-  @Column({ type: 'enum', enum: CustomerLevel, default: CustomerLevel.BRONZE })
+  @Column({ type: 'enum', enum: CustomerLevel, default: CustomerLevel.BRONZE, name: 'level' })
   level: CustomerLevel;
 
-  @Column({ type: 'enum', enum: RiskLevel, default: RiskLevel.LOW })
+  @Column({ type: 'enum', enum: RiskLevel, default: RiskLevel.LOW, name: 'risk_level' })
   riskLevel: RiskLevel;
 
   @Column({ type: 'text', nullable: true })
   remarks: string;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })

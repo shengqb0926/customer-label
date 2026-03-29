@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RuleEvaluator } from './rule-evaluator';
 import { RecommendationRule } from '../entities/recommendation-rule.entity';
-import { TagRecommendation } from '../entities/tag-recommendation.entity';
+import { TagRecommendation, RecommendationStatus } from '../entities/tag-recommendation.entity';
 
 /**
  * 客户数据接口
@@ -41,9 +41,10 @@ export class RuleEngine {
 
     console.log(`[RuleEngine] 加载了 ${rules.length} 条活跃规则`);
 
-    const recommendations: Partial<TagRecommendation>[] = [];
+    const recommendationsToSave: Partial<TagRecommendation>[] = [];
+    const rulesToUpdate: RecommendationRule[] = [];
 
-    // 2. 逐条评估规则
+    // 2. 逐条评估规则（不立即保存）
     for (const rule of rules) {
       try {
         const expression = typeof rule.ruleExpression === 'string' 
@@ -54,21 +55,21 @@ export class RuleEngine {
         if (result.matched) {
           console.log(`[RuleEngine] 规则 "${rule.ruleName}" 匹配，置信度：${result.confidence}`);
 
-          // 3. 生成推荐
+          // 3. 收集待保存的推荐
           const tagName = rule.tagTemplate?.name || '未命名标签';
-          recommendations.push({
+          recommendationsToSave.push({
             customerId: customer.id,
             tagName: tagName,
             tagCategory: rule.tagTemplate?.category,
             confidence: result.confidence,
-            source: 'rule' as const,
+            source: 'rule',
             reason: this.generateReason(rule, result),
-            isAccepted: false,
+            status: RecommendationStatus.PENDING,
           });
 
-          // 4. 更新命中次数
+          // 4. 更新命中次数（暂不保存）
           rule.hitCount += 1;
-          await this.ruleRepository.save(rule);
+          rulesToUpdate.push(rule);
         }
       } catch (error) {
         console.error(`[RuleEngine] 规则 ${rule.ruleName} 评估失败:`, error);
@@ -76,11 +77,27 @@ export class RuleEngine {
       }
     }
 
-    const endTime = Date.now();
-    console.log(`[RuleEngine] 规则评估完成，耗时：${endTime - startTime}ms，生成 ${recommendations.length} 条推荐`);
+    // 5. 批量保存推荐结果
+    let savedRecommendations: TagRecommendation[] = [];
+    if (recommendationsToSave.length > 0) {
+      console.log(`[RuleEngine] 批量保存 ${recommendationsToSave.length} 条推荐...`);
+      const entities = recommendationsToSave.map(rec => this.recommendationRepository.create(rec));
+      savedRecommendations = await this.recommendationRepository.save(entities);
+      console.log(`[RuleEngine] 推荐保存完成`);
+    }
 
-    // 5. 去重并按置信度排序
-    return this.deduplicateAndSort(recommendations);
+    // 6. 批量更新规则命中次数
+    if (rulesToUpdate.length > 0) {
+      console.log(`[RuleEngine] 批量更新 ${rulesToUpdate.length} 条规则的命中次数...`);
+      await this.ruleRepository.save(rulesToUpdate);
+      console.log(`[RuleEngine] 规则更新完成`);
+    }
+
+    const endTime = Date.now();
+    console.log(`[RuleEngine] 规则评估完成，耗时：${endTime - startTime}ms，生成 ${savedRecommendations.length} 条推荐`);
+
+    // 7. 返回去重并排序后的推荐
+    return this.deduplicateAndSort(savedRecommendations);
   }
 
   /**

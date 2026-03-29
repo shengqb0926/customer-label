@@ -1,9 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
 import { TagRecommendation, RecommendationStatus } from './entities/tag-recommendation.entity';
 import { RecommendationRule } from './entities/recommendation-rule.entity';
 import { ClusteringConfig } from './entities/clustering-config.entity';
+import { Customer } from './entities/customer.entity';
+import { CustomerTag } from './entities/customer-tag.entity';
 import { CacheService } from '../../infrastructure/redis';
 import { RuleEngineService, CustomerData } from './engines/rule-engine.service';
 import { ClusteringEngineService, CustomerFeatureVector } from './engines/clustering-engine.service';
@@ -39,6 +41,10 @@ export class RecommendationService {
     private readonly ruleRepo: Repository<RecommendationRule>,
     @InjectRepository(ClusteringConfig)
     private readonly configRepo: Repository<ClusteringConfig>,
+    @InjectRepository(Customer)
+    private readonly customerRepo: Repository<Customer>,
+    @InjectRepository(CustomerTag)
+    private readonly customerTagRepo: Repository<CustomerTag>,
     private readonly cache: CacheService,
     private readonly ruleEngine: RuleEngineService,
     private readonly clusteringEngine: ClusteringEngineService,
@@ -69,8 +75,8 @@ export class RecommendationService {
     }
 
     try {
-      // 如果没有提供客户数据，使用模拟数据
-      const data = customerData || this.generateMockCustomerData(customerId);
+      // 如果没有提供客户数据，从数据库获取真实数据
+      const data = customerData || await this.getRealCustomerData(customerId);
       
       // 根据不同模式调用不同引擎
       let allRecommendations: CreateRecommendationDto[] = [];
@@ -89,12 +95,16 @@ export class RecommendationService {
       }
 
       if (mode === 'association' || mode === 'all') {
-        // TODO: 需要真实的客户标签数据
-        const existingTags = []; // 从数据库获取客户已有标签
-        const allCustomerTags = new Map<number, string[]>(); // 所有客户标签
+        // 从数据库获取客户已有标签和所有客户标签数据
+        const customerTags = await this.getCustomerTags(customerId);
+        const allCustomerTags = await this.getAllCustomerTagsMap();
+        
+        this.logger.debug(`Customer ${customerId} has ${customerTags.length} tags`);
+        this.logger.debug(`Total customers with tags: ${allCustomerTags.size}`);
+        
         const associationRecs = await this.associationEngine.generateRecommendations(
           customerId,
-          existingTags,
+          customerTags.map(t => t.tagName),
           allCustomerTags
         );
         allRecommendations.push(...associationRecs);
@@ -191,6 +201,73 @@ export class RecommendationService {
   }
 
   /**
+   * 从数据库获取真实客户数据并转换为规则引擎格式
+   */
+  private async getRealCustomerData(customerId: number): Promise<CustomerData> {
+    const customer = await this.customerRepo.findOne({
+      where: { id: customerId },
+    });
+
+    if (!customer) {
+      throw new NotFoundException(`Customer ${customerId} not found`);
+    }
+
+    // 将数据库字段映射到 CustomerData 接口
+    // 同时支持多种字段名以兼容旧的规则表达式
+    const customerData: CustomerData & Record<string, any> = {
+      id: customer.id,
+      totalAssets: Number(customer.totalAssets) || 0,
+      monthlyIncome: Number(customer.monthlyIncome) || 0,
+      annualSpend: Number(customer.annualSpend) || 0,
+      lastLoginDays: Number(customer.lastLoginDays) || 0,
+      registerDays: Number(customer.registerDays) || 0,
+      orderCount: Number(customer.orderCount) || 0,
+      productCount: Number(customer.productCount) || 0,
+      riskLevel: customer.riskLevel,
+      age: customer.age,
+      gender: customer.gender,
+      city: customer.city,
+      membershipLevel: customer.level,
+      // 向后兼容：添加常用字段别名
+      totalAmount: Number(customer.totalAssets) || 0,  // 兼容旧规则中的 totalAmount
+      total_order_count: Number(customer.orderCount) || 0,
+    };
+
+    this.logger.debug(`Loaded real customer data for ID ${customerId}: ${JSON.stringify(customerData)}`);
+    
+    return customerData;
+  }
+
+  /**
+   * 获取指定客户的标签列表
+   */
+  private async getCustomerTags(customerId: number): Promise<CustomerTag[]> {
+    return await this.customerTagRepo.find({
+      where: { customerId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * 获取所有客户的标签映射（用于关联规则挖掘）
+   */
+  private async getAllCustomerTagsMap(): Promise<Map<number, string[]>> {
+    const tags = await this.customerTagRepo.find({
+      select: ['customerId', 'tagName'],
+      order: { customerId: 'ASC' },
+    });
+
+    const tagMap = new Map<number, string[]>();
+    for (const tag of tags) {
+      const existing = tagMap.get(tag.customerId) || [];
+      existing.push(tag.tagName);
+      tagMap.set(tag.customerId, existing);
+    }
+
+    return tagMap;
+  }
+
+  /**
    * 生成模拟客户数据（用于测试）
    */
   private generateMockCustomerData(customerId: number): CustomerData {
@@ -213,60 +290,177 @@ export class RecommendationService {
   }
 
   /**
-   * 提取客户特征向量
+   * 提取客户特征向量（带归一化）
    */
   private extractFeatures(customer: CustomerData): CustomerFeatureVector {
+    // 原始特征值
+    const rawFeatures = [
+      customer.totalAssets || 0,
+      customer.monthlyIncome || 0,
+      customer.annualSpend || 0,
+      customer.lastLoginDays || 0,
+      customer.registerDays || 0,
+      customer.orderCount || 0,
+      customer.productCount || 0,
+      customer.age || 30,
+    ];
+
+    // 特征名称
+    const featureNames = [
+      '总资产',
+      '月收入',
+      '年消费',
+      '距上次登录天数',
+      '注册天数',
+      '订单数',
+      '持有产品数',
+      '年龄',
+    ];
+
+    // 各特征的预估值范围（用于 Min-Max 归一化）
+    // 这些值应该根据实际数据统计动态更新
+    const featureRanges = [
+      { min: 0, max: 5000000 },      // 总资产
+      { min: 0, max: 200000 },       // 月收入
+      { min: 0, max: 1000000 },      // 年消费
+      { min: 0, max: 365 },          // 距上次登录天数
+      { min: 0, max: 3650 },         // 注册天数 (10 年)
+      { min: 0, max: 500 },          // 订单数
+      { min: 0, max: 100 },          // 持有产品数
+      { min: 18, max: 100 },         // 年龄
+    ];
+
+    // Min-Max 归一化到 [0, 1] 区间
+    const normalizedFeatures = rawFeatures.map((value, index) => {
+      const range = featureRanges[index];
+      if (!range || range.max === range.min) {
+        return 0;
+      }
+      // 限制在范围内并归一化
+      const clampedValue = Math.max(range.min, Math.min(value, range.max));
+      return (clampedValue - range.min) / (range.max - range.min);
+    });
+
     return {
       customerId: customer.id,
-      features: [
-        customer.totalAssets || 0,
-        customer.monthlyIncome || 0,
-        customer.annualSpend || 0,
-        customer.lastLoginDays || 0,
-        customer.registerDays || 0,
-        customer.orderCount || 0,
-        customer.productCount || 0,
-        customer.age || 30,
-      ],
-      featureNames: [
-        '总资产',
-        '月收入',
-        '年消费',
-        '距上次登录天数',
-        '注册天数',
-        '订单数',
-        '持有产品数',
-        '年龄',
-      ],
+      features: normalizedFeatures,
+      featureNames,
     };
   }
 
   /**
-   * 保存推荐结果
+   * 批量提取特征并计算统计信息（用于更精确的归一化）
+   */
+  async extractFeaturesWithStats(
+    customers: CustomerData[]
+  ): Promise<{
+    vectors: CustomerFeatureVector[];
+    stats: Array<{ min: number; max: number; mean: number }>;
+  }> {
+    if (customers.length === 0) {
+      return { vectors: [], stats: [] };
+    }
+
+    const featureNames = [
+      '总资产',
+      '月收入',
+      '年消费',
+      '距上次登录天数',
+      '注册天数',
+      '订单数',
+      '持有产品数',
+      '年龄',
+    ];
+
+    // 提取所有原始特征
+    const rawFeatures = customers.map(customer => [
+      customer.totalAssets || 0,
+      customer.monthlyIncome || 0,
+      customer.annualSpend || 0,
+      customer.lastLoginDays || 0,
+      customer.registerDays || 0,
+      customer.orderCount || 0,
+      customer.productCount || 0,
+      customer.age || 30,
+    ]);
+
+    // 计算每个特征的统计信息
+    const dimensions = rawFeatures[0].length;
+    const stats = [];
+
+    for (let i = 0; i < dimensions; i++) {
+      const values = rawFeatures.map(features => features[i]);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+
+      stats.push({ min, max, mean });
+    }
+
+    // Min-Max 归一化
+    const vectors: CustomerFeatureVector[] = customers.map((customer, idx) => {
+      const normalizedFeatures = rawFeatures[idx].map((value, featureIdx) => {
+        const range = stats[featureIdx];
+        if (range.max === range.min) {
+          return 0;
+        }
+        return (value - range.min) / (range.max - range.min);
+      });
+
+      return {
+        customerId: customer.id,
+        features: normalizedFeatures,
+        featureNames,
+      };
+    });
+
+    return { vectors, stats };
+  }
+
+  /**
+   * 保存推荐结果（批量优化版）
    */
   async saveRecommendations(
     customerId: number,
     recommendations: CreateRecommendationDto[]
   ): Promise<TagRecommendation[]> {
-    const entities = recommendations.map(rec => 
-      this.recommendationRepo.create({
-        customerId: rec.customerId,
-        tagName: rec.tagName,
-        tagCategory: rec.tagCategory,
-        confidence: rec.confidence,
-        source: rec.source,
-        reason: rec.reason,
-        scoreOverall: rec.confidence * 100,
-      })
-    );
+    if (recommendations.length === 0) {
+      this.logger.debug('No recommendations to save');
+      return [];
+    }
 
-    const saved = await this.recommendationRepo.save(entities);
-    
-    // 更新缓存
-    await this.cache.set(`recommendations:${customerId}`, saved, 3600);
-    
-    this.logger.log(`Saved ${saved.length} recommendations for customer ${customerId}`);
-    return saved;
+    try {
+      // 使用 insert() 批量插入，性能更好（单次 INSERT vs 多次 INSERT）
+      const insertResult = await this.recommendationRepo.insert(
+        recommendations.map(rec => ({
+          customerId: rec.customerId,
+          tagName: rec.tagName,
+          tagCategory: rec.tagCategory,
+          confidence: rec.confidence,
+          source: rec.source,
+          reason: rec.reason,
+          scoreOverall: Math.min(rec.confidence * 10, 9.9999),
+        }))
+      );
+
+      // 获取插入的 ID
+      const insertedIds = Object.values(insertResult.identifiers).map((id: any) => id.id || id);
+      
+      this.logger.debug(`Inserted ${insertedIds.length} recommendations with IDs: ${insertedIds.join(', ')}`);
+      
+      // 查询返回完整实体（带默认字段如 createdAt）
+      const saved = await this.recommendationRepo.findByIds(insertedIds);
+      
+      // 更新缓存（TTL 1 小时）
+      await this.cache.set(`recommendations:${customerId}`, saved, 3600);
+      
+      this.logger.log(`✅ Bulk saved ${saved.length} recommendations for customer ${customerId} (performance optimized)`);
+      return saved;
+      
+    } catch (error) {
+      this.logger.error(`❌ Failed to bulk save recommendations: ${error.message}`);
+      throw error;
+    }
   }
 
   /**

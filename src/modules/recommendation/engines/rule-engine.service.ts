@@ -72,10 +72,22 @@ export class RuleEngineService {
 
       for (const rule of rules) {
         try {
-          // 解析规则表达式
-          const expression = this.parser.parse(rule.ruleExpression);
+          // 解析规则表达式 - 需要将 JSON 字符串转换为对象
+          let expressionObj: any;
           
-          // 评估规则
+          if (typeof rule.ruleExpression === 'string') {
+            try {
+              expressionObj = JSON.parse(rule.ruleExpression);
+            } catch (parseError) {
+              this.logger.warn(`Failed to parse rule ${rule.id} expression as JSON: ${parseError.message}`);
+              continue; // 跳过格式错误的规则
+            }
+          } else {
+            expressionObj = rule.ruleExpression;
+          }
+          
+          // 解析并评估规则
+          const expression = this.parser.parse(expressionObj);
           const result = this.evaluator.evaluateExpression(expression, customer);
           
           if (result.matched && result.confidence && result.confidence >= 0.6) {
@@ -85,11 +97,14 @@ export class RuleEngineService {
               ? rule.tagTemplate[0] 
               : (rule.tagTemplate?.name || '未命名标签');
             
+            // 限制置信度范围在 0-0.9999 之间，避免数据库溢出
+            const confidence = Math.min(result.confidence, 0.9999);
+            
             recommendations.push({
               customerId: customer.id,
               tagName: tagName,
               tagCategory: this.inferCategory(rule),
-              confidence: result.confidence,
+              confidence: confidence,
               source: 'rule',
               reason: `规则匹配:${rule.ruleName} (优先级：${rule.priority})`,
             });

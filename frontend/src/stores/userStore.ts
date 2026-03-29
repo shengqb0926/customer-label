@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { User, UserRole } from '@/types';
+import { UserRole } from '@/types';
+import type { User } from '@/types';
 
 interface UserState {
   user: User | null;
@@ -10,6 +11,7 @@ interface UserState {
   hasRole: (role: UserRole | UserRole[]) => boolean;
   isAdmin: boolean;
   isAnalyst: boolean;
+  restoreState: () => boolean;
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
@@ -41,11 +43,11 @@ export const useUserStore = create<UserState>((set, get) => ({
   },
   
   get isAdmin() {
-    return get().hasRole('admin');
+    return get().hasRole(UserRole.ADMIN);
   },
   
   get isAnalyst() {
-    return get().hasRole('analyst');
+    return get().hasRole(UserRole.ANALYST);
   },
   
   // 添加恢复状态的方法

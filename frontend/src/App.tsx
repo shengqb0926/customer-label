@@ -9,9 +9,11 @@ import { AuthGuard } from '@/components/AuthGuard';
 import RuleList from '@/pages/RuleManagement/RuleList';
 import RuleTester from '@/pages/RuleManagement/RuleTester';
 import RecommendationList from '@/pages/Recommendation/RecommendationList';
-
-// 占位页面 - 后续完善
-const Clustering = () => <div>聚类配置页面（开发中）</div>;
+import ClusteringConfigManagement from '@/pages/Recommendation/ClusteringConfigManagement';
+import AssociationConfigManagement from '@/pages/Recommendation/AssociationConfigManagement';
+import EngineExecutionMonitor from '@/pages/Recommendation/EngineExecutionMonitor';
+import CustomerManagement from '@/pages/Customer';
+import { UserRole } from '@/types';
 
 function App() {
   return (
@@ -35,11 +37,21 @@ function App() {
             {/* 推荐结果管理 */}
             <Route path="recommendations" element={<RecommendationList />} />
             
+            {/* 引擎执行监控 - 所有登录用户可访问 */}
+            <Route
+              path="engine-monitor"
+              element={
+                <AuthGuard>
+                  <EngineExecutionMonitor />
+                </AuthGuard>
+              }
+            />
+            
             {/* 规则管理 - 需要分析师或管理员权限 */}
             <Route
               path="rules"
               element={
-                <AuthGuard roles={['admin', 'analyst']}>
+                <AuthGuard roles={[UserRole.ADMIN, UserRole.ANALYST]}>
                   <RuleList />
                 </AuthGuard>
               }
@@ -49,18 +61,38 @@ function App() {
             <Route
               path="rules/test"
               element={
-                <AuthGuard roles={['admin', 'analyst']}>
+                <AuthGuard roles={[UserRole.ADMIN, UserRole.ANALYST]}>
                   <RuleTester />
                 </AuthGuard>
               }
             />
             
-            {/* 聚类配置 - 需要分析师或管理员权限 */}
+            {/* 聚类配置管理 - 需要分析师或管理员权限 */}
             <Route
-              path="clustering"
+              path="clustering-configs"
               element={
-                <AuthGuard roles={['admin', 'analyst']}>
-                  <Clustering />
+                <AuthGuard roles={[UserRole.ADMIN, UserRole.ANALYST]}>
+                  <ClusteringConfigManagement />
+                </AuthGuard>
+              }
+            />
+            
+            {/* 关联规则配置管理 - 需要分析师或管理员权限 */}
+            <Route
+              path="association-configs"
+              element={
+                <AuthGuard roles={[UserRole.ADMIN, UserRole.ANALYST]}>
+                  <AssociationConfigManagement />
+                </AuthGuard>
+              }
+            />
+            
+            {/* 客户管理 - 所有登录用户可访问 */}
+            <Route
+              path="customers"
+              element={
+                <AuthGuard>
+                  <CustomerManagement />
                 </AuthGuard>
               }
             />
@@ -69,7 +101,7 @@ function App() {
             <Route
               path="users"
               element={
-                <AuthGuard roles={['admin']}>
+                <AuthGuard roles={[UserRole.ADMIN]}>
                   <UserManagement />
                 </AuthGuard>
               }

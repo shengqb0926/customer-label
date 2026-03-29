@@ -1,6 +1,108 @@
 import { IsString, IsOptional, IsInt, IsNumber, IsEnum, IsBoolean, Min, Max, IsEmail, MinLength, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CustomerLevel, RiskLevel, Gender } from '../entities/customer.entity';
+import { Transform, Type } from 'class-transformer';
+
+/**
+ * RFM 分析结果 DTO
+ */
+export class RfmAnalysisDto {
+  @ApiProperty({ description: '客户 ID' })
+  customerId: number;
+
+  @ApiProperty({ description: '客户名称' })
+  customerName: string;
+
+  @ApiProperty({ description: '最近一次消费时间（天）', example: 30 })
+  recency: number;
+
+  @ApiProperty({ description: '消费频率', example: 15 })
+  frequency: number;
+
+  @ApiProperty({ description: '消费金额', example: 50000 })
+  monetary: number;
+
+  @ApiProperty({ description: 'R 分数 (1-5)', example: 4 })
+  @Max(5)
+  @Min(1)
+  rScore: number;
+
+  @ApiProperty({ description: 'F 分数 (1-5)', example: 3 })
+  @Max(5)
+  @Min(1)
+  fScore: number;
+
+  @ApiProperty({ description: 'M 分数 (1-5)', example: 5 })
+  @Max(5)
+  @Min(1)
+  mScore: number;
+
+  @ApiProperty({ description: 'RFM 总分', example: 12 })
+  totalScore: number;
+
+  @ApiProperty({ description: '客户价值分类', enum: [
+    '重要价值客户',
+    '重要发展客户',
+    '重要保持客户',
+    '重要挽留客户',
+    '一般价值客户',
+    '一般发展客户',
+    '一般保持客户',
+    '一般挽留客户',
+  ]})
+  customerSegment: string;
+
+  @ApiProperty({ description: '营销策略建议' })
+  strategy: string;
+}
+
+/**
+ * RFM 统计汇总 DTO
+ */
+export class RfmSummaryDto {
+  @ApiProperty({ description: '总客户数' })
+  totalCustomers: number;
+
+  @ApiProperty({ description: '各价值分类统计' })
+  segmentDistribution: Record<string, number>;
+
+  @ApiProperty({ description: '平均 R 值', example: 45.5 })
+  avgRecency: number;
+
+  @ApiProperty({ description: '平均 F 值', example: 12.3 })
+  avgFrequency: number;
+
+  @ApiProperty({ description: '平均 M 值', example: 35000 })
+  avgMonetary: number;
+
+  @ApiProperty({ description: '高价值客户占比', example: 0.25 })
+  highValueRatio: number;
+}
+
+/**
+ * RFM 分析参数 DTO（所有参数都是字符串类型）
+ */
+export class GetRfmAnalysisParams {
+  @ApiPropertyOptional({ description: '页码', example: 1, type: String })
+  @IsOptional()
+  page?: string;
+
+  @ApiPropertyOptional({ description: '每页数量', example: 20, type: String })
+  @IsOptional()
+  limit?: string;
+
+  @ApiPropertyOptional({ description: '客户价值分类', example: '重要价值客户', type: String })
+  @IsOptional()
+  segment?: string;
+
+  @ApiPropertyOptional({ description: '最低总分', example: 10, type: String })
+  @IsOptional()
+  minTotalScore?: string;
+
+  @ApiPropertyOptional({ description: '最高总分', example: 15, type: String })
+  @IsOptional()
+  maxTotalScore?: string;
+}
 
 // 创建客户 DTO
 export class CreateCustomerDto {
@@ -110,11 +212,113 @@ export class CreateCustomerDto {
   isActive?: boolean;
 }
 
-// 更新客户 DTO
-export class UpdateCustomerDto extends CreateCustomerDto {
-  @ApiPropertyOptional()
+// 更新客户 DTO - 所有字段设为可选
+export class UpdateCustomerDto {
+  @ApiPropertyOptional({ description: '客户姓名' })
   @IsOptional()
+  @IsString()
+  @MinLength(2)
   name?: string;
+
+  @ApiPropertyOptional({ description: '邮箱' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({ description: '手机号' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^1[3-9]\d{9}$/)
+  phone?: string;
+
+  @ApiPropertyOptional({ description: '性别', enum: Gender })
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
+
+  @ApiPropertyOptional({ description: '年龄' })
+  @IsOptional()
+  @IsInt()
+  @Min(18)
+  @Max(100)
+  age?: number;
+
+  @ApiPropertyOptional({ description: '城市' })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiPropertyOptional({ description: '省份' })
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @ApiPropertyOptional({ description: '详细地址' })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiPropertyOptional({ description: '总资产' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  totalAssets?: number;
+
+  @ApiPropertyOptional({ description: '月收入' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  monthlyIncome?: number;
+
+  @ApiPropertyOptional({ description: '年消费' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  annualSpend?: number;
+
+  @ApiPropertyOptional({ description: '订单数' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  orderCount?: number;
+
+  @ApiPropertyOptional({ description: '持有产品数' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  productCount?: number;
+
+  @ApiPropertyOptional({ description: '注册天数' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  registerDays?: number;
+
+  @ApiPropertyOptional({ description: '距上次登录天数' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  lastLoginDays?: number;
+
+  @ApiPropertyOptional({ description: '客户等级', enum: CustomerLevel })
+  @IsOptional()
+  @IsEnum(CustomerLevel)
+  level?: CustomerLevel;
+
+  @ApiPropertyOptional({ description: '风险等级', enum: RiskLevel })
+  @IsOptional()
+  @IsEnum(RiskLevel)
+  riskLevel?: RiskLevel;
+
+  @ApiPropertyOptional({ description: '备注' })
+  @IsOptional()
+  @IsString()
+  remarks?: string;
+
+  @ApiPropertyOptional({ description: '是否激活' })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 // 批量导入 DTO

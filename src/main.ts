@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -17,6 +17,11 @@ async function bootstrap() {
     const port = configService.get<number>('PORT', 3000);
     const apiPrefix = configService.get<string>('API_PREFIX', '/api/v1');
     
+    logger.log('=== Application Configuration ===');
+    logger.log(`Port: ${port}`);
+    logger.log(`API Prefix: ${apiPrefix}`);
+    logger.log('===============================');
+    
     // 设置全局前缀
     app.setGlobalPrefix(apiPrefix);
     
@@ -27,22 +32,27 @@ async function bootstrap() {
       credentials: true,
     });
     
-    // 全局验证管道配置
+    // 配置全局验证管道
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true, // 自动移除未装饰的属性
-        forbidNonWhitelisted: true, // 禁止非白名单属性
-        transform: true, // 自动转换类型
+        forbidNonWhitelisted: false, // 不禁止非白名单属性，避免严格验证问题
+        transform: true, // 启用自动转换，允许字符串转数字
         transformOptions: {
-          enableImplicitConversion: true,
+          enableImplicitConversion: true, // 允许隐式类型转换
         },
         validationError: {
-          target: false,
-          value: false,
+          target: true, // 显示目标对象
+          value: true,  // 显示实际值
+        },
+        exceptionFactory: (errors) => {
+          console.error('=== Validation Errors ===');
+          console.error(JSON.stringify(errors, null, 2));
+          return new BadRequestException(errors);
         },
       })
     );
-    
+
     // Swagger 文档配置（必须在全局前缀设置之后）
     const swaggerConfig = new DocumentBuilder()
       .setTitle('客户标签智能推荐系统 API')
@@ -65,7 +75,7 @@ async function bootstrap() {
       `,
       customSiteTitle: '客户标签 API 文档',
     });
-    
+
     // 添加根路径重定向到 Swagger 文档（放在最后，避免拦截其他路由）
     app.use('/', (req: Request, res: Response, next) => {
       if (req.path === '/') {

@@ -104,7 +104,8 @@ export class ClusteringEngineService {
               customerId: customer.customerId,
               tagName: tag.tagName,
               tagCategory: tag.category,
-              confidence: Math.round(confidence * 100) / 100,
+              // 限制置信度范围在 0-0.9999 之间，避免数据库 numeric 字段溢出
+              confidence: Math.min(Math.round(confidence * 100) / 100, 0.9999),
               source: 'clustering',
               reason: tag.reason,
             });

@@ -49,6 +49,12 @@ coverage/
 temp/
 tmp/
 
+# Vite cache
+frontend/.vite_cache_disabled_*/
+
+# Backup files
+*.backup
+
 # OpenSpec
 .openspec/
 

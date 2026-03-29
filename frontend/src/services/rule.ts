@@ -138,7 +138,7 @@ export const ruleService = {
   },
 };
 
-// 推荐服务
+// 推荐结果管理
 export const recommendationService = {
   // 获取推荐列表
   async getRecommendations(params?: GetRecommendationsParams) {
@@ -147,7 +147,7 @@ export const recommendationService = {
 
   // 获取状态统计
   async getStatusStats(params?: GetRecommendationsParams) {
-    return await apiClient.get<{ total: number; pending: number; accepted: number; rejected: number }>('/recommendations/stats/status', { params });
+    return await apiClient.get('/recommendations/stats/status', { params });
   },
 
   // 采纳推荐
@@ -173,5 +173,228 @@ export const recommendationService = {
     }
     
     return await apiClient.post('/recommendations/batch-reject', payload);
+  },
+};
+
+// 聚类配置相关类型
+export interface ClusteringConfig {
+  id: number;
+  configName: string;
+  description?: string;
+  algorithm: 'k-means' | 'dbscan' | 'hierarchical';
+  parameters: Record<string, any>;
+  featureWeights?: Record<string, number>;
+  isActive: boolean;
+  lastRunAt?: Date;
+  runCount: number;
+  avgSilhouetteScore?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateClusteringConfigDto {
+  configName: string;
+  description?: string;
+  algorithm: 'k-means' | 'dbscan' | 'hierarchical';
+  parameters: Record<string, any>;
+  featureWeights?: Record<string, number>;
+  isActive?: boolean;
+}
+
+export interface UpdateClusteringConfigDto {
+  configName?: string;
+  description?: string;
+  algorithm?: 'k-means' | 'dbscan' | 'hierarchical';
+  parameters?: Record<string, any>;
+  featureWeights?: Record<string, number>;
+  isActive?: boolean;
+}
+
+// 关联规则配置相关类型
+export interface AssociationConfig {
+  id: number;
+  configName: string;
+  description?: string;
+  algorithm: 'apriori' | 'fpgrowth' | 'eclat';
+  parameters: Record<string, any>;
+  featureWeights?: Record<string, number>;
+  isActive: boolean;
+  lastRunAt?: Date;
+  runCount: number;
+  avgQualityScore?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateAssociationConfigDto {
+  configName: string;
+  description?: string;
+  algorithm: 'apriori' | 'fpgrowth' | 'eclat';
+  parameters: Record<string, any>;
+  featureWeights?: Record<string, number>;
+  isActive?: boolean;
+}
+
+export interface UpdateAssociationConfigDto {
+  configName?: string;
+  description?: string;
+  algorithm?: 'apriori' | 'fpgrowth' | 'eclat';
+  parameters?: Record<string, any>;
+  featureWeights?: Record<string, number>;
+  isActive?: boolean;
+}
+
+// 聚类配置管理服务
+export const clusteringConfigService = {
+  /**
+   * 创建聚类配置
+   */
+  async createConfig(dto: CreateClusteringConfigDto): Promise<ClusteringConfig> {
+    const response = await apiClient.post('/clustering', dto);
+    return response.data;
+  },
+
+  /**
+   * 获取聚类配置列表
+   */
+  async getConfigs(params?: {
+    page?: number;
+    limit?: number;
+    configName?: string;
+    algorithm?: string;
+    isActive?: boolean;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<{ data: ClusteringConfig[]; total: number }> {
+    const response = await apiClient.get('/clustering', { params });
+    return response.data;
+  },
+
+  /**
+   * 获取单个配置详情
+   */
+  async getConfigById(id: number): Promise<ClusteringConfig> {
+    const response = await apiClient.get(`/clustering/${id}`);
+    return response.data;
+  },
+
+  /**
+   * 更新聚类配置
+   */
+  async updateConfig(id: number, dto: UpdateClusteringConfigDto): Promise<ClusteringConfig> {
+    const response = await apiClient.put(`/clustering/${id}`, dto);
+    return response.data;
+  },
+
+  /**
+   * 删除聚类配置
+   */
+  async deleteConfig(id: number): Promise<void> {
+    await apiClient.delete(`/clustering/${id}`);
+  },
+
+  /**
+   * 激活聚类配置
+   */
+  async activateConfig(id: number): Promise<ClusteringConfig> {
+    const response = await apiClient.post(`/clustering/${id}/activate`);
+    return response.data;
+  },
+
+  /**
+   * 停用聚类配置
+   */
+  async deactivateConfig(id: number): Promise<ClusteringConfig> {
+    const response = await apiClient.post(`/clustering/${id}/deactivate`);
+    return response.data;
+  },
+
+  /**
+   * 手动运行聚类任务
+   */
+  async runClustering(id: number): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post(`/clustering/${id}/run`);
+    return response.data;
+  },
+};
+
+// 关联规则配置管理服务
+export const associationConfigService = {
+  /**
+   * 创建关联规则配置
+   */
+  async createConfig(dto: CreateAssociationConfigDto): Promise<AssociationConfig> {
+    const response = await apiClient.post('/association', dto);
+    return response.data;
+  },
+
+  /**
+   * 获取关联规则配置列表
+   */
+  async getConfigs(params?: {
+    page?: number;
+    limit?: number;
+    configName?: string;
+    algorithm?: string;
+    isActive?: boolean;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<{ data: AssociationConfig[]; total: number }> {
+    const response = await apiClient.get('/association', { params });
+    return response.data;
+  },
+
+  /**
+   * 获取单个配置详情
+   */
+  async getConfigById(id: number): Promise<AssociationConfig> {
+    const response = await apiClient.get(`/association/${id}`);
+    return response.data;
+  },
+
+  /**
+   * 更新关联规则配置
+   */
+  async updateConfig(id: number, dto: UpdateAssociationConfigDto): Promise<AssociationConfig> {
+    const response = await apiClient.put(`/association/${id}`, dto);
+    return response.data;
+  },
+
+  /**
+   * 删除关联规则配置
+   */
+  async deleteConfig(id: number): Promise<void> {
+    await apiClient.delete(`/association/${id}`);
+  },
+
+  /**
+   * 激活关联规则配置
+   */
+  async activateConfig(id: number): Promise<AssociationConfig> {
+    const response = await apiClient.post(`/association/${id}/activate`);
+    return response.data;
+  },
+
+  /**
+   * 停用关联规则配置
+   */
+  async deactivateConfig(id: number): Promise<AssociationConfig> {
+    const response = await apiClient.post(`/association/${id}/deactivate`);
+    return response.data;
+  },
+
+  /**
+   * 手动运行关联规则挖掘任务
+   */
+  async runAssociation(id: number): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post(`/association/${id}/run`);
+    return response.data;
+  },
+
+  /**
+   * 运行配置（用于批量操作）
+   */
+  async runConfig(id: string): Promise<{ success: boolean; message: string }> {
+    return this.runAssociation(Number(id));
   },
 };

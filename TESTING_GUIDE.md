@@ -325,7 +325,7 @@ npx jest cache.service.spec.ts
 
 ### 查看覆盖率报告
 
-```bash
+```
 # 生成覆盖率报告
 npm run test:cov
 
@@ -372,7 +372,7 @@ coverageThreshold: {
 
 ### 1. Mock 外部依赖
 
-```typescript
+```
 // ✅ 推荐：Mock Repository
 const mockRepository = {
   findOne: jest.fn(),
@@ -392,7 +392,7 @@ const mockAuthService = {
 
 ### 2. 使用 Factory 函数创建测试数据
 
-```typescript
+```
 // ✅ 推荐：Factory 函数
 function createUser(overrides = {}) {
   return {
@@ -413,7 +413,7 @@ const adminUser = createUser({
 
 ### 3. 清晰的测试结构
 
-```typescript
+```
 describe('ServiceName', () => {
   let service: ServiceName;
 
@@ -439,7 +439,7 @@ describe('ServiceName', () => {
 
 ### 4. 异步测试处理
 
-```typescript
+```
 // ✅ 推荐：使用 async/await
 it('should work with async', async () => {
   const result = await service.asyncMethod();
@@ -456,7 +456,7 @@ it('should handle Promise rejection', async () => {
 
 ### 5. 测试隔离
 
-```typescript
+```
 // ✅ 推荐：每个测试前重置 Mock
 beforeEach(() => {
   jest.clearAllMocks();
@@ -473,13 +473,13 @@ beforeEach(() => {
 
 ### 1. 显示详细日志
 
-```bash
+```
 npx jest --verbose
 ```
 
 ### 2. 在测试中添加日志
 
-```typescript
+```
 it('should log debug info', async () => {
   console.log('Debug:', someVariable);
   const result = await service.method();
@@ -490,7 +490,7 @@ it('should log debug info', async () => {
 
 ### 3. 只运行特定测试
 
-```bash
+```
 # 使用 -t 标志
 npx jest -t "should return user"
 
@@ -504,7 +504,7 @@ fdescribe('Focused Suite', () => {
 
 ### 4. 跳过测试
 
-```typescript
+```
 // 跳过整个 describe 块
 xdescribe('Skipped Suite', () => {
   it('will not run', () => {
@@ -527,7 +527,7 @@ xit('will not run', () => {
 **错误**: `Error: Timeout - Async callback was not invoked within the specified time`
 
 **解决方案**:
-```typescript
+```
 // 增加超时时间
 jest.setTimeout(30000);
 
@@ -542,7 +542,7 @@ jest.setTimeout(30000);
 **原因**: Mock 对象未正确注入
 
 **解决方案**:
-```typescript
+```
 // ✅ 确保在 beforeEach 中创建 Mock
 beforeEach(async () => {
   const module = await Test.createTestingModule({
@@ -559,7 +559,7 @@ beforeEach(async () => {
 ### 问题 3: 覆盖率不达标
 
 **解决方案**:
-```bash
+```
 # 临时降低覆盖率要求
 npm test -- --coverageThreshold='{}'
 
@@ -578,7 +578,7 @@ collectCoverageFrom: [
 
 **解决方案**:
 确保 `tsconfig.json` 和 `jest.config.ts` 配置一致：
-```typescript
+```
 // jest.config.ts
 globals: {
   'ts-jest': {

@@ -105,7 +105,7 @@ export class ClusteringManagerController {
   }
 
   @Post(':id/run')
-  @ApiOperation({ summary: '执行聚类分析' })
+  @ApiOperation({ summary: '执行聚类分析', description: '使用指定配置执行聚类算法，为客户分群' })
   @ApiParam({ name: 'id', type: Number, description: '配置 ID' })
   @ApiResponse({ 
     status: 200, 
@@ -128,7 +128,7 @@ export class ClusteringManagerController {
   }
 
   @Get(':id/stats')
-  @ApiOperation({ summary: '获取聚类结果统计' })
+  @ApiOperation({ summary: '获取聚类结果统计', description: '获取最近一次聚类执行的统计信息和质量评估' })
   @ApiParam({ name: 'id', type: Number, description: '配置 ID' })
   @ApiResponse({ 
     status: 200, 
@@ -136,12 +136,12 @@ export class ClusteringManagerController {
     schema: {
       type: 'object',
       properties: {
-        configName: { type: 'string', example: '客户分群配置' },
-        algorithm: { type: 'string', example: 'k-means' },
-        clusterCount: { type: 'number', example: 5 },
-        avgSilhouetteScore: { type: 'number', example: 0.75 },
-        lastRunAt: { type: 'string', format: 'date-time' },
-        isActive: { type: 'boolean', example: true },
+        configName: { type: 'string', example: '客户分群配置', description: '配置名称' },
+        algorithm: { type: 'string', example: 'k-means', description: '算法类型' },
+        clusterCount: { type: 'number', example: 5, description: '聚类数量' },
+        avgSilhouetteScore: { type: 'number', example: 0.75, description: '平均轮廓系数' },
+        lastRunAt: { type: 'string', format: 'date-time', description: '最后运行时间' },
+        isActive: { type: 'boolean', example: true, description: '是否激活' },
       },
     },
   })

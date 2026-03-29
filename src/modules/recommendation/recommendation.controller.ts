@@ -95,26 +95,55 @@ export class RecommendationController {
   }
 
   /**
-   * 为客户生成推荐（异步）
+   * 为客户生成推荐（同步模式，手动触发）
    */
   @Post('generate/:customerId')
+  @ApiOperation({ summary: '手动触发推荐引擎', description: '手动为客户生成推荐，支持指定引擎类型（规则引擎/聚合引擎/关联引擎）' })
+  @ApiParam({ name: 'customerId', description: '客户 ID', type: Number })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        mode: {
+          type: 'string',
+          enum: ['rule', 'clustering', 'association', 'all'],
+          description: '引擎类型：rule=规则引擎（最快），clustering=聚合引擎，association=关联引擎，all=全部引擎（最慢）',
+          example: 'rule',
+        },
+        useCache: {
+          type: 'boolean',
+          description: '是否使用缓存（默认 true）',
+          example: true,
+          default: true,
+        },
+      },
+      required: ['mode'],
+    },
+  })
   async generateRecommendations(
     @Param('customerId') customerId: number,
-    @Query('mode') mode?: 'rule' | 'clustering' | 'association' | 'all',
-    @Query('useCache') useCache?: boolean
-  ): Promise<{ jobId?: string; status: string; message: string }> {
-    this.logger.log(`Generating recommendations for customer ${customerId}`);
+    @Body('mode') mode: 'rule' | 'clustering' | 'association' | 'all' = 'rule', // 默认使用最快的规则引擎
+    @Body('useCache') useCache: boolean = true
+  ): Promise<{ 
+    success: boolean; 
+    count: number; 
+    recommendations: TagRecommendation[];
+    message: string 
+  }> {
+    this.logger.log(`Manually triggering ${mode} engine for customer ${customerId}`);
     
     try {
-      // 使用队列异步处理
-      const job = await this.service.generateForCustomer(customerId, {
-        mode: mode || 'all',
-        useCache: (useCache as any) !== 'false',
+      // 同步执行推荐生成
+      const recommendations = await this.service.generateForCustomer(customerId, {
+        mode,
+        useCache,
       });
 
       return {
-        status: 'queued',
-        message: '推荐计算任务已加入队列，稍后查看结果',
+        success: true,
+        count: recommendations.length,
+        recommendations,
+        message: `成功生成 ${recommendations.length} 条推荐 (${mode} 引擎)`,
       };
     } catch (error) {
       this.logger.error('Failed to generate recommendations:', error);
@@ -211,10 +240,10 @@ export class RecommendationController {
    * 接受推荐
    */
   @Post(':id/accept')
-  @ApiOperation({ summary: '接受推荐', description: '接受某个标签推荐，可附带反馈原因' })
+  @ApiOperation({ summary: '接受推荐', description: '标记某个推荐为已接受状态，可选择修改标签名称或提供反馈原因' })
   @ApiParam({ name: 'id', description: '推荐 ID', type: Number })
   @ApiBody({
-    description: '接受推荐的附加信息（可选）',
+    description: '接受推荐的可选参数（修改后的标签名、反馈原因）',
     required: false,
     schema: {
       type: 'object',
@@ -279,7 +308,7 @@ export class RecommendationController {
    * 批量接受推荐
    */
   @Post('batch-accept')
-  @ApiOperation({ summary: '批量接受推荐', description: '批量接受多个推荐' })
+  @ApiOperation({ summary: '批量接受推荐', description: '一次性接受多个推荐结果，提高操作效率' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -288,10 +317,21 @@ export class RecommendationController {
           type: 'array',
           items: { type: 'integer' },
           description: '推荐 ID 列表',
-          example: [1, 2, 3],
+          example: [1, 2, 3, 4, 5],
         },
       },
       required: ['ids'],
+    },
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回批量接受的结果统计',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'number', description: '成功接受的数量' },
+        total: { type: 'number', description: '总处理数量' },
+      },
     },
   })
   async batchAcceptRecommendations(
@@ -394,5 +434,93 @@ export class RecommendationController {
         message: '清空测试数据失败',
       };
     }
+  }
+
+  /**
+   * 获取引擎执行历史
+   */
+  @Get('engine-executions')
+  @ApiOperation({ summary: '获取引擎执行历史', description: '查询推荐引擎的执行历史记录，支持分页和筛选' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: '页码' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: '每页数量' })
+  @ApiQuery({ name: 'customerId', required: false, type: Number, description: '按客户 ID 筛选' })
+  @ApiQuery({ name: 'engineType', required: false, enum: ['rule', 'clustering', 'association'], description: '按引擎类型筛选' })
+  @ApiQuery({ name: 'status', required: false, enum: ['success', 'failed', 'pending'], description: '按执行状态筛选' })
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回引擎执行历史列表（分页）',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', description: '执行记录 ID' },
+              customerId: { type: 'number', description: '客户 ID' },
+              customerName: { type: 'string', description: '客户名称' },
+              engineType: { type: 'string', enum: ['rule', 'clustering', 'association'] },
+              status: { type: 'string', enum: ['success', 'failed', 'pending'] },
+              executionTime: { type: 'number', description: '执行耗时（秒）' },
+              generatedCount: { type: 'number', description: '生成结果数量' },
+              executedAt: { type: 'string', format: 'date-time', description: '执行时间' },
+            },
+          },
+        },
+        total: { type: 'number', description: '总记录数' },
+        page: { type: 'number', description: '当前页码' },
+        limit: { type: 'number', description: '每页数量' },
+      },
+    },
+  })
+  async getEngineExecutions(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('customerId') customerId?: number,
+    @Query('engineType') engineType?: string,
+    @Query('status') status?: string,
+  ): Promise<any> {
+    // TODO: 实现从数据库查询 engine_executions 表
+    // 暂时返回模拟数据
+    const mockData = {
+      data: [
+        {
+          id: 1,
+          customerId: 1,
+          customerName: '张三',
+          engineType: 'rule',
+          status: 'success',
+          executionTime: 1.23,
+          generatedCount: 5,
+          executedAt: new Date().toISOString(),
+        },
+        {
+          id: 2,
+          customerId: 2,
+          customerName: '李四',
+          engineType: 'clustering',
+          status: 'success',
+          executionTime: 2.45,
+          generatedCount: 8,
+          executedAt: new Date().toISOString(),
+        },
+        {
+          id: 3,
+          customerId: 3,
+          customerName: '王五',
+          engineType: 'association',
+          status: 'pending',
+          executionTime: 0,
+          generatedCount: 0,
+          executedAt: new Date().toISOString(),
+        },
+      ],
+      total: 3,
+      page: Number(page),
+      limit: Number(limit),
+    };
+
+    return mockData;
   }
 }

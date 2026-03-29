@@ -87,7 +87,8 @@ export class FusionEngineService {
       customerId: rec.customerId,
       tagName: rec.tagName,
       tagCategory: rec.tagCategory,
-      confidence: rec.fusedConfidence,
+      // 限制置信度范围在 0-0.9999 之间，避免数据库 numeric 字段溢出
+      confidence: Math.min(rec.fusedConfidence, 0.9999),
       source: rec.allSources.join('+') as any,
       reason: this.generateReason(rec),
     }));
@@ -146,7 +147,8 @@ export class FusionEngineService {
       customerId: first.customerId,
       tagName,
       tagCategory: this.selectBestCategory(recommendations),
-      confidence: Math.round(fusedConfidence * 100) / 100,
+      // 限制置信度范围在 0-0.9999 之间，避免数据库 numeric 字段溢出
+      confidence: Math.min(Math.round(fusedConfidence * 100) / 100, 0.9999),
       source: allSources[0],
       reason: explanations[0] || '',
       allSources,

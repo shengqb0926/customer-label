@@ -84,7 +84,7 @@ const ExpressionEditor: React.FC<ExpressionEditorProps> = ({ value, onChange }) 
   // 切换逻辑运算符
   const toggleOperator = () => {
     const newOperator = expression.operator === 'AND' ? 'OR' : 'AND';
-    const newExpression = { ...expression, operator: newOperator };
+    const newExpression: RuleExpression = { ...expression, operator: newOperator };
     setExpression(newExpression);
     onChange?.(newExpression);
   };
@@ -116,9 +116,10 @@ const ExpressionEditor: React.FC<ExpressionEditorProps> = ({ value, onChange }) 
           {expression.conditions.map((condition, index) => (
             <ConditionItem
               key={index}
-              condition={condition}
+              condition={condition as BaseCondition}
               onChange={(updates) => updateCondition(index, updates)}
               onDelete={() => removeCondition(index)}
+              index={index}
             />
           ))}
         </Space>
@@ -127,17 +128,18 @@ const ExpressionEditor: React.FC<ExpressionEditorProps> = ({ value, onChange }) 
   );
 };
 
-// 条件项组件
+// 条件项组件 - 只处理 BaseCondition 类型
 interface ConditionItemProps {
   condition: BaseCondition;
   onChange: (updates: Partial<BaseCondition>) => void;
   onDelete: () => void;
 }
 
-const ConditionItem: React.FC<ConditionItemProps> = ({
+const ConditionItem: React.FC<ConditionItemProps & { index: number }> = ({
   condition,
   onChange,
   onDelete,
+  index,
 }) => {
   // 根据字段类型获取可用运算符
   const getFieldOperators = () => {
@@ -185,7 +187,7 @@ const ConditionItem: React.FC<ConditionItemProps> = ({
         <Select
           placeholder="运算符"
           value={condition.operator}
-          onChange={(value) => onChange({ operator: value })}
+          onChange={(value) => onChange({ operator: value as BaseCondition['operator'] })}
           style={{ width: 120 }}
         >
           {getFieldOperators().map(([key, { label }]) => (

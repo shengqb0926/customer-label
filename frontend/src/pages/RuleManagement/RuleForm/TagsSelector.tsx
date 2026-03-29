@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Select, Tag, Space, Input, Divider } from 'antd';
+import { Select, Tag, Divider, Input, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import type { CustomTagProps } from 'rc-select/lib/interface';
 
 interface TagsSelectorProps {
   value?: string[];
@@ -52,7 +51,7 @@ const TagsSelector: React.FC<TagsSelectorProps> = ({ value = [], onChange }) => 
   };
 
   // 自定义标签渲染
-  const tagRender = (props: CustomTagProps) => {
+  const tagRender = (props: any) => {
     const { label, value, closable, onClose } = props;
     const onPreventMouseDown = (event: React.MouseEvent<HTMLSpanElement>) => {
       event.preventDefault();

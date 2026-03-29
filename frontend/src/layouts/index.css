@@ -62,3 +62,16 @@
   padding: 24px;
   min-height: calc(100vh - 112px);
 }
+
+/* 客户管理模块专用样式 */
+.customer-management-layout {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-management-content {
+  flex: 1;
+  padding: 24px;
+  overflow: auto;
+}
