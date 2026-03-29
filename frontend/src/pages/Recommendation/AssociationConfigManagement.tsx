@@ -210,7 +210,7 @@ const AssociationConfigManagement: React.FC = () => {
     setLoading(true);
     try {
       const response = await associationConfigService.getConfigs();
-      setConfigs(response);
+      setConfigs(response.data);
     } catch (error) {
       message.error('获取配置列表失败');
     } finally {
@@ -342,7 +342,7 @@ const AssociationConfigManagement: React.FC = () => {
         setBatchRunning(true);
         try {
           const promises = selectedRowKeys.map((key) =>
-            associationConfigService.runConfig(key)
+            associationConfigService.runConfig(Number(key))
           );
           
           const results = await Promise.allSettled(promises);
