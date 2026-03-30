@@ -22,6 +22,8 @@ import {
   Dropdown,
   Checkbox,
   Divider,
+  Tabs,
+  Alert,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -37,13 +39,23 @@ import {
   LinkOutlined,
   ThunderboltOutlined,
   AppstoreOutlined,
+  SettingOutlined,
+  BarChartOutlined,
+  DashboardOutlined,
+  ExperimentOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { associationConfigService } from '@/services/rule';
 import type { AssociationConfig, CreateAssociationConfigDto, UpdateAssociationConfigDto } from '@/services/rule';
+import VisualRuleBuilder from './VisualAssociationRuleBuilder';
+import ItemsetSelector from './ItemsetSelector';
+import AssociationExecutionMonitor from './AssociationExecutionMonitor';
+import AssociationPerformanceAnalysis from './AssociationPerformanceAnalysis';
 
 const { Title } = Typography;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
 const AssociationConfigManagement: React.FC = () => {
   const [configs, setConfigs] = useState<AssociationConfig[]>([]);
