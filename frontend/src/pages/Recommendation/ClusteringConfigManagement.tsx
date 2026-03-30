@@ -21,6 +21,14 @@ import {
   Checkbox,
   Dropdown,
   Divider,
+  Tabs,
+  Alert,
+  Slider,
+  InputNumber,
+  TreeSelect,
+  Badge,
+  Tooltip,
+  Steps,
 } from 'antd';
 import type { InputRef } from 'antd';
 import {
@@ -35,16 +43,27 @@ import {
   ThunderboltOutlined,
   StopOutlined,
   AppstoreOutlined,
+  SettingOutlined,
+  BarChartOutlined,
+  DashboardOutlined,
+  ExperimentOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { clusteringConfigService } from '@/services/rule';
 import type { ClusteringConfig, CreateClusteringConfigDto, UpdateClusteringConfigDto } from '@/services/rule';
+import VisualConfigBuilder from './VisualConfigBuilder';
+import FeatureSelector from './FeatureSelector';
+import ExecutionMonitor from './ExecutionMonitor';
+import PerformanceAnalysis from './PerformanceAnalysis';
 
 const { Title } = Typography;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
 const ClusteringConfigManagement: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('list');
   const [configs, setConfigs] = useState<ClusteringConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -59,6 +78,7 @@ const ClusteringConfigManagement: React.FC = () => {
   // 批量操作相关状态
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [batchRunning, setBatchRunning] = useState(false);
+  const [selectedConfigForAction, setSelectedConfigForAction] = useState<number | null>(null);
 
   // 预设模板定义
   const configTemplates = [
