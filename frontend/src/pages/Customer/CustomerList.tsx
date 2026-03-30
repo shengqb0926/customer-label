@@ -426,6 +426,16 @@ const CustomerList: React.FC = () => {
                 关联
               </Button>
             </Tooltip>
+            <Tooltip title="全部引擎（综合推荐）">
+              <Button
+                type="default"
+                size="small"
+                icon={<ThunderboltOutlined />}
+                onClick={() => handleTriggerEngine(record.id, 'all')}
+              >
+                全部
+              </Button>
+            </Tooltip>
           </Space>
         </Space>
       ),
