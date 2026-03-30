@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { RecommendationLevel } from './dto/get-scores.dto';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ScoringService, UpdateTagScoreDto } from './scoring.service';
@@ -22,7 +23,7 @@ describe('ScoringService', () => {
     businessValueScore: 88,
     businessValueRoi: 2.5,
     overallScore: 85.5,
-    recommendation: '推荐' as any,
+    recommendation: RecommendationLevel.RECOMMENDED as any,
     insights: ['高覆盖率', '稳定性好'],
     lastCalculatedAt: new Date(),
   };
@@ -150,7 +151,7 @@ describe('ScoringService', () => {
     });
   });
 
-  describe('generateRecommendation', () => {
+  describe('getByRecommendation', () => {
     it('should recommend priority optimization for low coverage', () => {
       const dto = {
         tagId: 1,
@@ -165,7 +166,7 @@ describe('ScoringService', () => {
         businessValueRoi: 5.0,
       };
 
-      const result = service.generateRecommendation(dto as any);
+      const result = service.getByRecommendation(dto as any);
 
       expect(result.recommendation).toContain('覆盖度');
       expect(result.recommendation).toContain('优化');
@@ -185,7 +186,7 @@ describe('ScoringService', () => {
         businessValueRoi: 5.0,
       };
 
-      const result = service.generateRecommendation(dto as any);
+      const result = service.getByRecommendation(dto as any);
 
       expect(result.recommendation).toContain('区分度');
       expect(result.recommendation).toContain('特征工程');
@@ -205,7 +206,7 @@ describe('ScoringService', () => {
         businessValueRoi: 5.0,
       };
 
-      const result = service.generateRecommendation(dto as any);
+      const result = service.getByRecommendation(dto as any);
 
       expect(result.recommendation).toContain('稳定性');
       expect(result.recommendation).toContain('监控');
@@ -225,7 +226,7 @@ describe('ScoringService', () => {
         businessValueRoi: 8.0,
       };
 
-      const result = service.generateRecommendation(dto as any);
+      const result = service.getByRecommendation(dto as any);
 
       expect(result.recommendation).toContain('推广');
       expect(result.recommendation).toContain('应用');
@@ -400,11 +401,11 @@ describe('ScoringService', () => {
     it('should filter by recommendation', async () => {
       jest.spyOn(scoreRepo, 'findAndCount').mockResolvedValue([mockScores as any, 2]);
 
-      await service.findAllWithPagination({ recommendation: '推荐' });
+      await service.findAllWithPagination({ recommendation: RecommendationLevel.RECOMMENDED });
 
       expect(scoreRepo.findAndCount).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
-          recommendation: '推荐',
+          recommendation: RecommendationLevel.RECOMMENDED,
         }),
       }));
     });
@@ -446,7 +447,7 @@ describe('ScoringService', () => {
 
       expect(result).toHaveLength(1);
       expect(scoreRepo.find).toHaveBeenCalledWith({
-        where: { recommendation: '推荐' },
+        where: { recommendation: RecommendationLevel.RECOMMENDED },
         order: { overallScore: 'DESC' },
       });
     });
@@ -475,7 +476,7 @@ describe('ScoringService', () => {
         groupBy: jest.fn().mockReturnThis(),
         getRawMany: jest.fn().mockResolvedValue([
           { recommendation: '强烈推荐', count: '30' },
-          { recommendation: '推荐', count: '50' },
+          { recommendation: RecommendationLevel.RECOMMENDED, count: '50' },
           { recommendation: '中性', count: '20' },
         ]),
       } as any);
