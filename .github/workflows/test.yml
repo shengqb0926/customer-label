@@ -47,13 +47,25 @@ jobs:
           
       - name: Check coverage thresholds
         run: |
-          COVERAGE=$(node -e "console.log(require('./coverage/coverage-summary.json').total.statements.pct)")
-          echo "当前覆盖率：${COVERAGE}%"
-          if (( $(echo "$COVERAGE < 30" | bc -l) )); then
-            echo "❌ 覆盖率低于 30%，当前：${COVERAGE}%"
+          # 检查覆盖率报告是否存在
+          if [ ! -f "coverage/coverage-summary.json" ]; then
+            echo "❌ 覆盖率报告不存在"
             exit 1
           fi
-          echo "✅ 覆盖率检查通过：${COVERAGE}%"
+          
+          # 解析语句覆盖率
+          COVERAGE=$(node -e "console.log(require('./coverage/coverage-summary.json').total.statements.pct)")
+          echo "📊 当前语句覆盖率：${COVERAGE}%"
+          
+          # 检查是否低于阈值
+          THRESHOLD=30
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "❌ 覆盖率低于 ${THRESHOLD}%，当前：${COVERAGE}%"
+            echo "💡 请运行 'npm test -- --coverage' 查看详细的覆盖率报告"
+            exit 1
+          fi
+          
+          echo "✅ 覆盖率检查通过：${COVERAGE}% (阈值：${THRESHOLD}%)"
       
       - name: Upload coverage to GitHub Actions
         uses: actions/upload-artifact@v4
