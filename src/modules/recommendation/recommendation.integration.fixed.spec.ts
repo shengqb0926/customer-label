@@ -158,6 +158,14 @@ describe('RecommendationService Integration Tests - Simplified', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    // 重置 cache mock 到默认行为，避免污染后续测试
+    mockCacheService.get.mockReset();
+    mockCacheService.set.mockReset();
+    mockCacheService.delete.mockReset();
+    mockCacheService.exists.mockReset();
+    
+    mockCacheService.get.mockResolvedValue(null);
+    mockCacheService.set.mockResolvedValue(undefined);
   });
 
   describe('核心推荐流程测试', () => {
@@ -205,7 +213,9 @@ describe('RecommendationService Integration Tests - Simplified', () => {
       ]);
 
       mockRecommendationRepo.insert.mockResolvedValue({
-        identifiers: [{ id: 1 }],
+        identifiers: [1],
+        generatedMaps: [],
+        raw: [],
       });
 
       mockRecommendationRepo.findByIds.mockResolvedValue([
@@ -290,7 +300,9 @@ describe('RecommendationService Integration Tests - Simplified', () => {
       ]);
 
       mockRecommendationRepo.insert.mockResolvedValue({
-        identifiers: [{ id: 1 }],
+        identifiers: [1],
+        generatedMaps: [],
+        raw: [],
       });
 
       mockRecommendationRepo.findByIds.mockResolvedValue([
