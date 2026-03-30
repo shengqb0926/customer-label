@@ -38,8 +38,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Run lint
-        run: npm run lint || true
+      - name: Run lint (if available)
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint || true
+          else
+            echo "⚠️ Lint 脚本未定义，跳过检查"
+          fi
       
       - name: Run unit tests with coverage
         run: |
