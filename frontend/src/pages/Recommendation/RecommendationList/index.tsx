@@ -70,11 +70,8 @@ const RecommendationList: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = React.useState<React.Key[]>([]);
   const [advancedSearchVisible, setAdvancedSearchVisible] = React.useState(false);
   const [confidenceLevel, setConfidenceLevel] = useState<string>('all');
-  
-  // 批量操作进度状态
   const [batchProcessing, setBatchProcessing] = React.useState(false);
-  const [batchProgress, setBatchProgress] = React.useState(0);
-  const [batchTotal, setBatchTotal] = React.useState(0);
+  const [batchProgress, setBatchProgress] = React.useState({ percent: 0, status: 'active' as ProgressProps['status'] });
 
   // 加载推荐列表和统计数据
   useEffect(() => {
@@ -282,28 +279,29 @@ const RecommendationList: React.FC = () => {
       cancelText: '取消',
       onOk: async () => {
         setBatchProcessing(true);
-        setBatchProgress(0);
-        setBatchTotal(selectedRowKeys.length);
+        setBatchProgress({ percent: 0, status: 'active' });
         
         try {
           await batchAcceptRecommendations(
             selectedRowKeys as number[], 
             autoTag,
-            (current, total) => {
-              setBatchProgress(current);
-              setBatchTotal(total);
+            (processed, total) => {
+              const percent = Math.round((processed / total) * 100);
+              setBatchProgress({ percent, status: 'active' });
             }
           );
           
+          setBatchProgress({ percent: 100, status: 'success' });
           message.success(`已成功接受 ${selectedRowKeys.length} 条推荐${autoTag ? '并自动打标签' : ''}`);
           loadRecommendations();
         } catch (error: any) {
+          setBatchProgress({ percent: 0, status: 'exception' });
           message.error(error.message || '批量接受失败');
         } finally {
-          setBatchProcessing(false);
-          setBatchProgress(0);
-          setBatchTotal(0);
-          setSelectedRowKeys([]);
+          setTimeout(() => {
+            setBatchProcessing(false);
+            setBatchProgress({ percent: 0, status: 'active' });
+          }, 1000);
         }
       },
     });
@@ -342,32 +340,33 @@ const RecommendationList: React.FC = () => {
         // 验证是否输入了原因
         if (!reasonValue || reasonValue.trim() === '') {
           message.error('请输入拒绝原因');
-          return false; // 阻止关闭对话框
+          return false;
         }
         
         setBatchProcessing(true);
-        setBatchProgress(0);
-        setBatchTotal(selectedRowKeys.length);
+        setBatchProgress({ percent: 0, status: 'active' });
         
         try {
           await batchRejectRecommendations(
             selectedRowKeys as number[], 
             reasonValue.trim(),
-            (current, total) => {
-              setBatchProgress(current);
-              setBatchTotal(total);
+            (processed, total) => {
+              const percent = Math.round((processed / total) * 100);
+              setBatchProgress({ percent, status: 'active' });
             }
           );
           
+          setBatchProgress({ percent: 100, status: 'success' });
           message.success(`已成功拒绝 ${selectedRowKeys.length} 条推荐`);
           loadRecommendations();
         } catch (error: any) {
+          setBatchProgress({ percent: 0, status: 'exception' });
           message.error(error.message || '批量拒绝失败');
         } finally {
-          setBatchProcessing(false);
-          setBatchProgress(0);
-          setBatchTotal(0);
-          setSelectedRowKeys([]);
+          setTimeout(() => {
+            setBatchProcessing(false);
+            setBatchProgress({ percent: 0, status: 'active' });
+          }, 1000);
         }
       },
     });
@@ -387,27 +386,28 @@ const RecommendationList: React.FC = () => {
       cancelText: '取消',
       onOk: async () => {
         setBatchProcessing(true);
-        setBatchProgress(0);
-        setBatchTotal(selectedRowKeys.length);
+        setBatchProgress({ percent: 0, status: 'active' });
         
         try {
           await batchUndoRecommendations(
             selectedRowKeys as number[],
-            (current, total) => {
-              setBatchProgress(current);
-              setBatchTotal(total);
+            (processed, total) => {
+              const percent = Math.round((processed / total) * 100);
+              setBatchProgress({ percent, status: 'active' });
             }
           );
           
+          setBatchProgress({ percent: 100, status: 'success' });
           message.success(`已成功撤销 ${selectedRowKeys.length} 条推荐`);
           loadRecommendations();
         } catch (error: any) {
+          setBatchProgress({ percent: 0, status: 'exception' });
           message.error(error.message || '批量撤销失败');
         } finally {
-          setBatchProcessing(false);
-          setBatchProgress(0);
-          setBatchTotal(0);
-          setSelectedRowKeys([]);
+          setTimeout(() => {
+            setBatchProcessing(false);
+            setBatchProgress({ percent: 0, status: 'active' });
+          }, 1000);
         }
       },
     });
@@ -980,22 +980,35 @@ const RecommendationList: React.FC = () => {
         </Form>
       </Card>
 
-      {/* 批量操作进度条提示 */}
+      {/* 批量操作进度条 */}
       {batchProcessing && (
-        <Card style={{ marginBottom: 16, borderRadius: 8 }} size="small">
+        <Card 
+          style={{ marginBottom: 16, borderRadius: 8, borderColor: batchProgress.status === 'success' ? '#52c41a' : batchProgress.status === 'exception' ? '#ff4d4f' : '#1890ff' }}
+          size="small"
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <LoadingOutlined spin style={{ fontSize: 20, color: '#1890ff' }} />
+            {batchProgress.status === 'active' && <LoadingOutlined spin style={{ fontSize: 24, color: '#1890ff' }} />}
+            {batchProgress.status === 'success' && <CheckCircleOutlined style={{ fontSize: 24, color: '#52c41a' }} />}
+            {batchProgress.status === 'exception' && <CloseCircleOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />}
+            
             <div style={{ flex: 1 }}>
-              <Text strong>正在处理批量操作...</Text>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text strong>
+                  {batchProgress.status === 'active' && '正在处理...'}
+                  {batchProgress.status === 'success' && '处理完成！'}
+                  {batchProgress.status === 'exception' && '处理失败'}
+                </Text>
+                <Text type="secondary">{batchProgress.percent}%</Text>
+              </div>
               <Progress 
-                percent={Math.round((batchProgress / batchTotal) * 100)} 
-                status="active"
-                strokeColor="#1890ff"
-                style={{ marginTop: 8 }}
+                percent={batchProgress.percent} 
+                status={batchProgress.status}
+                strokeColor={{
+                  '0%': '#1890ff',
+                  '100%': '#52c41a',
+                }}
+                strokeWidth={8}
               />
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                已处理 {batchProgress} / {batchTotal} 条
-              </Text>
             </div>
           </div>
         </Card>
@@ -1049,13 +1062,8 @@ const RecommendationList: React.FC = () => {
                   已选择 {selectedRowKeys.length} 条
                 </Tag>
               )}
-              {batchProcessing && (
-                <Tag color="orange" style={{ marginLeft: 8 }}>
-                  <LoadingOutlined spin /> 处理中... {batchProgress}/{batchTotal}
-                </Tag>
-              )}
             </div>
-            {selectedRowKeys.length > 0 && !batchProcessing && (
+            {selectedRowKeys.length > 0 && (
               <Space size="middle">
                 <Button
                   type="primary"
@@ -1092,19 +1100,6 @@ const RecommendationList: React.FC = () => {
                   导出选中
                 </Button>
               </Space>
-            )}
-            {batchProcessing && (
-              <div style={{ width: 300 }}>
-                <Progress
-                  percent={Math.round((batchProgress / batchTotal) * 100)}
-                  status="active"
-                  strokeColor={{
-                    '0%': '#108ee9',
-                    '100%': '#87d068',
-                  }}
-                  format={(percent) => `${percent}% (${batchProgress}/${batchTotal})`}
-                />
-              </div>
             )}
           </div>
         )}

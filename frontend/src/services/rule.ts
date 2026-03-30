@@ -180,27 +180,21 @@ export const recommendationService = {
     return await apiClient.post('/recommendations/batch-undo', { ids });
   },
 
-  // 获取单个推荐详情
-  async getRecommendation(id: number) {
-    return await apiClient.get(`/recommendations/${id}`);
-  },
-
   // 获取相似客户推荐
-  async getSimilarRecommendations(id: number, limit?: number) {
-    const params: any = {};
-    if (limit) {
-      params.limit = limit;
-    }
-    return await apiClient.get(`/recommendations/${id}/similar`, { params });
+  async getSimilarCustomerRecommendations(recommendationId: number, tagName: string, limit?: number) {
+    const params = new URLSearchParams();
+    params.append('tagName', tagName);
+    if (limit) params.append('limit', limit.toString());
+    
+    return await apiClient.get(`/recommendations/${recommendationId}/similar?${params.toString()}`);
   },
 
   // 获取客户历史推荐记录
-  async getCustomerHistory(customerId: number, limit?: number) {
-    const params: any = {};
-    if (limit) {
-      params.limit = limit;
-    }
-    return await apiClient.get(`/recommendations/customer/${customerId}/history`, { params });
+  async getCustomerRecommendationHistory(customerId: number, limit?: number) {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    
+    return await apiClient.get(`/recommendations/customer/${customerId}/history?${params.toString()}`);
   },
 
 };

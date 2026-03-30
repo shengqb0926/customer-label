@@ -14,24 +14,21 @@ interface RecommendationDetailModalProps {
 
 interface SimilarCustomer {
   customerId: number;
-  customerName: string;
-  recommendationId: number;
+  customerName?: string;
   tagName: string;
   confidence: number;
-  isAccepted: boolean | null;
-  similarity: number;
+  status: 'pending' | 'accepted' | 'rejected';
+  similarityScore: number;
 }
 
 interface HistoryRecommendation {
   id: number;
   tagName: string;
   tagCategory?: string;
-  confidence: number;
-  source: string;
-  reason?: string;
-  isAccepted: boolean | null;
-  createdAt: string;
-  acceptedAt?: string | null;
+  createdAt: Date;
+  status: 'pending' | 'accepted' | 'rejected';
+  reason: string;
+  acceptedAt?: Date;
 }
 
 // Mock 数据 - 相似客户推荐（实际应从 API 获取）
@@ -86,6 +83,58 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
   recommendation,
   onCancel,
 }) => {
+  const [similarCustomers, setSimilarCustomers] = React.useState<SimilarCustomer[]>([]);
+  const [historyRecords, setHistoryRecords] = React.useState<HistoryRecommendation[]>([]);
+  const [loadingSimilar, setLoadingSimilar] = React.useState(false);
+  const [loadingHistory, setLoadingHistory] = React.useState(false);
+
+  // 加载相似客户数据
+  React.useEffect(() => {
+    if (visible && recommendation) {
+      loadSimilarCustomers();
+    }
+  }, [visible, recommendation]);
+
+  // 加载历史记录数据
+  React.useEffect(() => {
+    if (visible && recommendation) {
+      loadHistoryRecords();
+    }
+  }, [visible, recommendation]);
+
+  const loadSimilarCustomers = async () => {
+    setLoadingSimilar(true);
+    try {
+      const data = await recommendationService.getSimilarCustomerRecommendations(
+        recommendation!.id,
+        recommendation!.tagName,
+        5
+      );
+      setSimilarCustomers(data || []);
+    } catch (error) {
+      console.error('Failed to load similar customers:', error);
+      setSimilarCustomers([]);
+    } finally {
+      setLoadingSimilar(false);
+    }
+  };
+
+  const loadHistoryRecords = async () => {
+    setLoadingHistory(true);
+    try {
+      const data = await recommendationService.getCustomerRecommendationHistory(
+        recommendation!.customerId,
+        10
+      );
+      setHistoryRecords(data || []);
+    } catch (error) {
+      console.error('Failed to load history records:', error);
+      setHistoryRecords([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   if (!recommendation) return null;
 
   const sourceMap = {
@@ -100,7 +149,9 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
       title: '客户名称',
       dataIndex: 'customerName',
       key: 'customerName',
-      render: (text: string) => <Text strong>{text}</Text>,
+      render: (text: string, record: SimilarCustomer) => (
+        <Text strong>{text || `客户 #${record.customerId}`}</Text>
+      ),
     },
     {
       title: '推荐标签',
@@ -126,31 +177,27 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
     },
     {
       title: '状态',
-      dataIndex: 'isAccepted',
-      key: 'isAccepted',
-      render: (isAccepted: boolean | null) => {
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
         const statusMap: Record<string, string> = {
-          true: '✅ 已接受',
-          false: '❌ 已拒绝',
-          null: '⏰ 待处理',
+          accepted: '✅ 已接受',
+          pending: '⏰ 待处理',
+          rejected: '❌ 已拒绝',
         };
-        const statusKey = isAccepted === null ? 'null' : String(isAccepted);
-        return <Badge status={isAccepted === null ? 'processing' : isAccepted ? 'success' : 'error'} text={statusMap[statusKey]} />;
+        return <Badge status={status === 'accepted' ? 'success' : status === 'pending' ? 'processing' : 'error'} text={statusMap[status]} />;
       },
     },
     {
       title: '相似度',
-      dataIndex: 'similarity',
-      key: 'similarity',
-      render: (similarity: number) => (
+      dataIndex: 'similarityScore',
+      key: 'similarityScore',
+      render: (score: number) => (
         <Progress
-          percent={Number((similarity * 100).toFixed(1))}
-          strokeColor={{
-            '0%': '#ff4d4f',
-            '100%': '#52c41a',
-          }}
-          width={80}
+          percent={Number((score * 100).toFixed(1))}
+          strokeColor="#722ed1"
           format={(percent) => `${percent}%`}
+          width={80}
         />
       ),
     },
@@ -165,29 +212,30 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
       render: (text: string) => <Tag color="blue">{text}</Tag>,
     },
     {
-      title: '标签类型',
+      title: '标签类别',
       dataIndex: 'tagCategory',
       key: 'tagCategory',
-      render: (text?: string) => text ? <Tag color="default">{text}</Tag> : '-',
+      render: (text?: string) => text || '-',
     },
     {
       title: '推荐时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (text: string) => new Date(text).toLocaleString(),
+      render: (text: Date) => new Date(text).toLocaleString(),
     },
     {
       title: '状态',
-      dataIndex: 'isAccepted',
-      key: 'isAccepted',
-      render: (isAccepted: boolean | null) => {
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
         const statusMap: Record<string, string> = {
-          true: '✅ 已接受',
-          false: '❌ 已拒绝',
-          null: '⏰ 待处理',
+          accepted: '✅ 已接受',
+          rejected: '❌ 已拒绝',
+          pending: '⏰ 待处理',
         };
-        const statusKey = isAccepted === null ? 'null' : String(isAccepted);
-        return <Tag color={isAccepted === null ? 'orange' : isAccepted ? 'green' : 'red'}>{statusMap[statusKey]}</Tag>;
+        return <Tag color={status === 'accepted' ? 'green' : status === 'rejected' ? 'red' : 'orange'}>
+          {statusMap[status]}
+        </Tag>;
       },
     },
     {
@@ -198,6 +246,9 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
       width: 200,
     },
   ];
+
+  const similarData = getSimilarCustomers(recommendation);
+  const historyData = getHistoryRecommendations(recommendation);
 
   return (
     <Modal
@@ -341,12 +392,12 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
             showIcon
             style={{ marginBottom: 16 }}
           />
-          <Spin spinning={similarLoading}>
-            {similarData.length > 0 ? (
+          <Spin spinning={loadingSimilar} tip="加载中...">
+            {similarCustomers.length > 0 ? (
               <Table
-                rowKey="recommendationId"
+                rowKey="customerId"
                 columns={similarColumns as any}
-                dataSource={similarData}
+                dataSource={similarCustomers}
                 pagination={false}
                 size="small"
                 scroll={{ x: 'max-content' }}
@@ -366,12 +417,12 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
             showIcon
             style={{ marginBottom: 16 }}
           />
-          <Spin spinning={historyLoading}>
-            {historyData.length > 0 ? (
+          <Spin spinning={loadingHistory} tip="加载中...">
+            {historyRecords.length > 0 ? (
               <Table
                 rowKey="id"
                 columns={historyColumns as any}
-                dataSource={historyData}
+                dataSource={historyRecords}
                 pagination={false}
                 size="small"
                 scroll={{ x: 'max-content' }}

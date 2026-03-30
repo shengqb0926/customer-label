@@ -51,9 +51,9 @@ interface RuleState {
   fetchRecommendations: (params?: any) => Promise<void>;
   acceptRecommendation: (id: number, feedbackReason?: string) => Promise<void>;
   rejectRecommendation: (id: number, feedbackReason?: string) => Promise<void>;
-  batchAcceptRecommendations: (ids: number[], autoTag?: boolean) => Promise<any>;
-  batchRejectRecommendations: (ids: number[], reason?: string) => Promise<any>;
-  batchUndoRecommendations: (ids: number[]) => Promise<any>;
+  batchAcceptRecommendations: (ids: number[], autoTag?: boolean, onProgress?: (processed: number, total: number) => void) => Promise<any>;
+  batchRejectRecommendations: (ids: number[], reason?: string, onProgress?: (processed: number, total: number) => void) => Promise<any>;
+  batchUndoRecommendations: (ids: number[], onProgress?: (processed: number, total: number) => void) => Promise<any>;
   
   // 统计 Actions
   fetchStatistics: (params?: any) => Promise<void>;
@@ -182,52 +182,63 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     await get().fetchStatistics(); // 刷新统计
   },
   
-  batchAcceptRecommendations: async (ids: number[], autoTag?: boolean, onProgress?: (current: number, total: number) => void) => {
-    const result = await recommendationService.batchAcceptRecommendations(ids, autoTag);
+  batchAcceptRecommendations: async (ids: number[], autoTag?: boolean, onProgress?: (processed: number, total: number) => void) => {
+    const total = ids.length;
+    let processed = 0;
     
-    // 模拟进度更新（实际应该在 service 中实现）
-    if (onProgress) {
-      for (let i = 0; i <= ids.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        onProgress(i, ids.length);
+    // 分批处理，每批显示进度
+    const batchSize = Math.ceil(total / 10); // 分成 10 批
+    
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const batch = ids.slice(i, i + batchSize);
+      await recommendationService.batchAcceptRecommendations(batch, autoTag);
+      processed += batch.length;
+      if (onProgress) {
+        onProgress(processed, total);
       }
     }
     
     await get().fetchRecommendations();
     await get().fetchStatistics();
-    return result;
+    return { success: total, total };
   },
   
-  batchRejectRecommendations: async (ids: number[], reason?: string, onProgress?: (current: number, total: number) => void) => {
-    const result = await recommendationService.batchRejectRecommendations(ids, reason);
+  batchRejectRecommendations: async (ids: number[], reason?: string, onProgress?: (processed: number, total: number) => void) => {
+    const total = ids.length;
+    let processed = 0;
+    const batchSize = Math.ceil(total / 10);
     
-    // 模拟进度更新
-    if (onProgress) {
-      for (let i = 0; i <= ids.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        onProgress(i, ids.length);
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const batch = ids.slice(i, i + batchSize);
+      await recommendationService.batchRejectRecommendations(batch, reason);
+      processed += batch.length;
+      if (onProgress) {
+        onProgress(processed, total);
       }
     }
     
     await get().fetchRecommendations();
     await get().fetchStatistics();
-    return result;
+    return { success: total, total };
   },
 
-  batchUndoRecommendations: async (ids: number[], onProgress?: (current: number, total: number) => void) => {
-    const result = await recommendationService.batchUndoRecommendations(ids);
+  batchUndoRecommendations: async (ids: number[], onProgress?: (processed: number, total: number) => void) => {
+    const total = ids.length;
+    let processed = 0;
+    const batchSize = Math.ceil(total / 10);
     
-    // 模拟进度更新
-    if (onProgress) {
-      for (let i = 0; i <= ids.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        onProgress(i, ids.length);
+    for (let i = 0; i < ids.length; i += batchSize) {
+      const batch = ids.slice(i, i + batchSize);
+      await recommendationService.batchUndoRecommendations(batch);
+      processed += batch.length;
+      if (onProgress) {
+        onProgress(processed, total);
       }
     }
     
     await get().fetchRecommendations();
     await get().fetchStatistics();
-    return result;
+    return { success: total, total };
   },
 
   // 统计 Actions

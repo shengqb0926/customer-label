@@ -6,6 +6,8 @@ import {
   Param,
   Query,
   Logger,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -237,92 +239,6 @@ export class RecommendationController {
   }
 
   /**
-   * 获取单个推荐详情
-   */
-  @Get(':id')
-  @ApiOperation({ summary: '获取推荐详情', description: '获取单个推荐的完整信息' })
-  @ApiParam({ name: 'id', description: '推荐 ID', type: Number })
-  @ApiResponse({ 
-    status: 200, 
-    description: '返回推荐详情',
-    type: TagRecommendation,
-  })
-  async getRecommendation(@Param('id') id: number): Promise<TagRecommendation> {
-    this.logger.log(`Getting recommendation ${id}`);
-    return await this.service.findOne(id);
-  }
-
-  /**
-   * 获取相似客户的推荐
-   */
-  @Get(':id/similar')
-  @ApiOperation({ summary: '获取相似客户推荐', description: '基于标签和置信度查找相似客户的推荐' })
-  @ApiParam({ name: 'id', description: '推荐 ID', type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: '返回数量限制', example: 5 })
-  @ApiResponse({ 
-    status: 200, 
-    description: '返回相似客户推荐列表',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          customerId: { type: 'number', description: '客户 ID' },
-          customerName: { type: 'string', description: '客户名称' },
-          recommendationId: { type: 'number', description: '推荐 ID' },
-          tagName: { type: 'string', description: '推荐标签' },
-          confidence: { type: 'number', description: '置信度' },
-          isAccepted: { type: 'boolean', description: '是否已接受' },
-          similarity: { type: 'number', description: '相似度分数' },
-        },
-      },
-    },
-  })
-  async getSimilarRecommendations(
-    @Param('id') id: number,
-    @Query('limit') limit: number = 5
-  ): Promise<any[]> {
-    this.logger.log(`Getting similar recommendations for ${id}`);
-    return await this.service.findSimilarRecommendations(id, limit);
-  }
-
-  /**
-   * 获取客户的历史推荐记录
-   */
-  @Get('customer/:customerId/history')
-  @ApiOperation({ summary: '获取客户历史推荐', description: '获取客户的所有历史推荐记录（按时间倒序）' })
-  @ApiParam({ name: 'customerId', description: '客户 ID', type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: '返回数量限制', example: 10 })
-  @ApiResponse({ 
-    status: 200, 
-    description: '返回历史推荐记录列表',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'number', description: '推荐 ID' },
-          tagName: { type: 'string', description: '推荐标签' },
-          tagCategory: { type: 'string', description: '标签类别' },
-          confidence: { type: 'number', description: '置信度' },
-          source: { type: 'string', description: '推荐来源' },
-          reason: { type: 'string', description: '推荐理由' },
-          isAccepted: { type: 'boolean', description: '是否已接受' },
-          createdAt: { type: 'string', description: '推荐时间' },
-          acceptedAt: { type: 'string', description: '接受时间' },
-        },
-      },
-    },
-  })
-  async getCustomerHistory(
-    @Param('customerId') customerId: number,
-    @Query('limit') limit: number = 10
-  ): Promise<any[]> {
-    this.logger.log(`Getting history recommendations for customer ${customerId}`);
-    return await this.service.findCustomerHistory(customerId, limit);
-  }
-
-  /**
    * 接受推荐
    */
   @Post(':id/accept')
@@ -519,6 +435,126 @@ export class RecommendationController {
       success: successCount,
       total: body.ids.length,
     };
+  }
+
+  /**
+   * 获取相似客户推荐
+   */
+  @Get(':id/similar')
+  @ApiOperation({ 
+    summary: '获取相似客户推荐', 
+    description: '基于客户特征相似度，查找有相同推荐标签的其他客户' 
+  })
+  @ApiParam({ name: 'id', description: '推荐 ID', type: Number })
+  @ApiQuery({ 
+    name: 'tagName', 
+    required: true, 
+    type: String, 
+    description: '推荐标签名称',
+    example: '高价值客户'
+  })
+  @ApiQuery({ 
+    name: 'limit', 
+    required: false, 
+    type: Number, 
+    description: '返回数量限制',
+    default: 5,
+    minimum: 1,
+    maximum: 20
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回相似客户推荐列表',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          customerId: { type: 'number', description: '客户 ID' },
+          customerName: { type: 'string', description: '客户名称' },
+          tagName: { type: 'string', description: '推荐标签' },
+          confidence: { type: 'number', description: '置信度' },
+          status: { type: 'string', enum: ['pending', 'accepted', 'rejected'] },
+          similarityScore: { type: 'number', description: '相似度分数 (0-1)' },
+        },
+      },
+    },
+  })
+  async getSimilarCustomerRecommendations(
+    @Param('id') id: number,
+    @Query('tagName') tagName: string,
+    @Query('limit') limit: number = 5
+  ): Promise<Array<{
+    customerId: number;
+    customerName?: string;
+    tagName: string;
+    confidence: number;
+    status: 'pending' | 'accepted' | 'rejected';
+    similarityScore: number;
+  }>> {
+    // 先获取推荐信息拿到 customerId
+    const recommendation = await this.service.getRecommendationById(id);
+    if (!recommendation) {
+      throw new HttpException(`推荐 ${id} 不存在`, HttpStatus.NOT_FOUND);
+    }
+    
+    return await this.service.getSimilarCustomerRecommendations(
+      recommendation.customerId,
+      tagName,
+      limit
+    );
+  }
+
+  /**
+   * 获取客户历史推荐记录
+   */
+  @Get('customer/:customerId/history')
+  @ApiOperation({ 
+    summary: '获取客户历史推荐', 
+    description: '获取某个客户的所有历史推荐记录' 
+  })
+  @ApiParam({ name: 'customerId', description: '客户 ID', type: Number })
+  @ApiQuery({ 
+    name: 'limit', 
+    required: false, 
+    type: Number, 
+    description: '返回数量限制',
+    default: 10,
+    minimum: 1,
+    maximum: 50
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回历史推荐记录列表',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'number', description: '推荐 ID' },
+          tagName: { type: 'string', description: '推荐标签' },
+          tagCategory: { type: 'string', description: '标签类别' },
+          createdAt: { type: 'string', format: 'date-time' },
+          status: { type: 'string', enum: ['pending', 'accepted', 'rejected'] },
+          reason: { type: 'string', description: '推荐理由' },
+          acceptedAt: { type: 'string', format: 'date-time', description: '接受时间' },
+        },
+      },
+    },
+  })
+  async getCustomerRecommendationHistory(
+    @Param('customerId') customerId: number,
+    @Query('limit') limit: number = 10
+  ): Promise<Array<{
+    id: number;
+    tagName: string;
+    tagCategory?: string;
+    createdAt: Date;
+    status: 'pending' | 'accepted' | 'rejected';
+    reason: string;
+    acceptedAt?: Date;
+  }>> {
+    return await this.service.getCustomerRecommendationHistory(customerId, limit);
   }
 
   /**
