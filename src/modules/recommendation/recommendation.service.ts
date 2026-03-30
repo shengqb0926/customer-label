@@ -52,7 +52,7 @@ export class RecommendationService {
     private readonly associationEngine: AssociationEngineService,
     private readonly fusionEngine: FusionEngineService,
     private readonly conflictDetector: ConflictDetectorService,
-    private readonly similarityService: SimilarityService, // ✨ 新增：相似度服务
+    private readonly similarityService: SimilarityService,
   ) {}
 
   /**
@@ -910,7 +910,28 @@ export class RecommendationService {
     
     await this.recommendationRepo.save(recommendation);
     
+    // 清除缓存
+    await this.invalidateCache(recommendation.customerId);
+    
     this.logger.log(`Undo recommendation ${id}, back to pending status`);
+  }
+
+  /**
+   * 清除客户相关的缓存
+   */
+  private async invalidateCache(customerId: number): Promise<void> {
+    try {
+      // 清除相似度推荐缓存
+      await this.cache.deleteByPattern(`rec:similar:${customerId}:*`);
+      
+      // 清除推荐统计缓存（如果有的话）
+      await this.cache.deleteByPattern(`rec:stats:${customerId}:*`);
+      
+      this.logger.debug(`Cache invalidated for customer ${customerId}`);
+    } catch (error) {
+      this.logger.error(`Failed to invalidate cache for customer ${customerId}:`, error);
+      // 缓存失效不影响主流程
+    }
   }
 
   /**

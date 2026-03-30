@@ -1,0 +1,100 @@
+    Cache error
+
+    [0m [90m 402 |[39m
+     [90m 403 |[39m     it([32m'应该处理缓存失败的降级逻辑'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 404 |[39m       mockCacheService[33m.[39m[36mget[39m[33m.[39mmockRejectedValue([36mnew[39m [33mError[39m([32m'Cache error'[39m))[33m;[39m
+     [90m     |[39m                                              [31m[1m^[22m[39m
+     [90m 405 |[39m       mockCustomerRepo[33m.[39mfindOne[33m.[39mmockResolvedValue({
+     [90m 406 |[39m         id[33m:[39m [35m1[39m[33m,[39m
+     [90m 407 |[39m         totalAssets[33m:[39m [35m500000[39m[33m,[39m[0m
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.fixed.spec.ts:404:46)
+
+  ● RecommendationService Integration Tests - Simplified › 边界情况测试 › 应该处理超高净值客户
+
+    Cache error
+
+    [0m [90m 402 |[39m
+     [90m 403 |[39m     it([32m'应该处理缓存失败的降级逻辑'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 404 |[39m       mockCacheService[33m.[39m[36mget[39m[33m.[39mmockRejectedValue([36mnew[39m [33mError[39m([32m'Cache error'[39m))[33m;[39m
+     [90m     |[39m                                              [31m[1m^[22m[39m
+     [90m 405 |[39m       mockCustomerRepo[33m.[39mfindOne[33m.[39mmockResolvedValue({
+     [90m 406 |[39m         id[33m:[39m [35m1[39m[33m,[39m
+     [90m 407 |[39m         totalAssets[33m:[39m [35m500000[39m[33m,[39m[0m
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.fixed.spec.ts:404:46)
+
+FAIL frontend/src/services/customer.spec.ts
+  ● Test suite failed to run
+
+    [96mfrontend/src/services/customer.spec.ts[0m:[93m1[0m:[93m54[0m - [91merror[0m[90m TS2307: [0mCannot find module 'vitest' or its corresponding type declarations.
+
+    [7m1[0m import { describe, it, expect, vi, beforeEach } from 'vitest';
+    [7m [0m [91m                                                     ~~~~~~~~[0m
+    [96mfrontend/src/services/customer.spec.ts[0m:[93m2[0m:[93m10[0m - [91merror[0m[90m TS2724: [0m'"./customer"' has no exported member named 'CustomerService'. Did you mean 'customerService'?
+
+    [7m2[0m import { CustomerService } from './customer';
+    [7m [0m [91m         ~~~~~~~~~~~~~~~[0m
+
+      [96mfrontend/src/services/customer.ts[0m:[93m108[0m:[93m14[0m
+        [7m108[0m export const customerService = {
+        [7m   [0m [96m             ~~~~~~~~~~~~~~~[0m
+        'customerService' is declared here.
+
+FAIL frontend/src/services/rule.spec.ts
+  ● Test suite failed to run
+
+    [96mfrontend/src/services/rule.spec.ts[0m:[93m1[0m:[93m54[0m - [91merror[0m[90m TS2307: [0mCannot find module 'vitest' or its corresponding type declarations.
+
+    [7m1[0m import { describe, it, expect, vi, beforeEach } from 'vitest';
+    [7m [0m [91m                                                     ~~~~~~~~[0m
+    [96mfrontend/src/services/rule.spec.ts[0m:[93m2[0m:[93m10[0m - [91merror[0m[90m TS2724: [0m'"./rule"' has no exported member named 'RuleService'. Did you mean 'ruleService'?
+
+    [7m2[0m import { RuleService } from './rule';
+    [7m [0m [91m         ~~~~~~~~~~~[0m
+
+      [96mfrontend/src/services/rule.ts[0m:[93m104[0m:[93m14[0m
+        [7m104[0m export const ruleService = {
+        [7m   [0m [96m             ~~~~~~~~~~~[0m
+        'ruleService' is declared here.
+
+FAIL src/modules/auth/auth.service.spec.ts
+  ● Test suite failed to run
+
+    [96msrc/modules/auth/auth.service.spec.ts[0m:[93m125[0m:[93m46[0m - [91merror[0m[90m TS2345: [0mArgument of type 'Partial<User>' is not assignable to parameter of type 'User'.
+      Property 'id' is optional in type 'Partial<User>' but required in type 'User'.
+
+    [7m125[0m       const result = await authService.login(mockUser);
+    [7m   [0m [91m                                             ~~~~~~~~[0m
+    [96msrc/modules/auth/auth.service.spec.ts[0m:[93m137[0m:[93m31[0m - [91merror[0m[90m TS2345: [0mArgument of type 'Partial<User>' is not assignable to parameter of type 'User'.
+      Property 'id' is optional in type 'Partial<User>' but required in type 'User'.
+
+    [7m137[0m       await authService.login(mockUser);
+    [7m   [0m [91m                              ~~~~~~~~[0m
+    [96msrc/modules/auth/auth.service.spec.ts[0m:[93m152[0m:[93m15[0m - [91merror[0m[90m TS2322: [0mType '"user"' is not assignable to type 'UserRole'.
+
+    [7m152[0m       roles: ['user'],
+    [7m   [0m [91m              ~~~~~~[0m
+    [96msrc/modules/auth/auth.service.spec.ts[0m:[93m158[0m:[93m38[0m - [91merror[0m[90m TS2345: [0mArgument of type 'Partial<User>' is not assignable to parameter of type 'User'.
+      Property 'id' is optional in type 'Partial<User>' but required in type 'User'.
+
+    [7m158[0m       await authService.refreshToken(mockUser);
+    [7m   [0m [91m                                     ~~~~~~~~[0m
+    [96msrc/modules/auth/auth.service.spec.ts[0m:[93m166[0m:[93m34[0m - [91merror[0m[90m TS2339: [0mProperty 'verifyToken' does not exist on type 'AuthService'.
+
+    [7m166[0m       const result = authService.verifyToken('valid_token');
+    [7m   [0m [91m                                 ~~~~~~~~~~~[0m
+    [96msrc/modules/auth/auth.service.spec.ts[0m:[93m176[0m:[93m34[0m - [91merror[0m[90m TS2339: [0mProperty 'verifyToken' does not exist on type 'AuthService'.
+
+    [7m176[0m       const result = authService.verifyToken('invalid_token');
+    [7m   [0m [91m                                 ~~~~~~~~~~~[0m
+    [96msrc/modules/auth/auth.service.spec.ts[0m:[93m187[0m:[93m34[0m - [91merror[0m[90m TS2339: [0mProperty 'verifyToken' does not exist on type 'AuthService'.
+
+    [7m187[0m       const result = authService.verifyToken('expired_token');
+    [7m   [0m [91m                                 ~~~~~~~~~~~[0m
+
+
+Test Suites: 9 failed, 16 passed, 25 total
+Tests:       26 failed, 302 passed, 328 total
+Snapshots:   0 total
+Time:        19.273 s

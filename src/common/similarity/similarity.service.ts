@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from '../../modules/recommendation/entities/customer.entity';
+import { CacheService } from '../../infrastructure/redis/cache.service';
 import {
   SimilarityConfig,
   SimilarityResult,
@@ -27,6 +28,7 @@ export class SimilarityService {
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepo: Repository<Customer>,
+    private readonly cacheService: CacheService,
   ) {}
 
   /**
@@ -73,6 +75,35 @@ export class SimilarityService {
     const startTime = Date.now();
     const mergedConfig = { ...DEFAULT_SIMILARITY_CONFIG, ...config };
 
+    // 生成缓存键
+    const cacheKey = `rec:similar:${targetCustomerId}:${limit}`;
+
+    try {
+      // 使用 getOrSet 模式自动处理缓存
+      return await this.cacheService.getOrSet(
+        cacheKey,
+        async () => {
+          this.logger.debug(`Cache MISS: ${cacheKey}, computing similarity...`);
+          return await this.computeSimilarCustomers(targetCustomerId, limit, mergedConfig);
+        },
+        3600, // 1 小时 TTL
+      );
+    } catch (error) {
+      this.logger.error(`Error finding similar customers for #${targetCustomerId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 计算相似客户的内部实现（从原 findSimilarCustomers 提取）
+   */
+  private async computeSimilarCustomers(
+    targetCustomerId: number,
+    limit: number,
+    mergedConfig: SimilarityConfig,
+  ): Promise<BatchSimilarityResults> {
+    const startTime = Date.now();
+    
     // 获取目标客户
     const targetCustomer = await this.customerRepo.findOne({ 
       where: { id: targetCustomerId },
@@ -83,12 +114,12 @@ export class SimilarityService {
     }
 
     // 获取所有候选客户（排除自己）
-    const allCustomers = await this.customerRepo.find({
+    const allCandidates = await this.customerRepo.find({
       where: { id: Not(targetCustomerId) },
     });
 
     this.logger.debug(
-      `Finding similar customers for #${targetCustomerId}, candidates: ${allCustomers.length}`,
+      `Finding similar customers for #${targetCustomerId}, candidates: ${allCandidates.length}`,
     );
 
     // 向量化目标客户
@@ -97,7 +128,7 @@ export class SimilarityService {
     // 批量计算相似度
     const results: Array<{ customerId: number; similarity: number }> = [];
     
-    for (const candidate of allCustomers) {
+    for (const candidate of allCandidates) {
       const candidateVector = this.vectorize(candidate, mergedConfig.featureWeights);
       const similarity = this.calculateSimilarity(targetVector, candidateVector, mergedConfig);
 
@@ -129,7 +160,7 @@ export class SimilarityService {
     return {
       targetCustomerId,
       results: rankedResults,
-      totalCandidates: allCustomers.length,
+      totalCandidates: allCandidates.length,
       aboveThreshold: results.length,
       computationTime,
     };

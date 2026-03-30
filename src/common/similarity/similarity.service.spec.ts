@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Customer } from '../../modules/recommendation/entities/customer.entity';
 import { Repository } from 'typeorm';
 import { CosineSimilarity } from './algorithms/cosine.algorithm';
+import { CacheService } from '../../infrastructure/redis/cache.service';
 
 describe('SimilarityService', () => {
   let service: SimilarityService;
@@ -48,6 +49,14 @@ describe('SimilarityService', () => {
     registerDays: 30,
   } as Customer;
 
+  const mockCacheService = {
+    get: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+    getOrSet: jest.fn(),
+    deleteByPattern: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -55,6 +64,10 @@ describe('SimilarityService', () => {
         {
           provide: getRepositoryToken(Customer),
           useClass: Repository,
+        },
+        {
+          provide: CacheService,
+          useValue: mockCacheService,
         },
       ],
     })
@@ -160,9 +173,19 @@ describe('SimilarityService', () => {
   });
 
   describe('findSimilarCustomers', () => {
+    beforeEach(() => {
+      // Reset all mocks before each test
+      jest.clearAllMocks();
+    });
+
     it('should find similar customers sorted by similarity', async () => {
       jest.spyOn(customerRepo, 'findOne').mockResolvedValue(mockCustomer1);
       jest.spyOn(customerRepo, 'find').mockResolvedValue([mockCustomer2, mockCustomer3]);
+      
+      // Mock getOrSet to call the getter function directly (bypass cache in tests)
+      mockCacheService.getOrSet.mockImplementation(async (key, getter) => {
+        return await getter();
+      });
 
       const result = await service.findSimilarCustomers(1, 5);
 
@@ -176,6 +199,11 @@ describe('SimilarityService', () => {
     it('should respect limit parameter', async () => {
       jest.spyOn(customerRepo, 'findOne').mockResolvedValue(mockCustomer1);
       jest.spyOn(customerRepo, 'find').mockResolvedValue([mockCustomer2, mockCustomer3]);
+      
+      // Mock getOrSet
+      mockCacheService.getOrSet.mockImplementation(async (key, getter) => {
+        return await getter();
+      });
 
       const result = await service.findSimilarCustomers(1, 1);
 
@@ -185,6 +213,11 @@ describe('SimilarityService', () => {
     it('should handle empty candidate list', async () => {
       jest.spyOn(customerRepo, 'findOne').mockResolvedValue(mockCustomer1);
       jest.spyOn(customerRepo, 'find').mockResolvedValue([]);
+      
+      // Mock getOrSet
+      mockCacheService.getOrSet.mockImplementation(async (key, getter) => {
+        return await getter();
+      });
 
       const result = await service.findSimilarCustomers(1, 5);
 
