@@ -421,3 +421,75 @@ export const associationConfigService = {
     return this.runAssociation(id);
   },
 };
+
+// 规则测试与效果分析相关 API
+export const ruleTestService = {
+  /**
+   * 测试单个规则
+   */
+  async testRule(ruleId: number, customerData: Record<string, any>): Promise<TestResult & { rule?: Rule; tags?: string[] }> {
+    const response = await apiClient.post(`/rules/${ruleId}/test`, { customerData });
+    return response.data;
+  },
+
+  /**
+   * 批量评估客户（所有适用规则）
+   */
+  async evaluateCustomer(customerData: Record<string, any>): Promise<Array<TestResult & { rule?: Rule; tags?: string[] }>> {
+    const response = await apiClient.post('/rules/evaluate', { customerData });
+    return response.data;
+  },
+
+  /**
+   * 获取规则性能指标
+   */
+  async getPerformanceMetrics(
+    ruleId: number,
+    options?: { startDate?: string; endDate?: string }
+  ): Promise<PerformanceMetrics> {
+    const response = await apiClient.get(`/rules/${ruleId}/performance`, { params: options });
+    return response.data;
+  },
+
+  /**
+   * 获取版本历史
+   */
+  async getVersionHistory(ruleId: number): Promise<VersionHistoryItem[]> {
+    const response = await apiClient.get(`/rules/${ruleId}/versions`);
+    return response.data;
+  },
+
+  /**
+   * 回滚到指定版本
+   */
+  async rollback(versionId: number): Promise<void> {
+    await apiClient.post(`/rules/versions/${versionId}/rollback`);
+  },
+
+  /**
+   * 删除版本
+   */
+  async deleteVersion(versionId: number): Promise<void> {
+    await apiClient.delete(`/rules/versions/${versionId}`);
+  },
+};
+
+// 规则测试与效果分析相关类型
+export interface PerformanceMetrics {
+  totalExecutions: number;
+  matchedCount: number;
+  matchRate: number;
+  avgExecutionTime: number;
+  acceptedTags: number;
+  rejectedTags: number;
+  acceptanceRate: number;
+}
+
+export interface VersionHistoryItem {
+  id: number;
+  version: string;
+  createdAt: string;
+  createdBy?: string;
+  changeDescription?: string;
+  snapshot: Partial<Rule>;
+}
