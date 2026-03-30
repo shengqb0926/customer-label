@@ -12,6 +12,7 @@ export enum ConflictType {
   RULE_CONTRADICTION = 'RULE_CONTRADICTION',            // 规则矛盾
   RECOMMENDATION_DUPLICATE = 'RECOMMENDATION_DUPLICATE', // 推荐重复
   RECOMMENDATION_CONFLICT = 'RECOMMENDATION_CONFLICT',   // 推荐冲突
+  POTENTIAL_CONFLICT = 'POTENTIAL_CONFLICT',            // 潜在冲突（ML 识别）
 }
 
 /**
@@ -68,6 +69,8 @@ export interface MutualExclusionRule {
   category1?: string;
   category2?: string;
   reason: string;
+  enabled?: boolean;
+  custom?: boolean; // 是否为自定义规则
 }
 
 /**
@@ -80,63 +83,203 @@ export interface ConflictItem {
   value?: any;
 }
 
+/**
+ * 冲突模式缓存接口
+ */
+interface ConflictPatternCache {
+  pattern: string;
+  conflicts: ConflictRecord[];
+  cachedAt: Date;
+  hitCount: number;
+}
+
 @Injectable()
 export class ConflictDetectorService {
   private readonly logger = new Logger(ConflictDetectorService.name);
-
+  
   // 预定义的互斥标签规则
   private readonly mutualExclusionRules: MutualExclusionRule[] = [
     {
       tag1: '高价值客户',
       tag2: '流失风险客户',
       reason: '高价值客户和流失风险客户在业务定义上存在潜在冲突',
+      enabled: true,
+      custom: false,
     },
     {
       tag1: '活跃客户',
       tag2: '流失风险客户',
       reason: '活跃客户和流失风险客户在行为特征上矛盾',
+      enabled: true,
+      custom: false,
     },
     {
       tag1: '低风险客户',
       tag2: '高风险客户',
       reason: '风险等级互斥',
+      enabled: true,
+      custom: false,
     },
     {
       tag1: '高潜力客户',
       tag2: '衰退客户',
       reason: '增长趋势相反',
+      enabled: true,
+      custom: false,
     },
   ];
+
+  // 冲突模式缓存（内存）
+  private readonly conflictPatternCache = new Map<string, ConflictPatternCache>();
+  
+  // 自定义互斥规则（运行时添加）
+  private readonly customExclusionRules: MutualExclusionRule[] = [];
 
   constructor(
     @InjectRepository(TagRecommendation)
     private readonly recommendationRepo: Repository<TagRecommendation>,
     @InjectRepository(RecommendationRule)
     private readonly ruleRepo: Repository<RecommendationRule>,
+    // Temporarily commented out for testing
+    // private readonly cacheService: CacheService,
   ) {}
 
   /**
-   * 检测单个客户的推荐冲突
+   * 添加自定义互斥规则
+   */
+  addCustomExclusionRule(rule: MutualExclusionRule): void {
+    this.customExclusionRules.push({ ...rule, custom: true, enabled: true });
+    this.logger.log(`Added custom exclusion rule: ${rule.tag1} <-> ${rule.tag2}`);
+    
+    // 清除缓存的规则列表
+    this.clearRulesCache();
+  }
+
+  /**
+   * 移除自定义互斥规则
+   */
+  removeCustomExclusionRule(tag1: string, tag2: string): boolean {
+    const index = this.customExclusionRules.findIndex(
+      r => r.tag1 === tag1 && r.tag2 === tag2
+    );
+    
+    if (index !== -1) {
+      this.customExclusionRules.splice(index, 1);
+      this.logger.log(`Removed custom exclusion rule: ${tag1} <-> ${tag2}`);
+      this.clearRulesCache();
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * 获取所有启用的互斥规则
+   */
+  getActiveExclusionRules(): MutualExclusionRule[] {
+    return [
+      ...this.mutualExclusionRules.filter(r => r.enabled !== false),
+      ...this.customExclusionRules.filter(r => r.enabled !== false),
+    ];
+  }
+
+  /**
+   * 启用/禁用互斥规则
+   */
+  toggleExclusionRule(tag1: string, tag2: string, enabled: boolean): void {
+    // 先在预定义规则中查找
+    const predefinedRule = this.mutualExclusionRules.find(
+      r => r.tag1 === tag1 && r.tag2 === tag2
+    );
+    
+    if (predefinedRule) {
+      predefinedRule.enabled = enabled;
+      this.logger.log(`Toggled predefined exclusion rule: ${tag1} <-> ${tag2} -> ${enabled}`);
+      this.clearRulesCache();
+      return;
+    }
+    
+    // 再在自定义规则中查找
+    const customRule = this.customExclusionRules.find(
+      r => r.tag1 === tag1 && r.tag2 === tag2
+    );
+    
+    if (customRule) {
+      customRule.enabled = enabled;
+      this.logger.log(`Toggled custom exclusion rule: ${tag1} <-> ${tag2} -> ${enabled}`);
+      this.clearRulesCache();
+    }
+  }
+
+  /**
+   * 清除规则缓存
+   */
+  private clearRulesCache(): void {
+    this.conflictPatternCache.clear();
+  }
+
+  /**
+   * 检测单个客户的推荐冲突（支持分批处理）
    */
   async detectCustomerConflicts(
     customerId: number,
-    recommendations: TagRecommendation[]
+    recommendations: TagRecommendation[],
+    options?: {
+      batchSize?: number;
+      useCache?: boolean;
+      skipTypes?: ConflictType[];
+    }
   ): Promise<ConflictRecord[]> {
+    const {
+      batchSize = 100,
+      useCache = true,
+      skipTypes = [],
+    } = options || {};
+
+    this.logger.log(
+      `Detecting conflicts for customer ${customerId} with ${recommendations.length} recommendations`
+    );
+
+    // 检查缓存
+    const cacheKey = `conflict:${customerId}:${this.generateCacheKey(recommendations)}`;
+    if (useCache) {
+      const cached = await this.getFromCache(cacheKey);
+      if (cached) {
+        this.logger.debug(`Cache hit for customer ${customerId}`);
+        return cached;
+      }
+    }
+
     const conflicts: ConflictRecord[] = [];
 
-    this.logger.log(`Detecting conflicts for customer ${customerId} with ${recommendations.length} recommendations`);
+    // 分批处理大规模数据
+    const batches = this.chunkArray(recommendations, batchSize);
+    
+    for (const batch of batches) {
+      // 1. 检测标签互斥冲突
+      if (!skipTypes.includes(ConflictType.TAG_MUTUAL_EXCLUSION)) {
+        const tagConflicts = this.detectTagMutualExclusions(customerId, batch);
+        conflicts.push(...tagConflicts);
+      }
 
-    // 1. 检测标签互斥冲突
-    const tagConflicts = this.detectTagMutualExclusions(customerId, recommendations);
-    conflicts.push(...tagConflicts);
+      // 2. 检测推荐重复
+      if (!skipTypes.includes(ConflictType.RECOMMENDATION_DUPLICATE)) {
+        const duplicateConflicts = this.detectDuplicateRecommendations(customerId, batch);
+        conflicts.push(...duplicateConflicts);
+      }
 
-    // 2. 检测推荐重复
-    const duplicateConflicts = this.detectDuplicateRecommendations(customerId, recommendations);
-    conflicts.push(...duplicateConflicts);
+      // 3. 检测推荐冲突（相同类别但内容矛盾）
+      if (!skipTypes.includes(ConflictType.RECOMMENDATION_CONFLICT)) {
+        const recommendationConflicts = this.detectRecommendationConflicts(customerId, batch);
+        conflicts.push(...recommendationConflicts);
+      }
 
-    // 3. 检测推荐冲突（相同类别但内容矛盾）
-    const recommendationConflicts = this.detectRecommendationConflicts(customerId, recommendations);
-    conflicts.push(...recommendationConflicts);
+      // 4. 机器学习辅助的潜在冲突检测（实验性）
+      if (!skipTypes.includes(ConflictType.POTENTIAL_CONFLICT)) {
+        const mlConflicts = this.detectPotentialConflicts(customerId, batch);
+        conflicts.push(...mlConflicts);
+      }
+    }
 
     if (conflicts.length > 0) {
       this.logger.warn(`Detected ${conflicts.length} conflicts for customer ${customerId}`);
@@ -144,7 +287,89 @@ export class ConflictDetectorService {
       this.logger.debug(`No conflicts detected for customer ${customerId}`);
     }
 
+    // 缓存结果
+    if (useCache && conflicts.length > 0) {
+      await this.saveToCache(cacheKey, conflicts);
+    }
+
     return conflicts;
+  }
+
+  /**
+   * 生成缓存键
+   */
+  private generateCacheKey(recommendations: TagRecommendation[]): string {
+    const sorted = [...recommendations]
+      .map(r => `${r.tagName}:${r.confidence}`)
+      .sort()
+      .join('|');
+    return Buffer.from(sorted).toString('base64').substring(0, 32);
+  }
+
+  /**
+   * 从缓存获取
+   */
+  private async getFromCache(key: string): Promise<ConflictRecord[] | null> {
+    try {
+      const cached = this.conflictPatternCache.get(key);
+      if (cached) {
+        // 缓存有效期 5 分钟
+        const isExpired = (Date.now() - cached.cachedAt.getTime()) > 5 * 60 * 1000;
+        if (!isExpired) {
+          cached.hitCount++;
+          return cached.conflicts;
+        } else {
+          this.conflictPatternCache.delete(key);
+        }
+      }
+      
+      // Temporarily commented out Redis cache for testing
+      // const redisCached = await this.cacheService.get<ConflictRecord[]>(key);
+      // if (redisCached) {
+      //   this.conflictPatternCache.set(key, {
+      //     pattern: key,
+      //     conflicts: redisCached,
+      //     cachedAt: new Date(),
+      //     hitCount: 1,
+      //   });
+      //   return redisCached;
+      // }
+    } catch (error) {
+      this.logger.error('Cache get error:', error.message);
+    }
+    
+    return null;
+  }
+
+  /**
+   * 保存到缓存
+   */
+  private async saveToCache(key: string, conflicts: ConflictRecord[]): Promise<void> {
+    try {
+      // 内存缓存
+      this.conflictPatternCache.set(key, {
+        pattern: key,
+        conflicts,
+        cachedAt: new Date(),
+        hitCount: 0,
+      });
+
+      // Temporarily commented out Redis cache for testing
+      // await this.cacheService.set(key, conflicts, 600);
+    } catch (error) {
+      this.logger.error('Cache set error:', error.message);
+    }
+  }
+
+  /**
+   * 数组分块
+   */
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
   }
 
   /**
@@ -157,7 +382,7 @@ export class ConflictDetectorService {
     const conflicts: ConflictRecord[] = [];
     const tagNameSet = new Set(recommendations.map(r => r.tagName));
 
-    for (const exclusionRule of this.mutualExclusionRules) {
+    for (const exclusionRule of this.getActiveExclusionRules()) {
       const hasTag1 = tagNameSet.has(exclusionRule.tag1);
       const hasTag2 = tagNameSet.has(exclusionRule.tag2);
 
@@ -359,6 +584,20 @@ export class ConflictDetectorService {
     }
 
     return [];
+  }
+
+  /**
+   * 检测潜在冲突（实验性）
+   */
+  private detectPotentialConflicts(
+    customerId: number,
+    recommendations: TagRecommendation[]
+  ): ConflictRecord[] {
+    const conflicts: ConflictRecord[] = [];
+
+    // TODO: 实现机器学习辅助的潜在冲突检测逻辑
+
+    return conflicts;
   }
 
   /**
