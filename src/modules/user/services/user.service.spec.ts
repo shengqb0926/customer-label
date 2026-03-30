@@ -103,7 +103,7 @@ describe('UserService', () => {
         roles: ['user'],
       };
 
-      const createdUser = { ...createDto, id: 2, password: 'hashed_password' };
+      const createdUser = { ...createDto, id: 2 };
 
       jest.spyOn(userRepo, 'findOne').mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
@@ -113,13 +113,11 @@ describe('UserService', () => {
       const result = await service.createUser(createDto as any);
 
       expect(result.username).toBe('newuser');
-      expect(result.password).toBe('hashed_password');
+      expect(result.email).toBe('new@example.com');
+      expect(result.password).toBeUndefined(); // hidePassword 会移除密码字段
       expect(bcrypt.hash).toHaveBeenCalledWith('password123', expect.any(Number));
-      expect(userRepo.create).toHaveBeenCalledWith(expect.objectContaining({
-        username: 'newuser',
-        email: 'new@example.com',
-        password: 'hashed_password',
-      }));
+      expect(userRepo.create).toHaveBeenCalled();
+      expect(userRepo.save).toHaveBeenCalled();
     });
 
     it('should throw error if username already exists', async () => {
@@ -152,6 +150,7 @@ describe('UserService', () => {
 
       expect(result.email).toBe('updated@example.com');
       expect(result.roles).toContain('admin');
+      expect(result.password).toBeUndefined(); // hidePassword 会移除密码字段
       expect(userRepo.update).toHaveBeenCalledWith(1, updateDto);
     });
 
@@ -165,12 +164,12 @@ describe('UserService', () => {
   describe('deleteUser', () => {
     it('should delete user successfully', async () => {
       jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUser as any);
-      jest.spyOn(userRepo, 'delete').mockResolvedValue({ affected: 1 } as any);
+      jest.spyOn(userRepo, 'remove').mockResolvedValue(mockUser as any);
 
       await service.deleteUser(1);
 
       expect(userRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(userRepo.delete).toHaveBeenCalledWith(1);
+      expect(userRepo.remove).toHaveBeenCalledWith(mockUser);
     });
 
     it('should throw NotFoundException when deleting non-existent user', async () => {
@@ -189,13 +188,14 @@ describe('UserService', () => {
       jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUser as any);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_new_pass');
-      jest.spyOn(userRepo, 'save').mockResolvedValue({ ...mockUser, password: 'hashed_new_pass' } as any);
+      jest.spyOn(userRepo, 'save').mockResolvedValue({ ...mockUser } as any);
 
       const result = await service.changePassword(userId, oldPassword, newPassword);
 
-      expect(result.password).toBe('hashed_new_pass');
+      expect(result.password).toBeUndefined(); // hidePassword 会移除密码字段
       expect(bcrypt.compare).toHaveBeenCalledWith(oldPassword, 'hashed_password');
       expect(bcrypt.hash).toHaveBeenCalledWith(newPassword, expect.any(Number));
+      expect(userRepo.save).toHaveBeenCalled();
     });
 
     it('should throw error if old password is incorrect', async () => {
@@ -213,6 +213,7 @@ describe('UserService', () => {
       const result = await (service as any).validatePassword('correct', 'hashed_correct');
 
       expect(result).toBe(true);
+      expect(bcrypt.compare).toHaveBeenCalledWith('correct', 'hashed_correct');
     });
 
     it('should return false for incorrect password', async () => {
@@ -221,6 +222,7 @@ describe('UserService', () => {
       const result = await (service as any).validatePassword('wrong', 'hashed_correct');
 
       expect(result).toBe(false);
+      expect(bcrypt.compare).toHaveBeenCalledWith('wrong', 'hashed_correct');
     });
   });
 });

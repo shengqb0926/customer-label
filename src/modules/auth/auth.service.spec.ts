@@ -9,7 +9,7 @@ describe('AuthService', () => {
   let jwtService: JwtService;
   let userService: UserService;
 
-  const mockUser: Partial<User> = {
+  const mockUser: Partial<User> & { id: number } = {
     id: 1,
     username: 'testuser',
     email: 'test@example.com',
@@ -49,7 +49,7 @@ describe('AuthService', () => {
 
   describe('validateUser', () => {
     it('should return user if valid', async () => {
-      jest.spyOn(userService, 'validateUser').mockResolvedValue(mockUser);
+      jest.spyOn(userService, 'validateUser').mockResolvedValue(mockUser as any);
 
       const result = await authService.validateUser('testuser', 'password');
 
@@ -70,7 +70,7 @@ describe('AuthService', () => {
     it('should return access token and user info', async () => {
       jest.spyOn(jwtService, 'sign').mockReturnValue('fake_token');
 
-      const result = await authService.login(mockUser);
+      const result = await authService.login(mockUser as any);
 
       expect(result).toHaveProperty('access_token');
       expect(result).toHaveProperty('expires_in', 3600);
@@ -87,7 +87,7 @@ describe('AuthService', () => {
     it('should call jwtService.sign with correct payload', async () => {
       jest.spyOn(jwtService, 'sign').mockReturnValue('fake_token');
 
-      await authService.login(mockUser);
+      await authService.login(mockUser as any);
 
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: mockUser.id,
@@ -102,7 +102,7 @@ describe('AuthService', () => {
     it('should return new token using login method', async () => {
       const loginSpy = jest.spyOn(authService, 'login');
       
-      await authService.refreshToken(mockUser);
+      await authService.refreshToken(mockUser as any);
 
       expect(loginSpy).toHaveBeenCalledWith(mockUser);
     });
@@ -111,7 +111,7 @@ describe('AuthService', () => {
   describe('changePassword', () => {
     it('should call userService.changePassword', async () => {
       const changePasswordSpy = jest.spyOn(userService, 'changePassword')
-        .mockResolvedValue(mockUser);
+        .mockResolvedValue(mockUser as any);
 
       await authService.changePassword(1, 'oldpass', 'newpass');
 

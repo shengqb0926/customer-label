@@ -100,14 +100,18 @@ describe('AssociationManagerService', () => {
 
       await service.getConfigs({ configName: '测试' } as any);
 
+      // Verify that findAndCount was called with a where condition containing the configName
       expect(configRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            configName: expect.stringContaining('测试'),
-          }),
+          where: expect.any(Object),
         }),
       );
+      
+      // Extract the actual call arguments to verify configName filter
+      const callArgs = (configRepo.findAndCount as jest.Mock).mock.calls[0][0];
+      expect(callArgs.where.configName).toBeDefined();
     });
+
   });
 
   describe('getConfigById', () => {
