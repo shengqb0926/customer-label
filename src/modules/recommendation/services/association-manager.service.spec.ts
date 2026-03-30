@@ -33,6 +33,7 @@ describe('AssociationManagerService', () => {
             save: jest.fn(),
             findAndCount: jest.fn(),
             delete: jest.fn(),
+            remove: jest.fn(),
           },
         },
       ],
@@ -99,11 +100,13 @@ describe('AssociationManagerService', () => {
 
       await service.getConfigs({ configName: '测试' } as any);
 
-      expect(configRepo.findAndCount).toHaveBeenCalledWith({
-        where: expect.objectContaining({
-          configName: expect.anything(),
+      expect(configRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            configName: expect.stringContaining('测试'),
+          }),
         }),
-      });
+      );
     });
   });
 
@@ -145,11 +148,11 @@ describe('AssociationManagerService', () => {
   describe('deleteConfig', () => {
     it('should delete config successfully', async () => {
       jest.spyOn(service, 'getConfigById').mockResolvedValue(mockAssociationConfig as any);
-      jest.spyOn(configRepo, 'delete').mockResolvedValue({ affected: 1 } as any);
+      jest.spyOn(configRepo, 'remove').mockResolvedValue(mockAssociationConfig as any);
 
       await service.deleteConfig(1);
 
-      expect(configRepo.delete).toHaveBeenCalledWith(1);
+      expect(configRepo.remove).toHaveBeenCalledWith(mockAssociationConfig);
     });
 
     it('should throw NotFoundException when deleting non-existent config', async () => {

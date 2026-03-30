@@ -198,10 +198,21 @@ describe('RfmAnalysisService', () => {
       expect(result.every(item => item.customerSegment === targetSegment)).toBe(true);
     });
 
-    it('should return empty array for non-existent segment', async () => {
-      const result = await service.getRfmBySegment('不存在的分类');
+    it('should filter by segment correctly', async () => {
+      jest.spyOn(customerRepo, 'find').mockResolvedValue(mockCustomers as any);
 
-      expect(result).toEqual([]);
+      // Mock analyzeRfm to return controlled data
+      const mockAnalysis = [
+        { customerId: 1, customerSegment: '重要价值客户', totalScore: 15 },
+        { customerId: 2, customerSegment: '一般发展客户', totalScore: 8 },
+      ];
+
+      jest.spyOn(service as any, 'analyzeRfm').mockResolvedValue(mockAnalysis);
+
+      const result = await service.getRfmBySegment('重要价值客户');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].customerSegment).toBe('重要价值客户');
     });
   });
 

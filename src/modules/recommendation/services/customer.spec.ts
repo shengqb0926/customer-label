@@ -240,13 +240,30 @@ describe('CustomerService', () => {
     it('should throw BadRequestException if email is duplicated', async () => {
       const updateDto = { email: 'duplicate@example.com' };
 
+      // Mock findById to return existing customer
       jest.spyOn(customerRepo, 'findOne')
         .mockResolvedValueOnce(mockCustomer as any)
+        // Mock the duplicate check with Not operator
         .mockResolvedValueOnce({ id: 2, email: 'duplicate@example.com' } as any);
 
       await expect(service.update(1, updateDto)).rejects.toThrow(BadRequestException);
       await expect(service.update(1, updateDto)).rejects.toThrow('邮箱或手机号已被其他客户使用');
     });
+
+    it('should succeed if email is not duplicated', async () => {
+      const updateDto = { email: 'newemail@example.com' };
+      const updatedCustomer = { ...mockCustomer, email: 'newemail@example.com' };
+
+      jest.spyOn(customerRepo, 'findOne')
+        .mockResolvedValueOnce(mockCustomer as any)
+        .mockResolvedValueOnce(null); // No duplicate found
+      jest.spyOn(customerRepo, 'save').mockResolvedValue(updatedCustomer as any);
+
+      const result = await service.update(1, updateDto);
+
+      expect(result.email).toBe('newemail@example.com');
+    });
+
   });
 
   describe('remove', () => {
@@ -278,35 +295,44 @@ describe('CustomerService', () => {
   });
 
   describe('getStatistics', () => {
-    it('should return customer statistics', async () => {
-      const mockStats = {
-        levelStats: [{ level: 'SILVER', count: '100' }],
-        riskStats: [{ riskLevel: 'LOW', count: '80' }],
-        cityStats: [{ city: '北京', count: '50' }],
-      };
+    it('should return complete customer statistics', async () => {
+      const mockLevelStats = [{ level: 'SILVER', count: '100' }];
+      const mockRiskStats = [{ riskLevel: 'LOW', count: '80' }];
+      const mockCityStats = [{ city: '北京', count: '50' }];
 
-      jest.spyOn(customerRepo, 'count').mockResolvedValue(250);
+      jest.spyOn(customerRepo, 'count')
+        .mockResolvedValueOnce(250) // total
+        .mockResolvedValueOnce(200); // activeCount
+      
       jest.spyOn(customerRepo, 'createQueryBuilder').mockReturnValue({
         select: jest.fn().mockReturnThis(),
         addSelect: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue(mockStats.levelStats),
+        getRawMany: jest.fn()
+          .mockResolvedValueOnce(mockLevelStats)
+          .mockResolvedValueOnce(mockRiskStats)
+          .mockResolvedValueOnce(mockCityStats),
         getRawOne: jest.fn().mockResolvedValue({ avg: 500000 }),
       } as any);
 
       const result = await service.getStatistics();
 
       expect(result.total).toBe(250);
+      expect(result.activeCount).toBe(200);
+      expect(result.inactiveCount).toBe(50);
       expect(result.levelStats).toBeDefined();
       expect(result.riskStats).toBeDefined();
       expect(result.cityStats).toBeDefined();
-      expect(result.avgAssets).toBeDefined();
+      expect(result.avgAssets).toBe(500000);
     });
 
     it('should handle zero customers', async () => {
-      jest.spyOn(customerRepo, 'count').mockResolvedValue(0);
+      jest.spyOn(customerRepo, 'count')
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
+      
       jest.spyOn(customerRepo, 'createQueryBuilder').mockReturnValue({
         select: jest.fn().mockReturnThis(),
         addSelect: jest.fn().mockReturnThis(),
@@ -318,6 +344,8 @@ describe('CustomerService', () => {
       const result = await service.getStatistics();
 
       expect(result.total).toBe(0);
+      expect(result.activeCount).toBe(0);
+      expect(result.inactiveCount).toBe(0);
       expect(result.avgAssets).toBe(0);
     });
   });

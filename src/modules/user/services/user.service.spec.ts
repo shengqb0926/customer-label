@@ -5,6 +5,12 @@ import * as bcrypt from 'bcrypt';
 import { UserService } from './user.service';
 import { User, UserRole } from '../entities/user.entity';
 
+// Mock bcrypt module
+jest.mock('bcrypt', () => ({
+  hash: jest.fn(),
+  compare: jest.fn(),
+}));
+
 describe('UserService', () => {
   let service: UserService;
   let userRepo: Repository<User>;
@@ -24,10 +30,12 @@ describe('UserService', () => {
           provide: getRepositoryToken(User),
           useValue: {
             findOne: jest.fn(),
+            findAndCount: jest.fn(),
             create: jest.fn(),
             save: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
+            remove: jest.fn(),
           },
         },
       ],
@@ -35,6 +43,9 @@ describe('UserService', () => {
 
     service = module.get<UserService>(UserService);
     userRepo = module.get<Repository<User>>(getRepositoryToken(User));
+    
+    // Clear all mocks before each test
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -92,14 +103,10 @@ describe('UserService', () => {
         roles: ['user'],
       };
 
-      const createdUser = { ...createDto, id: 2 };
+      const createdUser = { ...createDto, id: 2, password: 'hashed_password' };
 
       jest.spyOn(userRepo, 'findOne').mockResolvedValue(null);
-      
-      // Mock bcrypt.hash to avoid the spy issue
-      const hashSpy = jest.spyOn(bcrypt, 'hash');
-      hashSpy.mockImplementation(() => Promise.resolve('hashed_password' as never));
-      
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
       jest.spyOn(userRepo, 'create').mockReturnValue(createdUser as any);
       jest.spyOn(userRepo, 'save').mockResolvedValue(createdUser as any);
 
@@ -107,13 +114,12 @@ describe('UserService', () => {
 
       expect(result.username).toBe('newuser');
       expect(result.password).toBe('hashed_password');
-      expect(hashSpy).toHaveBeenCalled();
+      expect(bcrypt.hash).toHaveBeenCalledWith('password123', expect.any(Number));
       expect(userRepo.create).toHaveBeenCalledWith(expect.objectContaining({
         username: 'newuser',
         email: 'new@example.com',
+        password: 'hashed_password',
       }));
-      
-      hashSpy.mockRestore();
     });
 
     it('should throw error if username already exists', async () => {
@@ -181,29 +187,20 @@ describe('UserService', () => {
       const newPassword = 'newpass123';
 
       jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUser as any);
-      
-      const compareSpy = jest.spyOn(bcrypt, 'compare');
-      compareSpy.mockImplementation(() => Promise.resolve(true as never));
-      
-      const hashSpy = jest.spyOn(bcrypt, 'hash');
-      hashSpy.mockImplementation(() => Promise.resolve('hashed_new_pass' as never));
-      
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_new_pass');
       jest.spyOn(userRepo, 'save').mockResolvedValue({ ...mockUser, password: 'hashed_new_pass' } as any);
 
       const result = await service.changePassword(userId, oldPassword, newPassword);
 
       expect(result.password).toBe('hashed_new_pass');
-      expect(compareSpy).toHaveBeenCalledWith(oldPassword, mockUser.password);
-      expect(hashSpy).toHaveBeenCalledWith(newPassword, expect.any(Number));
-      
-      compareSpy.mockRestore();
-      hashSpy.mockRestore();
+      expect(bcrypt.compare).toHaveBeenCalledWith(oldPassword, 'hashed_password');
+      expect(bcrypt.hash).toHaveBeenCalledWith(newPassword, expect.any(Number));
     });
 
     it('should throw error if old password is incorrect', async () => {
       jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUser as any);
-      
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(false as never));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.changePassword(1, 'wrongpass', 'newpass')).rejects.toThrow();
     });
@@ -211,7 +208,7 @@ describe('UserService', () => {
 
   describe('validatePassword', () => {
     it('should validate password correctly', async () => {
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true as never));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await (service as any).validatePassword('correct', 'hashed_correct');
 
@@ -219,7 +216,7 @@ describe('UserService', () => {
     });
 
     it('should return false for incorrect password', async () => {
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(false as never));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       const result = await (service as any).validatePassword('wrong', 'hashed_correct');
 
