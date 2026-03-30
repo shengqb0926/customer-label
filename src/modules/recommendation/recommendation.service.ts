@@ -902,9 +902,8 @@ export class RecommendationService {
     recommendation.isAccepted = null;
     recommendation.acceptedAt = null;
     recommendation.acceptedBy = null;
-    recommendation.rejectedAt = null;
-    recommendation.rejectedBy = null;
-    recommendation.rejectReason = null;
+    recommendation.modifiedTagName = null;
+    recommendation.feedbackReason = null;
     recommendation.updatedAt = new Date();
     
     await this.recommendationRepo.save(recommendation);
@@ -988,7 +987,7 @@ export class RecommendationService {
     acceptedAt?: Date;
   }>> {
     try {
-      const history = await this.tagRecommendationRepo.find({
+      const history = await this.recommendationRepo.find({
         where: { customerId },
         order: { createdAt: 'DESC' },
         take: limit,

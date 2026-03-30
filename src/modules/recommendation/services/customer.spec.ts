@@ -301,10 +301,10 @@ describe('CustomerService', () => {
       const mockRiskStats = [{ riskLevel: 'LOW', count: '80' }];
       const mockCityStats = [{ city: '北京', count: '50' }];
 
-      // Mock count for both total and activeCount calls - use mockResolvedValue with proper structure
-      jest.spyOn(customerRepo, 'findAndCount')
-        .mockResolvedValueOnce([[mockCustomer as any], 250]) // First call: total
-        .mockResolvedValueOnce([[mockCustomer as any], 200]); // Second call: active
+      // Mock count for total and activeCount - use mockResolvedValueOnce for two calls
+      jest.spyOn(customerRepo, 'count')
+        .mockResolvedValueOnce(250) // First call: total
+        .mockResolvedValueOnce(200); // Second call: active
       
       jest.spyOn(customerRepo, 'createQueryBuilder').mockReturnValue({
         select: jest.fn().mockReturnThis(),
@@ -331,9 +331,10 @@ describe('CustomerService', () => {
     });
 
     it('should handle zero customers', async () => {
-      jest.spyOn(customerRepo, 'findAndCount')
-        .mockResolvedValueOnce([[], 0]) // First call: total
-        .mockResolvedValueOnce([[], 0]); // Second call: active
+      // Mock count to return zero for both calls
+      jest.spyOn(customerRepo, 'count')
+        .mockResolvedValueOnce(0) // First call: total
+        .mockResolvedValueOnce(0); // Second call: active
       
       jest.spyOn(customerRepo, 'createQueryBuilder').mockReturnValue({
         select: jest.fn().mockReturnThis(),

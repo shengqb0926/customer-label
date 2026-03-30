@@ -457,10 +457,8 @@ export class RecommendationController {
     name: 'limit', 
     required: false, 
     type: Number, 
-    description: '返回数量限制',
-    default: 5,
-    minimum: 1,
-    maximum: 20
+    description: '返回数量限制 (默认 5，范围 1-20)',
+    example: 5
   })
   @ApiResponse({ 
     status: 200, 
@@ -518,10 +516,8 @@ export class RecommendationController {
     name: 'limit', 
     required: false, 
     type: Number, 
-    description: '返回数量限制',
-    default: 10,
-    minimum: 1,
-    maximum: 50
+    description: '返回数量限制 (默认 10，范围 1-50)',
+    example: 10
   })
   @ApiResponse({ 
     status: 200, 

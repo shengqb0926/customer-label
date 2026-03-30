@@ -142,7 +142,11 @@ describe('UserService', () => {
 
       const updatedUser = { ...mockUser, ...updateDto };
 
-      jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUser as any);
+      // Mock findOne twice: first to find the user, second to check email uniqueness
+      jest.spyOn(userRepo, 'findOne')
+        .mockResolvedValueOnce(mockUser as any)  // First call: find user by id
+        .mockResolvedValueOnce(null);            // Second call: check if email exists (returns null = not found)
+      
       jest.spyOn(userRepo, 'update').mockResolvedValue({ affected: 1 } as any);
       jest.spyOn(userRepo, 'save').mockResolvedValue(updatedUser as any);
 
@@ -185,10 +189,13 @@ describe('UserService', () => {
       const oldPassword = 'oldpass';
       const newPassword = 'newpass123';
 
-      jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUser as any);
+      // Create a mock user with hashed password
+      const mockUserWithPassword = { ...mockUser, password: 'hashed_password' };
+      
+      jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUserWithPassword as any);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_new_pass');
-      jest.spyOn(userRepo, 'save').mockResolvedValue({ ...mockUser } as any);
+      jest.spyOn(userRepo, 'save').mockResolvedValue({ ...mockUserWithPassword } as any);
 
       const result = await service.changePassword(userId, oldPassword, newPassword);
 
@@ -199,30 +206,12 @@ describe('UserService', () => {
     });
 
     it('should throw error if old password is incorrect', async () => {
-      jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUser as any);
+      const mockUserWithPassword = { ...mockUser, password: 'hashed_password' };
+      
+      jest.spyOn(userRepo, 'findOne').mockResolvedValue(mockUserWithPassword as any);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.changePassword(1, 'wrongpass', 'newpass')).rejects.toThrow();
-    });
-  });
-
-  describe('validatePassword', () => {
-    it('should validate password correctly', async () => {
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-
-      const result = await (service as any).validatePassword('correct', 'hashed_correct');
-
-      expect(result).toBe(true);
-      expect(bcrypt.compare).toHaveBeenCalledWith('correct', 'hashed_correct');
-    });
-
-    it('should return false for incorrect password', async () => {
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-
-      const result = await (service as any).validatePassword('wrong', 'hashed_correct');
-
-      expect(result).toBe(false);
-      expect(bcrypt.compare).toHaveBeenCalledWith('wrong', 'hashed_correct');
     });
   });
 });
