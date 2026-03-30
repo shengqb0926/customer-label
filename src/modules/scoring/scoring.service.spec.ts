@@ -440,16 +440,59 @@ describe('ScoringService', () => {
   });
 
   describe('getByRecommendation', () => {
-    it('should return tag scores filtered by recommendation', async () => {
-      jest.spyOn(scoreRepo, 'find').mockResolvedValue([mockTagScore as any]);
+    it('should return tags by recommendation type from database', async () => {
+      const mockTagScores: Partial<TagScore>[] = [
+        {
+          id: 1,
+          tagId: 1,
+          tagName: '测试标签 1',
+          overallScore: 85,
+          recommendation: '推荐',
+        },
+        {
+          id: 2,
+          tagId: 2,
+          tagName: '测试标签 2',
+          overallScore: 90,
+          recommendation: '强烈推荐',
+        },
+      ];
+
+      jest.spyOn(scoreRepo, 'find').mockResolvedValue(mockTagScores as TagScore[]);
 
       const result = await service.getByRecommendation('推荐');
 
-      expect(result).toHaveLength(1);
+      expect(result).toHaveLength(2);
+      expect(result[0].tagName).toBe('测试标签 1');
+      expect(result[1].tagName).toBe('测试标签 2');
       expect(scoreRepo.find).toHaveBeenCalledWith({
-        where: { recommendation: RecommendationLevel.RECOMMENDED },
+        where: { recommendation: '推荐' as any },
         order: { overallScore: 'DESC' },
       });
+    });
+
+    it('should return empty array when no tags match', async () => {
+      jest.spyOn(scoreRepo, 'find').mockResolvedValue([]);
+
+      const result = await service.getByRecommendation('不存在的类型');
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should sort results by overallScore descending', async () => {
+      const mockTagScores: Partial<TagScore>[] = [
+        { id: 1, tagId: 1, tagName: '标签 A', overallScore: 70, recommendation: '推荐' },
+        { id: 2, tagId: 2, tagName: '标签 B', overallScore: 90, recommendation: '推荐' },
+        { id: 3, tagId: 3, tagName: '标签 C', overallScore: 80, recommendation: '推荐' },
+      ];
+
+      jest.spyOn(scoreRepo, 'find').mockResolvedValue(mockTagScores as TagScore[]);
+
+      const result = await service.getByRecommendation('推荐');
+
+      expect(result[0].overallScore).toBe(90);
+      expect(result[1].overallScore).toBe(80);
+      expect(result[2].overallScore).toBe(70);
     });
   });
 

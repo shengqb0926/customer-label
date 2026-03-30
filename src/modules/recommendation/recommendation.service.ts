@@ -747,6 +747,20 @@ export class RecommendationService {
   async invalidateCache(customerId: number): Promise<void> {
     await this.cache.delete(`recommendations:${customerId}`);
     this.logger.debug(`Invalidated cache for customer ${customerId}`);
+    
+    // 同时清除其他相关缓存
+    try {
+      // 清除相似度推荐缓存
+      await this.cache.deleteByPattern(`rec:similar:${customerId}:*`);
+      
+      // 清除推荐统计缓存
+      await this.cache.deleteByPattern(`rec:stats:${customerId}:*`);
+      
+      this.logger.debug(`All caches invalidated for customer ${customerId}`);
+    } catch (error) {
+      this.logger.error(`Failed to invalidate some caches for customer ${customerId}:`, error);
+      // 缓存失效不影响主流程
+    }
   }
 
   /**
@@ -875,12 +889,12 @@ export class RecommendationService {
   /**
    * 批量撤销推荐操作
    */
-  async batchUndoRecommendations(ids: number[]): Promise<number> {
+  async batchUndoRecommendations(ids: number[], userId: number): Promise<number> {
     let successCount = 0;
     
     for (const id of ids) {
       try {
-        await this.undoRecommendation(id);
+        await this.undoRecommendation(id, userId);
         successCount++;
       } catch (error) {
         this.logger.error(`Failed to undo recommendation ${id}:`, error);
@@ -893,7 +907,7 @@ export class RecommendationService {
   /**
    * 撤销单个推荐操作
    */
-  async undoRecommendation(id: number): Promise<void> {
+  async undoRecommendation(id: number, userId: number): Promise<TagRecommendation> {
     const recommendation = await this.recommendationRepo.findOne({ where: { id } });
     
     if (!recommendation) {
@@ -914,24 +928,7 @@ export class RecommendationService {
     await this.invalidateCache(recommendation.customerId);
     
     this.logger.log(`Undo recommendation ${id}, back to pending status`);
-  }
-
-  /**
-   * 清除客户相关的缓存
-   */
-  private async invalidateCache(customerId: number): Promise<void> {
-    try {
-      // 清除相似度推荐缓存
-      await this.cache.deleteByPattern(`rec:similar:${customerId}:*`);
-      
-      // 清除推荐统计缓存（如果有的话）
-      await this.cache.deleteByPattern(`rec:stats:${customerId}:*`);
-      
-      this.logger.debug(`Cache invalidated for customer ${customerId}`);
-    } catch (error) {
-      this.logger.error(`Failed to invalidate cache for customer ${customerId}:`, error);
-      // 缓存失效不影响主流程
-    }
+    return recommendation;
   }
 
   /**

@@ -13,6 +13,7 @@ import { ClusteringEngineService } from './engines/clustering-engine.service';
 import { AssociationEngineService } from './engines/association-engine.service';
 import { FusionEngineService } from './engines/fusion-engine.service';
 import { ConflictDetectorService } from './services/conflict-detector.service';
+import { SimilarityService } from '../../common/similarity';
 
 describe('RecommendationService', () => {
   let recommendationService: RecommendationService;
@@ -114,6 +115,11 @@ describe('RecommendationService', () => {
     getMutualExclusionRules: jest.fn(),
   };
 
+  const mockSimilarityService = {
+    calculateSimilarity: jest.fn(),
+    findSimilarCustomers: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -161,6 +167,10 @@ describe('RecommendationService', () => {
         {
           provide: ConflictDetectorService,
           useValue: mockConflictDetector,
+        },
+        {
+          provide: SimilarityService,
+          useValue: mockSimilarityService,
         },
       ],
     }).compile();

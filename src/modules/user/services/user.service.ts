@@ -1,8 +1,8 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, FindOptionsWhere } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { User, UserRole } from '../entities/user.entity';
+import { Repository } from 'typeorm';
+import { User } from './entities/user.entity';
+import * as bcrypt from 'bcryptjs';
 
 export interface CreateUserDto {
   username: string;
@@ -52,7 +52,7 @@ export class UserService {
     });
 
     if (existingUsername) {
-      throw new BadRequestException(`用户名 "${dto.username}" 已存在`);
+      throw new ConflictException(`用户名 "${dto.username}" 已存在`);
     }
 
     // 检查邮箱是否已存在
@@ -61,7 +61,7 @@ export class UserService {
     });
 
     if (existingEmail) {
-      throw new BadRequestException(`邮箱 "${dto.email}" 已存在`);
+      throw new ConflictException(`邮箱 "${dto.email}" 已存在`);
     }
 
     // 加密密码
@@ -182,7 +182,7 @@ export class UserService {
       });
 
       if (existing) {
-        throw new BadRequestException(`用户名 "${dto.username}" 已存在`);
+        throw new ConflictException(`用户名 "${dto.username}" 已存在`);
       }
     }
 
@@ -193,7 +193,7 @@ export class UserService {
       });
 
       if (existing) {
-        throw new BadRequestException(`邮箱 "${dto.email}" 已存在`);
+        throw new ConflictException(`邮箱 "${dto.email}" 已存在`);
       }
     }
 
