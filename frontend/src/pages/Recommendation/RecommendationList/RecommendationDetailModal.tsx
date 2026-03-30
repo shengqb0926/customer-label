@@ -1,6 +1,7 @@
 import React from 'react';
-import { Modal, Descriptions, Tag, Progress, Alert, Timeline, Typography, Divider, Table, Space, Badge, Tabs } from 'antd';
+import { Modal, Descriptions, Tag, Progress, Alert, Timeline, Typography, Divider, Table, Space, Badge, Tabs, Spin, Empty } from 'antd';
 import type { Recommendation } from '@/services/rule';
+import { recommendationService } from '@/services/rule';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -9,6 +10,28 @@ interface RecommendationDetailModalProps {
   visible: boolean;
   recommendation: Recommendation | null;
   onCancel: () => void;
+}
+
+interface SimilarCustomer {
+  customerId: number;
+  customerName: string;
+  recommendationId: number;
+  tagName: string;
+  confidence: number;
+  isAccepted: boolean | null;
+  similarity: number;
+}
+
+interface HistoryRecommendation {
+  id: number;
+  tagName: string;
+  tagCategory?: string;
+  confidence: number;
+  source: string;
+  reason?: string;
+  isAccepted: boolean | null;
+  createdAt: string;
+  acceptedAt?: string | null;
 }
 
 // Mock 数据 - 相似客户推荐（实际应从 API 获取）
@@ -103,16 +126,33 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
     },
     {
       title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => {
+      dataIndex: 'isAccepted',
+      key: 'isAccepted',
+      render: (isAccepted: boolean | null) => {
         const statusMap: Record<string, string> = {
-          accepted: '✅ 已接受',
-          pending: '⏰ 待处理',
-          rejected: '❌ 已拒绝',
+          true: '✅ 已接受',
+          false: '❌ 已拒绝',
+          null: '⏰ 待处理',
         };
-        return <Badge status={status === 'accepted' ? 'success' : status === 'pending' ? 'processing' : 'error'} text={statusMap[status]} />;
+        const statusKey = isAccepted === null ? 'null' : String(isAccepted);
+        return <Badge status={isAccepted === null ? 'processing' : isAccepted ? 'success' : 'error'} text={statusMap[statusKey]} />;
       },
+    },
+    {
+      title: '相似度',
+      dataIndex: 'similarity',
+      key: 'similarity',
+      render: (similarity: number) => (
+        <Progress
+          percent={Number((similarity * 100).toFixed(1))}
+          strokeColor={{
+            '0%': '#ff4d4f',
+            '100%': '#52c41a',
+          }}
+          width={80}
+          format={(percent) => `${percent}%`}
+        />
+      ),
     },
   ];
 
@@ -125,6 +165,12 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
       render: (text: string) => <Tag color="blue">{text}</Tag>,
     },
     {
+      title: '标签类型',
+      dataIndex: 'tagCategory',
+      key: 'tagCategory',
+      render: (text?: string) => text ? <Tag color="default">{text}</Tag> : '-',
+    },
+    {
       title: '推荐时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
@@ -132,14 +178,16 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
     },
     {
       title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => {
+      dataIndex: 'isAccepted',
+      key: 'isAccepted',
+      render: (isAccepted: boolean | null) => {
         const statusMap: Record<string, string> = {
-          accepted: '✅ 已接受',
-          rejected: '❌ 已拒绝',
+          true: '✅ 已接受',
+          false: '❌ 已拒绝',
+          null: '⏰ 待处理',
         };
-        return <Tag color={status === 'accepted' ? 'green' : 'red'}>{statusMap[status]}</Tag>;
+        const statusKey = isAccepted === null ? 'null' : String(isAccepted);
+        return <Tag color={isAccepted === null ? 'orange' : isAccepted ? 'green' : 'red'}>{statusMap[statusKey]}</Tag>;
       },
     },
     {
@@ -147,11 +195,9 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
       dataIndex: 'reason',
       key: 'reason',
       ellipsis: true,
+      width: 200,
     },
   ];
-
-  const similarData = getSimilarCustomers(recommendation);
-  const historyData = getHistoryRecommendations(recommendation);
 
   return (
     <Modal
@@ -295,14 +341,20 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
             showIcon
             style={{ marginBottom: 16 }}
           />
-          <Table
-            rowKey="id"
-            columns={similarColumns as any}
-            dataSource={similarData}
-            pagination={false}
-            size="small"
-            scroll={{ x: 'max-content' }}
-          />
+          <Spin spinning={similarLoading}>
+            {similarData.length > 0 ? (
+              <Table
+                rowKey="recommendationId"
+                columns={similarColumns as any}
+                dataSource={similarData}
+                pagination={false}
+                size="small"
+                scroll={{ x: 'max-content' }}
+              />
+            ) : (
+              <Empty description="暂无相似客户推荐" />
+            )}
+          </Spin>
         </TabPane>
 
         {/* 历史记录标签页 */}
@@ -314,14 +366,20 @@ const RecommendationDetailModal: React.FC<RecommendationDetailModalProps> = ({
             showIcon
             style={{ marginBottom: 16 }}
           />
-          <Table
-            rowKey="id"
-            columns={historyColumns as any}
-            dataSource={historyData}
-            pagination={false}
-            size="small"
-            scroll={{ x: 'max-content' }}
-          />
+          <Spin spinning={historyLoading}>
+            {historyData.length > 0 ? (
+              <Table
+                rowKey="id"
+                columns={historyColumns as any}
+                dataSource={historyData}
+                pagination={false}
+                size="small"
+                scroll={{ x: 'max-content' }}
+              />
+            ) : (
+              <Empty description="暂无历史推荐记录" />
+            )}
+          </Spin>
         </TabPane>
       </Tabs>
     </Modal>

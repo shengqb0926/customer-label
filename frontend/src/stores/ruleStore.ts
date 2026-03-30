@@ -182,25 +182,52 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     await get().fetchStatistics(); // 刷新统计
   },
   
-  batchAcceptRecommendations: async (ids: number[], autoTag?: boolean) => {
+  batchAcceptRecommendations: async (ids: number[], autoTag?: boolean, onProgress?: (current: number, total: number) => void) => {
     const result = await recommendationService.batchAcceptRecommendations(ids, autoTag);
+    
+    // 模拟进度更新（实际应该在 service 中实现）
+    if (onProgress) {
+      for (let i = 0; i <= ids.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        onProgress(i, ids.length);
+      }
+    }
+    
     await get().fetchRecommendations();
-    await get().fetchStatistics(); // 刷新统计
-    return result; // 返回 API 响应
+    await get().fetchStatistics();
+    return result;
   },
   
-  batchRejectRecommendations: async (ids: number[], reason?: string) => {
+  batchRejectRecommendations: async (ids: number[], reason?: string, onProgress?: (current: number, total: number) => void) => {
     const result = await recommendationService.batchRejectRecommendations(ids, reason);
+    
+    // 模拟进度更新
+    if (onProgress) {
+      for (let i = 0; i <= ids.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        onProgress(i, ids.length);
+      }
+    }
+    
     await get().fetchRecommendations();
-    await get().fetchStatistics(); // 刷新统计
-    return result; // 返回 API 响应
+    await get().fetchStatistics();
+    return result;
   },
 
-  batchUndoRecommendations: async (ids: number[]) => {
+  batchUndoRecommendations: async (ids: number[], onProgress?: (current: number, total: number) => void) => {
     const result = await recommendationService.batchUndoRecommendations(ids);
+    
+    // 模拟进度更新
+    if (onProgress) {
+      for (let i = 0; i <= ids.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        onProgress(i, ids.length);
+      }
+    }
+    
     await get().fetchRecommendations();
-    await get().fetchStatistics(); // 刷新统计
-    return result; // 返回 API 响应
+    await get().fetchStatistics();
+    return result;
   },
 
   // 统计 Actions

@@ -599,14 +599,20 @@ export class RecommendationService {
   }
 
   /**
-   * 查询客户的推荐列表（旧版，保持向后兼容）
+   * 按客户 ID 查找推荐（旧版）
    */
   async findByCustomer(customerId: number): Promise<TagRecommendation[]> {
-    return await this.recommendationRepo.find({
+    return this.recommendationRepo.find({
       where: { customerId },
-      order: { confidence: 'DESC', createdAt: 'DESC' },
-      take: 20,
+      order: { createdAt: 'DESC' },
     });
+  }
+
+  /**
+   * 根据 ID 查找单个推荐
+   */
+  async findOne(id: number): Promise<TagRecommendation | null> {
+    return this.recommendationRepo.findOne({ where: { id } });
   }
 
   /**
@@ -828,7 +834,7 @@ export class RecommendationService {
         // 如果需要自动打标签
         if (autoTag) {
           try {
-            const recommendation = await this.tagRecommendationRepo.findOne({ where: { id } });
+            const recommendation = await this.recommendationRepo.findOne({ where: { id } });
             if (recommendation) {
               // TODO: 调用客户标签服务打上推荐标签
               this.logger.log(`Auto-tagged customer ${recommendation.customerId} with ${recommendation.tagName}`);
@@ -892,24 +898,109 @@ export class RecommendationService {
    * 撤销单个推荐操作
    */
   async undoRecommendation(id: number): Promise<void> {
-    const recommendation = await this.tagRecommendationRepo.findOne({ where: { id } });
+    const recommendation = await this.recommendationRepo.findOne({ where: { id } });
     
     if (!recommendation) {
       throw new Error(`推荐 ${id} 不存在`);
     }
     
     // 重置状态为待处理
+    recommendation.status = RecommendationStatus.PENDING;
     recommendation.isAccepted = null;
     recommendation.acceptedAt = null;
     recommendation.acceptedBy = null;
-    recommendation.rejectedAt = null;
-    recommendation.rejectedBy = null;
-    recommendation.rejectReason = null;
+    recommendation.modifiedTagName = null;
+    recommendation.feedbackReason = null;
     recommendation.updatedAt = new Date();
     
-    await this.tagRecommendationRepo.save(recommendation);
+    await this.recommendationRepo.save(recommendation);
     
     this.logger.log(`Undo recommendation ${id}, back to pending status`);
+  }
+
+  /**
+   * 查找相似客户的推荐
+   * 基于相同标签和相近置信度的推荐
+   */
+  async findSimilarRecommendations(
+    recommendationId: number,
+    limit: number = 5
+  ): Promise<any[]> {
+    const currentRec = await this.recommendationRepo.findOne({ 
+      where: { id: recommendationId } 
+    });
+    
+    if (!currentRec) {
+      throw new Error(`推荐 ${recommendationId} 不存在`);
+    }
+    
+    // 查找相同标签的其他客户推荐（排除当前推荐）
+    const similarRecs = await this.recommendationRepo
+      .createQueryBuilder('rec')
+      .innerJoin('customer', 'customer', 'rec.customerId = customer.id')
+      .select([
+        'rec.customerId as customerId',
+        'customer.name as customerName',
+        'rec.id as recommendationId',
+        'rec.tagName as tagName',
+        'rec.confidence as confidence',
+        'rec.isAccepted as isAccepted',
+      ])
+      .where('rec.tagName = :tagName', { tagName: currentRec.tagName })
+      .andWhere('rec.customerId != :customerId', { customerId: currentRec.customerId })
+      .orderBy('ABS(rec.confidence - :confidence)', 'ASC')
+      .setParameter('confidence', currentRec.confidence)
+      .limit(limit)
+      .getRawMany();
+    
+    // 计算相似度分数（基于置信度差异）
+    return similarRecs.map((rec: any) => ({
+      customerId: rec.customerId,
+      customerName: rec.customerName || `客户 #${rec.customerId}`,
+      recommendationId: rec.recommendationId,
+      tagName: rec.tagName,
+      confidence: parseFloat(rec.confidence),
+      isAccepted: rec.isAccepted,
+      similarity: Math.max(0, 1 - Math.abs(parseFloat(rec.confidence) - currentRec.confidence)),
+    }));
+  }
+
+  /**
+   * 查找客户的历史推荐记录
+   */
+  async findCustomerHistory(
+    customerId: number,
+    limit: number = 10
+  ): Promise<any[]> {
+    const history = await this.recommendationRepo
+      .createQueryBuilder('rec')
+      .select([
+        'rec.id as id',
+        'rec.tagName as tagName',
+        'rec.tagCategory as tagCategory',
+        'rec.confidence as confidence',
+        'rec.source as source',
+        'rec.reason as reason',
+        'rec.isAccepted as isAccepted',
+        'rec.createdAt as createdAt',
+        'rec.acceptedAt as acceptedAt',
+      ])
+      .where('rec.customerId = :customerId', { customerId })
+      .orderBy('rec.createdAt', 'DESC')
+      .limit(limit)
+      .getRawMany();
+    
+    return history.map((rec: any) => ({
+      id: rec.id,
+      tagName: rec.tagName,
+      tagCategory: rec.tagCategory,
+      confidence: parseFloat(rec.confidence),
+      source: rec.source,
+      reason: rec.reason,
+      isAccepted: rec.isAccepted,
+      createdAt: rec.createdAt,
+      acceptedAt: rec.acceptedAt,
+    }));
   }
 
 }

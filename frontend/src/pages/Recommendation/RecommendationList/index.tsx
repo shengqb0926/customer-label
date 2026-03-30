@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Input, Select, Space, Tag, Popconfirm, message, Typography, DatePicker, Row, Col, Statistic, Card, Progress, Modal, Form, Slider, Checkbox, Divider, Badge, Tooltip, Radio } from 'antd';
+import { Table, Button, Input, Select, Space, Tag, Popconfirm, message, Typography, DatePicker, Row, Col, Statistic, Card, Progress, Modal, Form, Slider, Checkbox, Divider, Badge, Tooltip, Radio, ProgressProps } from 'antd';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -12,6 +12,7 @@ import {
   SearchOutlined,
   UndoOutlined,
   TagOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useRuleStore } from '@/stores/ruleStore';
@@ -69,6 +70,11 @@ const RecommendationList: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = React.useState<React.Key[]>([]);
   const [advancedSearchVisible, setAdvancedSearchVisible] = React.useState(false);
   const [confidenceLevel, setConfidenceLevel] = useState<string>('all');
+  
+  // 批量操作进度状态
+  const [batchProcessing, setBatchProcessing] = React.useState(false);
+  const [batchProgress, setBatchProgress] = React.useState(0);
+  const [batchTotal, setBatchTotal] = React.useState(0);
 
   // 加载推荐列表和统计数据
   useEffect(() => {
@@ -249,7 +255,7 @@ const RecommendationList: React.FC = () => {
     });
   };
 
-  // 处理批量接受（带自动打标签选项）
+  // 处理批量接受（带自动打标签选项和进度条）
   const handleBatchAccept = async (selectedRowKeys: React.Key[]) => {
     if (!selectedRowKeys.length) {
       message.warning('请选择要接受的推荐');
@@ -275,27 +281,35 @@ const RecommendationList: React.FC = () => {
       okText: '确认接受',
       cancelText: '取消',
       onOk: async () => {
+        setBatchProcessing(true);
+        setBatchProgress(0);
+        setBatchTotal(selectedRowKeys.length);
+        
         try {
-          const result = await batchAcceptRecommendations(selectedRowKeys as number[], autoTag);
-          const successCount = (result as any)?.success || selectedRowKeys.length;
+          await batchAcceptRecommendations(
+            selectedRowKeys as number[], 
+            autoTag,
+            (current, total) => {
+              setBatchProgress(current);
+              setBatchTotal(total);
+            }
+          );
           
-          if (successCount === selectedRowKeys.length) {
-            message.success(`已成功接受 ${successCount} 条推荐${autoTag ? '并自动打标签' : ''}`);
-          } else if (successCount > 0) {
-            message.warning(`部分成功：成功接受 ${successCount} 条，失败 ${selectedRowKeys.length - successCount} 条`);
-          } else {
-            message.error('批量接受失败，请重试');
-          }
-          
+          message.success(`已成功接受 ${selectedRowKeys.length} 条推荐${autoTag ? '并自动打标签' : ''}`);
           loadRecommendations();
         } catch (error: any) {
           message.error(error.message || '批量接受失败');
+        } finally {
+          setBatchProcessing(false);
+          setBatchProgress(0);
+          setBatchTotal(0);
+          setSelectedRowKeys([]);
         }
       },
     });
   };
 
-  // 处理批量拒绝（保持原有逻辑）
+  // 处理批量拒绝（带进度条）
   const handleBatchReject = async (selectedRowKeys: React.Key[]) => {
     if (!selectedRowKeys.length) {
       message.warning('请选择要拒绝的推荐');
@@ -331,27 +345,35 @@ const RecommendationList: React.FC = () => {
           return false; // 阻止关闭对话框
         }
         
+        setBatchProcessing(true);
+        setBatchProgress(0);
+        setBatchTotal(selectedRowKeys.length);
+        
         try {
-          const result = await batchRejectRecommendations(selectedRowKeys as number[], reasonValue.trim());
-          const successCount = (result as any)?.success || selectedRowKeys.length;
+          await batchRejectRecommendations(
+            selectedRowKeys as number[], 
+            reasonValue.trim(),
+            (current, total) => {
+              setBatchProgress(current);
+              setBatchTotal(total);
+            }
+          );
           
-          if (successCount === selectedRowKeys.length) {
-            message.success(`已成功拒绝 ${successCount} 条推荐`);
-          } else if (successCount > 0) {
-            message.warning(`部分成功：成功拒绝 ${successCount} 条，失败 ${selectedRowKeys.length - successCount} 条`);
-          } else {
-            message.error('批量拒绝失败，请重试');
-          }
-          
+          message.success(`已成功拒绝 ${selectedRowKeys.length} 条推荐`);
           loadRecommendations();
         } catch (error: any) {
           message.error(error.message || '批量拒绝失败');
+        } finally {
+          setBatchProcessing(false);
+          setBatchProgress(0);
+          setBatchTotal(0);
+          setSelectedRowKeys([]);
         }
       },
     });
   };
 
-  // 处理批量撤销（新增功能）
+  // 处理批量撤销（带进度条）
   const handleBatchUndo = async (selectedRowKeys: React.Key[]) => {
     if (!selectedRowKeys.length) {
       message.warning('请选择要撤销的推荐');
@@ -364,13 +386,28 @@ const RecommendationList: React.FC = () => {
       okText: '确认撤销',
       cancelText: '取消',
       onOk: async () => {
+        setBatchProcessing(true);
+        setBatchProgress(0);
+        setBatchTotal(selectedRowKeys.length);
+        
         try {
-          // TODO: 调用后端撤销 API
-          // const result = await undoRecommendations(selectedRowKeys as number[]);
+          await batchUndoRecommendations(
+            selectedRowKeys as number[],
+            (current, total) => {
+              setBatchProgress(current);
+              setBatchTotal(total);
+            }
+          );
+          
           message.success(`已成功撤销 ${selectedRowKeys.length} 条推荐`);
           loadRecommendations();
         } catch (error: any) {
           message.error(error.message || '批量撤销失败');
+        } finally {
+          setBatchProcessing(false);
+          setBatchProgress(0);
+          setBatchTotal(0);
+          setSelectedRowKeys([]);
         }
       },
     });
@@ -943,6 +980,27 @@ const RecommendationList: React.FC = () => {
         </Form>
       </Card>
 
+      {/* 批量操作进度条提示 */}
+      {batchProcessing && (
+        <Card style={{ marginBottom: 16, borderRadius: 8 }} size="small">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <LoadingOutlined spin style={{ fontSize: 20, color: '#1890ff' }} />
+            <div style={{ flex: 1 }}>
+              <Text strong>正在处理批量操作...</Text>
+              <Progress 
+                percent={Math.round((batchProgress / batchTotal) * 100)} 
+                status="active"
+                strokeColor="#1890ff"
+                style={{ marginTop: 8 }}
+              />
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                已处理 {batchProgress} / {batchTotal} 条
+              </Text>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* 数据表格 */}
       <Table
         rowKey="id"
@@ -991,8 +1049,13 @@ const RecommendationList: React.FC = () => {
                   已选择 {selectedRowKeys.length} 条
                 </Tag>
               )}
+              {batchProcessing && (
+                <Tag color="orange" style={{ marginLeft: 8 }}>
+                  <LoadingOutlined spin /> 处理中... {batchProgress}/{batchTotal}
+                </Tag>
+              )}
             </div>
-            {selectedRowKeys.length > 0 && (
+            {selectedRowKeys.length > 0 && !batchProcessing && (
               <Space size="middle">
                 <Button
                   type="primary"
@@ -1029,6 +1092,19 @@ const RecommendationList: React.FC = () => {
                   导出选中
                 </Button>
               </Space>
+            )}
+            {batchProcessing && (
+              <div style={{ width: 300 }}>
+                <Progress
+                  percent={Math.round((batchProgress / batchTotal) * 100)}
+                  status="active"
+                  strokeColor={{
+                    '0%': '#108ee9',
+                    '100%': '#87d068',
+                  }}
+                  format={(percent) => `${percent}% (${batchProgress}/${batchTotal})`}
+                />
+              </div>
             )}
           </div>
         )}
