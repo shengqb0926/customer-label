@@ -1,9 +1,11 @@
 # 产品需求文档 (PRD)
 
-**项目名称**: 客户标签推荐系统  
+**项目名称**: 客户标签智能推荐系统  
 **版本**: v1.0  
 **编制日期**: 2026-03-30  
-**产品负责人**: [待填写]
+**产品负责人**: 产品经理（待任命）  
+**技术负责人**: AI Assistant  
+**当前状态**: 开发中 (Phase 2 完成)
 
 ---
 
@@ -17,22 +19,33 @@
 - **依赖经验**: 客户分群和推荐主要靠人工经验，缺乏数据支撑
 - **响应缓慢**: 市场变化快，传统数据分析周期长，无法及时响应
 
+**业务驱动因素**:
+- 金融行业客户数量突破 10 万+，需要智能化管理
+- 营销成本逐年上升，急需提升转化率
+- 竞争对手已部署 AI 推荐系统，需保持竞争力
+
 ### 1.2 产品目标
 
 构建一套智能客户标签推荐系统，实现：
-- **统一客户视图**: 整合客户数据，建立 360° 画像
-- **智能推荐**: 基于规则/聚类/关联等多引擎自动推荐标签
-- **精准营销**: 提升营销转化率 30%+
-- **降本增效**: 减少人工分析时间 80%+
+- ✅ **统一客户视图**: 整合客户数据，建立 360° 画像
+- ✅ **智能推荐**: 基于规则/聚类/关联等多引擎自动推荐标签
+- ✅ **精准营销**: 提升营销转化率 30%+
+- ✅ **降本增效**: 减少人工分析时间 80%+
+
+**成功指标 (KPI)**:
+- 推荐接受率 ≥ 65%
+- 营销转化率提升 ≥ 30%
+- 客户分析时间减少 ≥ 80%
+- 系统可用性 ≥ 99.5%
 
 ### 1.3 目标用户
 
-| 用户角色 | 典型场景 | 核心诉求 |
-|---------|---------|---------|
-| **销售经理** | 查看 VIP 客户列表，分配跟进任务 | 快速识别高价值客户 |
-| **运营人员** | 触发推荐引擎，获取营销策略 | 准确推荐，可解释性强 |
-| **数据分析师** | 配置规则引擎，调整聚类参数 | 灵活配置，可视化分析 |
-| **系统管理员** | 用户权限管理，系统监控 | 安全稳定，易维护 |
+| 用户角色 | 典型场景 | 核心诉求 | 优先级 |
+|---------|---------|---------|--------|
+| **销售经理** | 查看 VIP 客户列表，分配跟进任务 | 快速识别高价值客户 | P0 |
+| **运营人员** | 触发推荐引擎，获取营销策略 | 准确推荐，可解释性强 | P0 |
+| **数据分析师** | 配置规则引擎，调整聚类参数 | 灵活配置，可视化分析 | P1 |
+| **系统管理员** | 用户权限管理，系统监控 | 安全稳定，易维护 | P2 |
 
 ---
 
@@ -42,233 +55,345 @@
 
 ```
 ┌─────────────────────────────────────────┐
-│           前端应用层 (React)             │
+│           前端应用层 (React 18 + Ant Design 5)            │
 ├─────────────────────────────────────────┤
 │ 客户管理 | 推荐管理 | 配置管理 | 统计分析 │
 └─────────────────────────────────────────┘
-              ↓
+              ↓ REST API
 ┌─────────────────────────────────────────┐
-│          API 网关层 (NestJS)              │
+│          API 网关层 (NestJS 10 + TypeScript 5)             │
 ├─────────────────────────────────────────┤
 │   Controller → Service → Engine         │
+│   ├─ CustomerModule                      │
+│   ├─ RecommendationModule (4 大引擎)       │
+│   ├─ ScoringModule                        │
+│   └─ CacheModule (Redis)                 │
 └─────────────────────────────────────────┘
-              ↓
+              ↓ TypeORM 0.3
 ┌─────────────────────────────────────────┐
-│          数据持久层 (PostgreSQL)          │
+│          数据持久层 (PostgreSQL 14 + Redis 6)          │
 ├─────────────────────────────────────────┤
-│ customers | recommendations | configs   │
+│ customers | tag_recommendations | configs   │
 └─────────────────────────────────────────┘
 ```
 
 ### 2.2 功能清单
 
-#### F1: 客户管理模块
+#### F1: 客户管理模块 (CustomerModule)
 
-| 功能编号 | 功能名称 | 优先级 | 描述 |
-|---------|---------|--------|------|
-| F1.1 | 客户列表 | P0 | 分页展示客户，支持筛选/排序 |
-| F1.2 | 客户详情 | P0 | 查看客户完整信息和标签 |
-| F1.3 | 新增客户 | P0 | 手动创建客户记录 |
-| F1.4 | 编辑客户 | P0 | 修改客户信息 |
-| F1.5 | 删除客户 | P0 | 单条/批量删除 |
-| F1.6 | 批量导入 | P1 | Excel 导入客户数据 |
-| F1.7 | 批量导出 | P1 | 导出 Excel/CSV |
-| F1.8 | RFM 分析 | P1 | 客户价值分析（最近消费/频率/金额） |
-| F1.9 | 流失预警 | P2 | 识别流失风险客户 |
+| 功能编号 | 功能名称 | 优先级 | 描述 | 实现状态 | API 路径 |
+|---------|---------|--------|------|----------|----------|
+| F1.1 | 客户列表 | P0 | 分页展示客户，支持筛选/排序 | ✅ 已完成 | `GET /api/v1/customers` |
+| F1.2 | 客户详情 | P0 | 查看客户完整信息和标签 | ✅ 已完成 | `GET /api/v1/customers/:id` |
+| F1.3 | 新增客户 | P0 | 手动创建客户记录 | ✅ 已完成 | `POST /api/v1/customers` |
+| F1.4 | 编辑客户 | P0 | 修改客户信息 | ✅ 已完成 | `PATCH /api/v1/customers/:id` |
+| F1.5 | 删除客户 | P0 | 单条/批量删除 | ✅ 已完成 | `DELETE /api/v1/customers/:ids` |
+| F1.6 | 批量导入 | P1 | Excel 导入客户数据 | ⏳ 待开发 | - |
+| F1.7 | 批量导出 | P1 | 导出 Excel/CSV | ✅ 已完成 | `GET /api/v1/customers/export` |
+| F1.8 | RFM 分析 | P1 | 客户价值分析（最近消费/频率/金额） | ✅ 已完成 | `GET /api/v1/customers/:id/rfm` |
+| F1.9 | 流失预警 | P2 | 识别流失风险客户 | ⏳ 待开发 | - |
 
-#### F2: 推荐引擎模块
+**实体字段**:
+- `id` (bigint, 主键)
+- `name` (varchar(100), 必填)
+- `email` (varchar(100), 唯一索引)
+- `phone` (varchar(20), 唯一索引)
+- `gender` (enum: M/F)
+- `age` (int)
+- `city/province` (varchar)
+- `level` (enum: BRONZE/SILVER/GOLD/PLATINUM/DIAMOND)
+- `riskLevel` (enum: LOW/MEDIUM/HIGH)
+- `totalAssets` (decimal 12,2)
+- `monthlyIncome` (decimal 12,2)
+- `annualSpend` (decimal 12,2)
+- `orderCount/productCount` (int)
+- `tags` (text[], 数组类型)
+- `lastPurchaseDate` (date)
+- `createdAt/updatedAt` (timestamp)
 
-| 功能编号 | 功能名称 | 优先级 | 描述 |
-|---------|---------|--------|------|
-| F2.1 | 规则引擎 | P0 | 基于业务规则推荐标签 |
-| F2.2 | 聚类引擎 | P0 | K-Means 自动分群推荐 |
-| F2.3 | 关联引擎 | P0 | Apriori 挖掘关联规则 |
-| F2.4 | 融合引擎 | P0 | 多引擎结果加权融合 |
-| F2.5 | 手动触发 | P0 | 用户自主选择引擎执行 |
-| F2.6 | 推荐列表 | P1 | 查看/筛选/导出推荐结果 |
-| F2.7 | 接受/拒绝 | P1 | 确认或否决推荐 |
-| F2.8 | 批量操作 | P2 | 批量接受/拒绝推荐 |
+#### F2: 推荐引擎模块 (RecommendationModule)
+
+| 功能编号 | 功能名称 | 优先级 | 描述 | 实现状态 | API 路径 |
+|---------|---------|--------|------|----------|----------|
+| F2.1 | 规则引擎 | P0 | 基于业务规则推荐标签 | ✅ 已完成 | `POST /generate/:id?mode=rule` |
+| F2.2 | 聚类引擎 | P0 | K-Means 自动分群推荐 | ✅ 已完成 | `POST /generate/:id?mode=clustering` |
+| F2.3 | 关联引擎 | P0 | Apriori 挖掘关联规则 | ✅ 已完成 | `POST /generate/:id?mode=association` |
+| F2.4 | 融合引擎 | P0 | 多引擎结果加权融合 | ✅ 已完成 | 内部调用 |
+| F2.5 | 手动触发 | P0 | 用户自主选择引擎执行 | ✅ 已完成 | `POST /generate/:id` |
+| F2.6 | 推荐列表 | P1 | 查看/筛选/导出推荐结果 | ✅ 已完成 | `GET /api/v1/recommendations` |
+| F2.7 | 接受/拒绝 | P1 | 确认或否决推荐 | ✅ 已完成 | `POST /accept/:ids`, `POST /reject/:ids` |
+| F2.8 | 批量操作 | P2 | 批量接受/拒绝推荐 | ✅ 已完成 | `POST /batch-accept`, `POST /batch-reject` |
+
+**引擎特性**:
+- **规则引擎**: 支持 if-then 规则表达式，可配置优先级
+- **聚类引擎**: K-Means++ 算法，支持动态 K 值 (3-10)
+- **关联引擎**: Apriori 算法，支持度/置信度可调
+- **融合策略**: 加权平均，支持自定义权重配置
+
+**性能指标**:
+- 单客户推荐生成 < 3 秒
+- 批量处理 (100 条) < 30 秒
+- 并发支持 ≥ 10 QPS
 
 #### F3: 配置管理模块
 
-| 功能编号 | 功能名称 | 优先级 | 描述 |
-|---------|---------|--------|------|
-| F3.1 | 规则配置 | P0 | CRUD 业务规则表达式 |
-| F3.2 | 聚类配置 | P1 | 调整 K 值/迭代次数等参数 |
-| F3.3 | 关联配置 | P1 | 设置支持度/置信度阈值 |
-| F3.4 | 评分配置 | P2 | RFM 权重和分数配置 |
+| 功能编号 | 功能名称 | 优先级 | 描述 | 实现状态 | API 路径 |
+|---------|---------|--------|------|----------|----------|
+| F3.1 | 规则配置 | P0 | CRUD 业务规则表达式 | ✅ 已完成 | `/api/v1/rules` |
+| F3.2 | 聚类配置 | P1 | 调整 K 值/迭代次数等参数 | ✅ 已完成 | `/api/v1/clustering-configs` |
+| F3.3 | 关联配置 | P1 | 设置支持度/置信度阈值 | ✅ 已完成 | `/api/v1/association-configs` |
+| F3.4 | 评分配置 | P2 | RFM 权重和分数配置 | ⏳ 部分完成 | `/api/v1/score-configs` |
+
+**配置实体**:
+- `RecommendationRule`: id, name, description, expression, priority, enabled
+- `ClusteringConfig`: id, name, kValue, maxIterations, convergenceThreshold
+- `AssociationConfig`: id, name, minSupport, minConfidence, minLift
 
 #### F4: 统计分析模块
 
-| 功能编号 | 功能名称 | 优先级 | 描述 |
-|---------|---------|--------|------|
-| F4.1 | 客户统计 | P1 | 总数/等级分布/城市分布 |
-| F4.2 | 推荐统计 | P2 | 生成数量/接受率/拒绝率 |
-| F4.3 | 引擎监控 | P2 | 执行次数/耗时/命中率 |
+| 功能编号 | 功能名称 | 优先级 | 描述 | 实现状态 |
+|---------|---------|--------|------|----------|
+| F4.1 | 客户统计 | P0 | 总数/等级分布/地域分布 | ✅ 已完成 |
+| F4.2 | 推荐统计 | P0 | 生成数/接受率/趋势分析 | ✅ 已完成 |
+| F4.3 | 引擎性能 | P1 | 各引擎执行时间和质量对比 | ✅ 已完成 |
+| F4.4 | RFM 分布 | P1 | 客户价值矩阵可视化 | ⏳ 待开发 |
 
 ---
 
 ## 📊 三、非功能需求
 
-### 3.1 性能要求
+### 3.1 性能需求
 
 | 指标 | 目标值 | 测量方法 |
 |------|--------|---------|
-| **API 响应时间** | < 500ms (简单查询)<br>< 2s (复杂计算) | P95 延迟 |
-| **推荐引擎执行** | < 5s/客户 | 单次执行时间 |
-| **前端首屏加载** | < 2s | Chrome DevTools |
-| **并发支持** | 100 QPS | 压力测试 |
-| **数据库查询** | < 200ms | 慢查询日志 |
+| API 响应时间 (简单查询) | < 200ms | P95 延迟 |
+| API 响应时间 (复杂计算) | < 3000ms | P95 延迟 |
+| 推荐生成时间 (单客户) | < 3000ms | 端到端耗时 |
+| 推荐生成时间 (批量 100 条) | < 30000ms | 端到端耗时 |
+| 前端首屏加载 | < 2000ms | Chrome DevTools |
+| 数据库查询 | < 100ms | 慢查询日志 |
+| 缓存命中率 | > 80% | Redis 监控 |
 
-### 3.2 可用性要求
+### 3.2 可用性需求
 
-- **SLA**: 99.9%（全年宕机时间 < 8.76 小时）
-- **故障恢复**: RTO < 1 小时，RPO < 5 分钟
-- **备份策略**: 每日全量备份 + 实时增量备份
+- **系统可用性**: ≥ 99.5% (月度)
+- **错误率**: < 0.1% (HTTP 5xx 错误占比)
+- **并发支持**: ≥ 50 并发用户
+- **数据持久化**: 零丢失
 
-### 3.3 安全要求
+### 3.3 安全需求
 
-- **认证**: JWT Token 认证，2 小时过期
-- **授权**: RBAC 角色权限控制（ADMIN/OPERATOR/VIEWER）
-- **数据加密**: 密码 bcrypt 加密，敏感数据脱敏
-- **防护**: SQL 注入/XSS/CSRF防护
+- **认证**: JWT Token 认证，有效期 24 小时
+- **授权**: RBAC 角色权限控制 (管理员/普通用户/访客)
+- **加密**: 密码 bcrypt 加密，HTTPS 传输
+- **限流**: API 限流 (60 次/分钟/IP)
+- **审计**: 关键操作日志记录
 
-### 3.4 兼容性要求
+### 3.4 可扩展性需求
 
-- **浏览器**: Chrome 90+, Firefox 88+, Safari 14+
-- **Node.js**: 18.x LTS
-- **数据库**: PostgreSQL 14+
-- **缓存**: Redis 6+
-
----
-
-## 🎨 四、用户体验要求
-
-### 4.1 界面设计规范
-
-- **色彩系统**: Ant Design 默认主题色
-- **间距规范**: 8px 栅格系统
-- **字体规范**: 系统默认无衬线字体
-- **响应式**: 支持 1920x1080, 1366x768 分辨率
-
-### 4.2 交互规范
-
-- **加载反馈**: Loading 提示（超过 2s 显示进度条）
-- **成功反馈**: Message 提示（3 秒自动消失）
-- **错误处理**: 明确错误原因 + 解决建议
-- **确认操作**: 删除/覆盖等危险操作需二次确认
-
-### 4.3 可访问性
-
-- **键盘导航**: 支持 Tab/Enter/Esc快捷键
-- **屏幕阅读器**: ARIA 标签支持
-- **色盲友好**: 不单纯依赖颜色传递信息
+- **水平扩展**: 支持通过增加实例扩容
+- **模块化**: 模块间低耦合，可独立替换
+- **配置化**: 业务规则可配置，无需重新编译
 
 ---
 
-## ✅ 五、验收标准
+## 🔗 四、接口契约
 
-### 5.1 功能验收
+### 4.1 核心 API 列表
 
-| 模块 | 验收项 | 通过标准 |
-|------|--------|---------|
-| 客户管理 | CRUD 操作 | 100% 通过 |
-| 客户管理 | 筛选/分页 | 准确率 100% |
-| 推荐引擎 | 四大引擎执行 | 生成推荐且置信度合理 |
-| 推荐引擎 | 融合去重 | 无重复标签 |
-| 配置管理 | CRUD 操作 | 配置即时生效 |
+#### 客户管理 API
 
-### 5.2 性能验收
+```typescript
+// 获取客户列表 (支持分页、筛选、排序)
+GET /api/v1/customers?page=0&size=20&level=GOLD&sortBy=createdAt&order=DESC
+Response: {
+  data: Customer[],
+  total: number,
+  page: number,
+  size: number
+}
 
-- ✅ 所有简单查询 API P95 < 500ms
-- ✅ 推荐引擎执行 < 5s
-- ✅ 前端首屏 < 2s
-- ✅ 压力测试 100 QPS 无失败
+// 获取客户详情
+GET /api/v1/customers/:id
+Response: Customer & { recommendations: TagRecommendation[] }
 
-### 5.3 安全验收
+// 创建客户
+POST /api/v1/customers
+Body: CreateCustomerDto
+Response: Customer
 
-- ✅ JWT 认证正常
-- ✅ 权限控制有效（无越权访问）
-- ✅ SQL 注入测试通过
-- ✅ XSS/CSRF防护通过
+// 更新客户
+PATCH /api/v1/customers/:id
+Body: UpdateCustomerDto
+Response: Customer
 
-### 5.4 质量门禁
+// 批量删除
+DELETE /api/v1/customers/:ids (逗号分隔)
+Response: { deletedCount: number }
 
-- ✅ 单元测试覆盖率 ≥ 30%（短期目标）
-- ✅ 严重 Bug 数为 0
-- ✅ ESLint/Prettier 检查通过
-- ✅ 编译无 Error/Warning
+// 导出客户
+GET /api/v1/customers/export?format=csv
+Response: File (application/csv)
+```
 
----
+#### 推荐引擎 API
 
-## 📈 六、数据指标
+```typescript
+// 生成推荐 (手动触发)
+POST /api/v1/recommendations/generate/:customerId?mode=rule|clustering|association|all
+Response: { generated: number, recommendations: TagRecommendation[] }
 
-### 6.1 业务指标
+// 获取推荐列表
+GET /api/v1/recommendations?status=pending&customerId=123&page=0&size=20
+Response: { data: TagRecommendation[], total: number }
 
-| 指标名称 | 定义 | 目标值 |
-|---------|------|--------|
-| **客户总数** | 系统客户记录数 | 持续增长 |
-| **推荐接受率** | 接受推荐数 / 总推荐数 | > 60% |
-| **营销转化率** | 成交客户数 / 触达客户数 | 提升 30% |
-| **引擎命中率** | 缓存命中次数 / 总请求数 | > 80% |
+// 接受推荐
+POST /api/v1/recommendations/accept/:ids
+Response: { acceptedCount: number }
 
-### 6.2 技术指标
+// 拒绝推荐
+POST /api/v1/recommendations/reject/:ids
+Response: { rejectedCount: number }
 
-| 指标名称 | 定义 | 告警阈值 |
-|---------|------|---------|
-| **API 错误率** | 5xx 响应占比 | > 5% |
-| **P95 响应时间** | 95% 请求耗时 | > 2s |
-| **数据库连接数** | 活跃连接数 | > 80% 上限 |
-| **缓存命中率** | 命中次数 / 总请求数 | < 60% |
+// 批量接受
+POST /api/v1/recommendations/batch-accept
+Body: { customerIds: string[], mode?: string }
+Response: { acceptedCount: number }
 
----
+// 批量拒绝
+POST /api/v1/recommendations/batch-reject
+Body: { customerIds: string[], mode?: string }
+Response: { rejectedCount: number }
+```
 
-## 🚀 七、上线计划
+#### 配置管理 API
 
-### 7.1 里程碑
+```typescript
+// 规则配置 CRUD
+GET /api/v1/rules
+POST /api/v1/rules
+PATCH /api/v1/rules/:id
+DELETE /api/v1/rules/:id
 
-| 阶段 | 时间 | 交付物 |
-|------|------|--------|
-| **Phase 1** | 2026-03-25 | 核心功能开发完成（CRUD+ 引擎） |
-| **Phase 2** | 2026-03-28 | 缓存模块集成，性能优化 |
-| **Phase 3** | 2026-03-30 | 文档体系建设完成 |
-| **Phase 4** | 2026-04-05 | 测试完善，准备上线 |
-| **Go Live** | 2026-04-10 | 生产环境部署 |
+// 聚类配置 CRUD
+GET /api/v1/clustering-configs
+POST /api/v1/clustering-configs
+PATCH /api/v1/clustering-configs/:id
+DELETE /api/v1/clustering-configs/:id
 
-### 7.2 上线检查清单
+// 关联配置 CRUD
+GET /api/v1/association-configs
+POST /api/v1/association-configs
+PATCH /api/v1/association-configs/:id
+DELETE /api/v1/association-configs/:id
+```
 
-- [ ] 所有 P0/P1 功能测试通过
-- [ ] 性能指标达标
-- [ ] 安全扫描无高危漏洞
-- [ ] 运维监控配置完成
-- [ ] 用户手册编写完成
-- [ ] 回滚预案演练通过
+### 4.2 Swagger 文档
 
----
-
-## 📝 八、附录
-
-### 8.1 术语表
-
-| 术语 | 定义 |
-|------|------|
-| **RFM** | Recency, Frequency, Monetary - 客户价值分析模型 |
-| **K-Means** | K 均值聚类算法，无监督学习 |
-| **Apriori** | 关联规则挖掘算法 |
-| **置信度** | P(B\|A)，A 发生时 B 也发生的概率 |
-| **提升度** | P(B\|A) / P(B)，衡量关联强度 |
-
-### 8.2 参考文档
-
-- [推荐引擎架构设计](../RECOMMENDATION_ENGINES_ARCHITECTURE.md)
-- [系统设计文档](./architecture/SYSTEM_ARCHITECTURE.md)
-- [API 接口文档](./architecture/API_DESIGN.md)
+访问地址：`http://localhost:3000/api/docs`
 
 ---
 
-**文档版本**: v1.0  
-**编制人**: [待填写]  
-**审核人**: [待填写]  
-**批准人**: [待填写]
+## 📈 五、数据流转图
 
-**© 2026 客户标签推荐系统项目组 版权所有**
+### 5.1 推荐引擎执行流程
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant F as 前端 React
+    participant C as Controller
+    participant S as Service
+    participant E as Engine
+    participant D as Database
+    
+    U->>F: 点击"规则引擎"按钮
+    F->>C: POST /generate/:id?mode=rule
+    C->>S: generateForCustomer(id, mode)
+    S->>E: RuleEngine.generate()
+    E->>E: 执行规则匹配
+    E->>S: 返回推荐结果
+    S->>S: 保存到 tag_recommendations
+    S->>D: INSERT INTO tag_recommendations
+    S->>F: 返回{generated: N}
+    F->>U: 显示"生成 N 条推荐"
+```
+
+### 5.2 缓存数据流
+
+```mermaid
+graph LR
+    A[请求到达] --> B{缓存是否存在？}
+    B -->|是 | C[读取缓存<br/>耗时<10ms]
+    B -->|否 | D[查询数据库<br/>耗时 200ms]
+    D --> E[写入缓存 TTL=300s]
+    E --> F[返回结果]
+    C --> F
+    F --> G[响应客户端]
+```
+
+---
+
+## 🎬 六、验收标准
+
+### 6.1 功能验收
+
+**客户管理**:
+- [ ] 客户列表正确显示，分页正常
+- [ ] 筛选条件生效（等级/地区/风险）
+- [ ] 新增/编辑/删除功能正常
+- [ ] RFM 分析数据准确
+- [ ] 导出 CSV 格式正确
+
+**推荐引擎**:
+- [ ] 三个引擎均可手动触发
+- [ ] 推荐结果符合预期逻辑
+- [ ] 接受/拒绝操作成功
+- [ ] 批量处理无错误
+- [ ] 冲突检测有效
+
+**配置管理**:
+- [ ] 规则配置 CRUD 正常
+- [ ] 聚类参数调整生效
+- [ ] 关联阈值设置生效
+
+### 6.2 性能验收
+
+- [ ] 所有 API 响应时间达标 (P95 < 200ms)
+- [ ] 推荐生成时间 < 3 秒
+- [ ] 并发 50 用户无异常
+- [ ] 缓存命中率 > 80%
+
+### 6.3 安全验收
+
+- [ ] 未认证用户无法访问 API
+- [ ] 权限控制正常（角色隔离）
+- [ ] SQL 注入防护有效
+- [ ] 敏感数据加密存储
+
+---
+
+## 📝 七、变更历史
+
+| 版本 | 日期 | 变更人 | 变更描述 |
+|------|------|--------|---------|
+| v1.0 | 2026-03-30 | AI Assistant | 初始版本，基于 Phase 2 完成情况编写 |
+| - | - | - | - |
+
+---
+
+## 🔗 八、参考资料
+
+- [系统设计文档](../architecture/SYSTEM_ARCHITECTURE.md)
+- [API 设计文档](../architecture/API_DESIGN.md)
+- [数据库设计文档](../architecture/DATABASE_DESIGN.md)
+- [测试用例集](../test/TEST_CASES.md)
+- [用户手册](../deployment/USER_MANUAL.md)
+
+---
+
+**审批签字**:
+
+- 产品负责人：________________  日期：__________
+- 技术负责人：________________  日期：__________
+- 测试负责人：________________  日期：__________
