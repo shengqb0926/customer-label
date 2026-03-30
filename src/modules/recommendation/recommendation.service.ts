@@ -828,7 +828,7 @@ export class RecommendationService {
         // 如果需要自动打标签
         if (autoTag) {
           try {
-            const recommendation = await this.tagRecommendationRepo.findOne({ where: { id } });
+            const recommendation = await this.recommendationRepo.findOne({ where: { id } });
             if (recommendation) {
               // TODO: 调用客户标签服务打上推荐标签
               this.logger.log(`Auto-tagged customer ${recommendation.customerId} with ${recommendation.tagName}`);
@@ -892,7 +892,7 @@ export class RecommendationService {
    * 撤销单个推荐操作
    */
   async undoRecommendation(id: number): Promise<void> {
-    const recommendation = await this.tagRecommendationRepo.findOne({ where: { id } });
+    const recommendation = await this.recommendationRepo.findOne({ where: { id } });
     
     if (!recommendation) {
       throw new Error(`推荐 ${id} 不存在`);
@@ -907,7 +907,7 @@ export class RecommendationService {
     recommendation.rejectReason = null;
     recommendation.updatedAt = new Date();
     
-    await this.tagRecommendationRepo.save(recommendation);
+    await this.recommendationRepo.save(recommendation);
     
     this.logger.log(`Undo recommendation ${id}, back to pending status`);
   }
@@ -916,7 +916,7 @@ export class RecommendationService {
    * 获取单个推荐详情
    */
   async getRecommendationById(id: number): Promise<TagRecommendation | null> {
-    return await this.tagRecommendationRepo.findOne({ where: { id } });
+    return await this.recommendationRepo.findOne({ where: { id } });
   }
 
   /**

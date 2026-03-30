@@ -248,7 +248,7 @@ describe('CustomerService', () => {
         .mockResolvedValueOnce({ id: 2, email: 'duplicate@example.com' } as any);
 
       await expect(service.update(1, updateDto)).rejects.toThrow(BadRequestException);
-      await expect(service.update(1, updateDto)).rejects.toThrow('邮箱或手机号已被其他客户使用');
+      await expect(service.update(1, updateDto)).rejects.toThrow(/邮箱或手机号已被其他客户使用/);
     });
 
     it('should succeed if email is not duplicated', async () => {
@@ -301,8 +301,10 @@ describe('CustomerService', () => {
       const mockRiskStats = [{ riskLevel: 'LOW', count: '80' }];
       const mockCityStats = [{ city: '北京', count: '50' }];
 
-      // Mock count for both total and activeCount calls
-      jest.spyOn(customerRepo, 'findAndCount').mockResolvedValue([[mockCustomer as any], 250]);
+      // Mock count for both total and activeCount calls - use mockResolvedValue with proper structure
+      jest.spyOn(customerRepo, 'findAndCount')
+        .mockResolvedValueOnce([[mockCustomer as any], 250]) // First call: total
+        .mockResolvedValueOnce([[mockCustomer as any], 200]); // Second call: active
       
       jest.spyOn(customerRepo, 'createQueryBuilder').mockReturnValue({
         select: jest.fn().mockReturnThis(),
@@ -329,7 +331,9 @@ describe('CustomerService', () => {
     });
 
     it('should handle zero customers', async () => {
-      jest.spyOn(customerRepo, 'findAndCount').mockResolvedValue([[], 0]);
+      jest.spyOn(customerRepo, 'findAndCount')
+        .mockResolvedValueOnce([[], 0]) // First call: total
+        .mockResolvedValueOnce([[], 0]); // Second call: active
       
       jest.spyOn(customerRepo, 'createQueryBuilder').mockReturnValue({
         select: jest.fn().mockReturnThis(),
