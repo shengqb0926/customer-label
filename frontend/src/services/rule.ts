@@ -160,20 +160,26 @@ export const recommendationService = {
     return await apiClient.post(`/recommendations/${id}/reject`, { feedbackReason });
   },
 
-  // 批量接受推荐
-  async batchAcceptRecommendations(ids: number[]) {
-    return await apiClient.post('/recommendations/batch-accept', { ids });
+  // 批量接受推荐（支持自动打标签）
+  async batchAcceptRecommendations(ids: number[], autoTag?: boolean) {
+    return await apiClient.post('/recommendations/batch-accept', { ids, autoTag });
   },
 
   // 批量拒绝推荐
-  async batchRejectRecommendations(ids: number[], feedbackReason?: string) {
+  async batchRejectRecommendations(ids: number[], reason?: string) {
     const payload: any = { ids };
-    if (feedbackReason) {
-      payload.feedbackReason = feedbackReason;
+    if (reason) {
+      payload.reason = reason;
     }
     
     return await apiClient.post('/recommendations/batch-reject', payload);
   },
+
+  // 批量撤销推荐
+  async batchUndoRecommendations(ids: number[]) {
+    return await apiClient.post('/recommendations/batch-undo', { ids });
+  },
+
 };
 
 // 聚类配置相关类型

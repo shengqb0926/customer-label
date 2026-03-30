@@ -305,10 +305,13 @@ export class RecommendationController {
   }
 
   /**
-   * 批量接受推荐
+   * 批量接受推荐（支持自动打标签）
    */
   @Post('batch-accept')
-  @ApiOperation({ summary: '批量接受推荐', description: '一次性接受多个推荐结果，提高操作效率' })
+  @ApiOperation({ 
+    summary: '批量接受推荐', 
+    description: '批量接受多个推荐，可选择是否自动为客户打上对应标签' 
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -317,7 +320,13 @@ export class RecommendationController {
           type: 'array',
           items: { type: 'integer' },
           description: '推荐 ID 列表',
-          example: [1, 2, 3, 4, 5],
+          example: [1, 2, 3],
+        },
+        autoTag: {
+          type: 'boolean',
+          description: '是否自动为客户打上对应标签',
+          default: false,
+          example: true,
         },
       },
       required: ['ids'],
@@ -335,10 +344,10 @@ export class RecommendationController {
     },
   })
   async batchAcceptRecommendations(
-    @Body() body: { ids: number[] }
+    @Body() body: { ids: number[]; autoTag?: boolean }
   ): Promise<{ success: number; total: number }> {
     const userId = 1; // TODO: 从认证上下文获取
-    const successCount = await this.service.batchAcceptRecommendations(body.ids, userId);
+    const successCount = await this.service.batchAcceptRecommendations(body.ids, userId, body.autoTag);
     return {
       success: successCount,
       total: body.ids.length,
@@ -349,7 +358,48 @@ export class RecommendationController {
    * 批量拒绝推荐
    */
   @Post('batch-reject')
-  @ApiOperation({ summary: '批量拒绝推荐', description: '批量拒绝多个推荐' })
+  @ApiOperation({ 
+    summary: '批量拒绝推荐', 
+    description: '批量拒绝多个推荐，需要提供拒绝原因' 
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        ids: {
+          type: 'array',
+          items: { type: 'integer' },
+          description: '推荐 ID 列表',
+          example: [1, 2, 3],
+        },
+        reason: {
+          type: 'string',
+          description: '拒绝原因',
+          example: '标签不准确，客户不符合条件',
+        },
+      },
+      required: ['ids', 'reason'],
+    },
+  })
+  async batchRejectRecommendations(
+    @Body() body: { ids: number[]; reason: string }
+  ): Promise<{ success: number; total: number }> {
+    const userId = 1; // TODO: 从认证上下文获取
+    const successCount = await this.service.batchRejectRecommendations(body.ids, userId, body.reason);
+    return {
+      success: successCount,
+      total: body.ids.length,
+    };
+  }
+
+  /**
+   * 批量撤销推荐操作
+   */
+  @Post('batch-undo')
+  @ApiOperation({ 
+    summary: '批量撤销推荐', 
+    description: '批量撤销已接受或已拒绝的推荐，恢复到待处理状态' 
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -364,11 +414,21 @@ export class RecommendationController {
       required: ['ids'],
     },
   })
-  async batchRejectRecommendations(
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回批量撤销的结果统计',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'number', description: '成功撤销的数量' },
+        total: { type: 'number', description: '总处理数量' },
+      },
+    },
+  })
+  async batchUndoRecommendations(
     @Body() body: { ids: number[] }
   ): Promise<{ success: number; total: number }> {
-    const userId = 1; // TODO: 从认证上下文获取
-    const successCount = await this.service.batchRejectRecommendations(body.ids, userId);
+    const successCount = await this.service.batchUndoRecommendations(body.ids);
     return {
       success: successCount,
       total: body.ids.length,

@@ -51,8 +51,9 @@ interface RuleState {
   fetchRecommendations: (params?: any) => Promise<void>;
   acceptRecommendation: (id: number, feedbackReason?: string) => Promise<void>;
   rejectRecommendation: (id: number, feedbackReason?: string) => Promise<void>;
-  batchAcceptRecommendations: (ids: number[]) => Promise<any>;
-  batchRejectRecommendations: (ids: number[], feedbackReason?: string) => Promise<any>;
+  batchAcceptRecommendations: (ids: number[], autoTag?: boolean) => Promise<any>;
+  batchRejectRecommendations: (ids: number[], reason?: string) => Promise<any>;
+  batchUndoRecommendations: (ids: number[]) => Promise<any>;
   
   // 统计 Actions
   fetchStatistics: (params?: any) => Promise<void>;
@@ -181,20 +182,27 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     await get().fetchStatistics(); // 刷新统计
   },
   
-  batchAcceptRecommendations: async (ids: number[]) => {
-    const result = await recommendationService.batchAcceptRecommendations(ids);
+  batchAcceptRecommendations: async (ids: number[], autoTag?: boolean) => {
+    const result = await recommendationService.batchAcceptRecommendations(ids, autoTag);
     await get().fetchRecommendations();
     await get().fetchStatistics(); // 刷新统计
     return result; // 返回 API 响应
   },
   
-  batchRejectRecommendations: async (ids: number[], feedbackReason?: string) => {
-    const result = await recommendationService.batchRejectRecommendations(ids, feedbackReason);
+  batchRejectRecommendations: async (ids: number[], reason?: string) => {
+    const result = await recommendationService.batchRejectRecommendations(ids, reason);
     await get().fetchRecommendations();
     await get().fetchStatistics(); // 刷新统计
     return result; // 返回 API 响应
   },
-  
+
+  batchUndoRecommendations: async (ids: number[]) => {
+    const result = await recommendationService.batchUndoRecommendations(ids);
+    await get().fetchRecommendations();
+    await get().fetchStatistics(); // 刷新统计
+    return result; // 返回 API 响应
+  },
+
   // 统计 Actions
   fetchStatistics: async (params) => {
     set({ statisticsLoading: true });

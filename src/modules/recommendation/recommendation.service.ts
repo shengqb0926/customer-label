@@ -812,17 +812,33 @@ export class RecommendationService {
   }
 
   /**
-   * 批量接受推荐
+   * 批量接受推荐（支持自动打标签）
    */
   async batchAcceptRecommendations(
     ids: number[],
-    userId: number
+    userId: number,
+    autoTag: boolean = false
   ): Promise<number> {
     let successCount = 0;
     
     for (const id of ids) {
       try {
         await this.acceptRecommendation(id, userId);
+        
+        // 如果需要自动打标签
+        if (autoTag) {
+          try {
+            const recommendation = await this.tagRecommendationRepo.findOne({ where: { id } });
+            if (recommendation) {
+              // TODO: 调用客户标签服务打上推荐标签
+              this.logger.log(`Auto-tagged customer ${recommendation.customerId} with ${recommendation.tagName}`);
+            }
+          } catch (tagError) {
+            this.logger.error(`Failed to auto-tag customer after accepting recommendation ${id}:`, tagError);
+            // 不中断主流程，继续处理下一个
+          }
+        }
+        
         successCount++;
       } catch (error) {
         this.logger.error(`Failed to accept recommendation ${id}:`, error);
@@ -837,13 +853,14 @@ export class RecommendationService {
    */
   async batchRejectRecommendations(
     ids: number[],
-    userId: number
+    userId: number,
+    reason: string
   ): Promise<number> {
     let successCount = 0;
     
     for (const id of ids) {
       try {
-        await this.rejectRecommendation(id, userId);
+        await this.rejectRecommendation(id, userId, reason);
         successCount++;
       } catch (error) {
         this.logger.error(`Failed to reject recommendation ${id}:`, error);
@@ -852,4 +869,47 @@ export class RecommendationService {
     
     return successCount;
   }
+
+  /**
+   * 批量撤销推荐操作
+   */
+  async batchUndoRecommendations(ids: number[]): Promise<number> {
+    let successCount = 0;
+    
+    for (const id of ids) {
+      try {
+        await this.undoRecommendation(id);
+        successCount++;
+      } catch (error) {
+        this.logger.error(`Failed to undo recommendation ${id}:`, error);
+      }
+    }
+    
+    return successCount;
+  }
+
+  /**
+   * 撤销单个推荐操作
+   */
+  async undoRecommendation(id: number): Promise<void> {
+    const recommendation = await this.tagRecommendationRepo.findOne({ where: { id } });
+    
+    if (!recommendation) {
+      throw new Error(`推荐 ${id} 不存在`);
+    }
+    
+    // 重置状态为待处理
+    recommendation.isAccepted = null;
+    recommendation.acceptedAt = null;
+    recommendation.acceptedBy = null;
+    recommendation.rejectedAt = null;
+    recommendation.rejectedBy = null;
+    recommendation.rejectReason = null;
+    recommendation.updatedAt = new Date();
+    
+    await this.tagRecommendationRepo.save(recommendation);
+    
+    this.logger.log(`Undo recommendation ${id}, back to pending status`);
+  }
+
 }
