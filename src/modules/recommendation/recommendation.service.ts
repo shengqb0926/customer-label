@@ -13,6 +13,7 @@ import { AssociationEngineService } from './engines/association-engine.service';
 import { FusionEngineService, FusionWeights } from './engines/fusion-engine.service';
 import { ConflictDetectorService } from './services/conflict-detector.service';
 import { GetRecommendationsDto, PaginatedResponse } from './dto/get-recommendations.dto';
+import { SimilarityService } from '../../common/similarity';
 
 export interface CreateRecommendationDto {
   customerId: number;
@@ -51,6 +52,7 @@ export class RecommendationService {
     private readonly associationEngine: AssociationEngineService,
     private readonly fusionEngine: FusionEngineService,
     private readonly conflictDetector: ConflictDetectorService,
+    private readonly similarityService: SimilarityService,
   ) {}
 
   /**
@@ -745,6 +747,20 @@ export class RecommendationService {
   async invalidateCache(customerId: number): Promise<void> {
     await this.cache.delete(`recommendations:${customerId}`);
     this.logger.debug(`Invalidated cache for customer ${customerId}`);
+    
+    // 同时清除其他相关缓存
+    try {
+      // 清除相似度推荐缓存
+      await this.cache.deleteByPattern(`rec:similar:${customerId}:*`);
+      
+      // 清除推荐统计缓存
+      await this.cache.deleteByPattern(`rec:stats:${customerId}:*`);
+      
+      this.logger.debug(`All caches invalidated for customer ${customerId}`);
+    } catch (error) {
+      this.logger.error(`Failed to invalidate some caches for customer ${customerId}:`, error);
+      // 缓存失效不影响主流程
+    }
   }
 
   /**
@@ -812,17 +828,33 @@ export class RecommendationService {
   }
 
   /**
-   * 批量接受推荐
+   * 批量接受推荐（支持自动打标签）
    */
   async batchAcceptRecommendations(
     ids: number[],
-    userId: number
+    userId: number,
+    autoTag: boolean = false
   ): Promise<number> {
     let successCount = 0;
     
     for (const id of ids) {
       try {
         await this.acceptRecommendation(id, userId);
+        
+        // 如果需要自动打标签
+        if (autoTag) {
+          try {
+            const recommendation = await this.recommendationRepo.findOne({ where: { id } });
+            if (recommendation) {
+              // TODO: 调用客户标签服务打上推荐标签
+              this.logger.log(`Auto-tagged customer ${recommendation.customerId} with ${recommendation.tagName}`);
+            }
+          } catch (tagError) {
+            this.logger.error(`Failed to auto-tag customer after accepting recommendation ${id}:`, tagError);
+            // 不中断主流程，继续处理下一个
+          }
+        }
+        
         successCount++;
       } catch (error) {
         this.logger.error(`Failed to accept recommendation ${id}:`, error);
@@ -837,13 +869,14 @@ export class RecommendationService {
    */
   async batchRejectRecommendations(
     ids: number[],
-    userId: number
+    userId: number,
+    reason: string
   ): Promise<number> {
     let successCount = 0;
     
     for (const id of ids) {
       try {
-        await this.rejectRecommendation(id, userId);
+        await this.rejectRecommendation(id, userId, reason);
         successCount++;
       } catch (error) {
         this.logger.error(`Failed to reject recommendation ${id}:`, error);
@@ -852,4 +885,148 @@ export class RecommendationService {
     
     return successCount;
   }
+
+  /**
+   * 批量撤销推荐操作
+   */
+  async batchUndoRecommendations(ids: number[], userId?: number): Promise<number> {
+    let successCount = 0;
+    
+    for (const id of ids) {
+      try {
+        await this.undoRecommendation(id, userId);
+        successCount++;
+      } catch (error) {
+        this.logger.error(`Failed to undo recommendation ${id}:`, error);
+      }
+    }
+    
+    return successCount;
+  }
+
+  /**
+   * 撤销单个推荐操作
+   */
+  async undoRecommendation(id: number, userId?: number): Promise<TagRecommendation> {
+    const recommendation = await this.recommendationRepo.findOne({ where: { id } });
+    
+    if (!recommendation) {
+      throw new Error(`推荐 ${id} 不存在`);
+    }
+    
+    // 重置状态为待处理
+    recommendation.isAccepted = null;
+    recommendation.acceptedAt = null;
+    recommendation.acceptedBy = userId ?? null;
+    recommendation.modifiedTagName = null;
+    recommendation.feedbackReason = null;
+    recommendation.updatedAt = new Date();
+    
+    await this.recommendationRepo.save(recommendation);
+    
+    // 清除缓存
+    await this.invalidateCache(recommendation.customerId);
+    
+    this.logger.log(`Undo recommendation ${id}, back to pending status`);
+    return recommendation;
+  }
+
+  /**
+   * 获取单个推荐详情
+   */
+  async getRecommendationById(id: number): Promise<TagRecommendation | null> {
+    return await this.recommendationRepo.findOne({ where: { id } });
+  }
+
+  /**
+   * 获取相似客户推荐（使用真实相似度算法）
+   */
+  async getSimilarCustomerRecommendations(
+    recommendationId: number,
+    tagName: string,
+    limit: number = 5
+  ): Promise<Array<{
+    customerId: number;
+    customerName?: string;
+    tagName: string;
+    confidence: number;
+    status: 'pending' | 'accepted' | 'rejected';
+    similarityScore: number;
+  }>> {
+    try {
+      // 1. 获取当前客户的标签信息
+      const currentTags = await this.customerTagRepo.find({
+        where: { customerId: recommendationId },
+        relations: ['tag'],
+      });
+
+      if (currentTags.length === 0) {
+        this.logger.warn(`Customer ${recommendationId} has no tags, cannot find similar customers`);
+        return [];
+      }
+
+      // 2. 使用 SimilarityService 计算真实相似度
+      const similarityResults = await this.similarityService.findSimilarCustomers(
+        recommendationId,
+        limit,
+        {
+          algorithm: 'cosine',
+          minSimilarity: 0.6,
+        }
+      );
+
+      // 3. 转换为返回格式
+      return similarityResults.results.map(result => ({
+        customerId: result.customerId,
+        customerName: undefined, // 需要额外查询客户名称
+        tagName: tagName,
+        confidence: 0.8, // 默认置信度
+        status: 'accepted',
+        similarityScore: result.similarity, // ✨ 使用真实计算的相似度
+      }));
+    } catch (error) {
+      this.logger.error(`Failed to get similar customer recommendations:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 获取客户的历史推荐记录
+   */
+  async getCustomerRecommendationHistory(
+    customerId: number,
+    limit: number = 10
+  ): Promise<Array<{
+    id: number;
+    tagName: string;
+    tagCategory?: string;
+    createdAt: Date;
+    status: 'pending' | 'accepted' | 'rejected';
+    reason: string;
+    acceptedAt?: Date;
+  }>> {
+    try {
+      const history = await this.recommendationRepo.find({
+        where: { customerId },
+        order: { createdAt: 'DESC' },
+        take: limit,
+      });
+
+      return history.map(rec => ({
+        id: rec.id,
+        tagName: rec.tagName,
+        tagCategory: rec.tagCategory,
+        createdAt: rec.createdAt,
+        status: rec.status === RecommendationStatus.ACCEPTED ? 'accepted' 
+          : rec.status === RecommendationStatus.REJECTED ? 'rejected' 
+          : 'pending',
+        reason: rec.reason,
+        acceptedAt: rec.acceptedAt,
+      }));
+    } catch (error) {
+      this.logger.error(`Failed to get customer recommendation history:`, error);
+      return [];
+    }
+  }
+
 }

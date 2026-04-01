@@ -1,0 +1,9 @@
+
+> customer-label@1.0.0 test
+> jest customer.service.spec.ts
+
+[32m[Nest] 9244  - [39m2026/03/31 20:11:47 [32m    LOG[39m [38;5;3m[CustomerService] [39m[32m成功创建 3/3 个客户[39m
+[33m[Nest] 9244  - [39m2026/03/31 20:11:47 [33m   WARN[39m [38;5;3m[CustomerService] [39m[33m创建客户失败：客户 2 - 邮箱或手机号已存在[39m
+[32m[Nest] 9244  - [39m2026/03/31 20:11:47 [32m    LOG[39m [38;5;3m[CustomerService] [39m[32m成功创建 2/3 个客户[39m
+[32m[Nest] 9244  - [39m2026/03/31 20:11:47 [32m    LOG[39m [38;5;3m[CustomerService] [39m[32m客户 #1 已删除[39m
+[32m[Nest] 9244  - [39m2026/03/31 20:11:47 [32m    LOG[39m [38;5;3m[CustomerService] [39m[32m批量删除 3 个客户[39m

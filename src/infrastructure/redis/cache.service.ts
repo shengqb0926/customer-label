@@ -48,6 +48,7 @@ export class CacheService {
     try {
       const cached = await this.redis.get(key);
       if (!cached) {
+        this.cacheMisses++;
         return null;
       }
 
@@ -56,9 +57,12 @@ export class CacheService {
       // 检查是否过期
       if (entry.ttl && Date.now() - entry.timestamp > entry.ttl * 1000) {
         await this.redis.del(key);
+        this.cacheMisses++;
+        this.cacheEvictions++;
         return null;
       }
 
+      this.cacheHits++;
       return entry.data;
     } catch (error) {
       this.logger.error(`Cache GET error for key ${key}:`, error);
@@ -218,5 +222,110 @@ export class CacheService {
     }
 
     return stats;
+  }
+
+  /**
+   * 获取或设置缓存（原子操作）
+   * @param key 缓存键
+   * @param getter 数据获取函数
+   * @param ttl 过期时间（秒）
+   * @returns 缓存的数据
+   */
+  async getOrSet<T>(key: string, getter: () => Promise<T>, ttl?: number): Promise<T> {
+    // 先尝试从缓存获取
+    const cached = await this.get<T>(key);
+    if (cached !== null) {
+      this.cacheHits++;
+      this.logger.debug(`Cache HIT: ${key}`);
+      return cached;
+    }
+
+    // 缓存未命中，执行 getter
+    this.cacheMisses++;
+    this.logger.debug(`Cache MISS: ${key}, executing getter...`);
+    
+    try {
+      const data = await getter();
+      await this.set(key, data, ttl);
+      this.cacheWrites++;
+      return data;
+    } catch (error) {
+      this.logger.error(`Cache getOrSet error for key ${key}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 批量设置缓存
+   * @param entries 键值对数组
+   * @param ttl 过期时间（秒）
+   */
+  async mset<T>(entries: Map<string, T> | Record<string, T>, ttl?: number): Promise<void> {
+    try {
+      const entriesArray = entries instanceof Map ? Array.from(entries.entries()) : Object.entries(entries);
+      
+      for (const [key, value] of entriesArray) {
+        await this.set(key, value, ttl);
+      }
+      
+      this.logger.debug(`Cache MSET: ${entriesArray.length} entries`);
+    } catch (error) {
+      this.logger.error('Cache MSET error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 按模式删除缓存（支持通配符）
+   * @param pattern 键模式，如 `user:*` 或 `rec:similar:*`
+   * @returns 删除的键数量
+   */
+  async deleteByPattern(pattern: string): Promise<number> {
+    try {
+      const keys = await this.getKeys(pattern);
+      if (keys.length === 0) {
+        this.logger.debug(`No keys found for pattern: ${pattern}`);
+        return 0;
+      }
+
+      // 批量删除
+      let deletedCount = 0;
+      for (const key of keys) {
+        await this.redis.del(key);
+        deletedCount++;
+      }
+
+      this.cacheEvictions += deletedCount;
+      this.logger.warn(`Cache deleted by pattern '${pattern}': ${deletedCount} keys`);
+      
+      return deletedCount;
+    } catch (error) {
+      this.logger.error(`Cache deleteByPattern error for pattern ${pattern}:`, error);
+      return 0;
+    }
+  }
+
+  /**
+   * 批量删除缓存
+   * @param keys 缓存键数组
+   * @returns 删除的数量
+   */
+  async deleteBatch(keys: string[]): Promise<number> {
+    try {
+      let deletedCount = 0;
+      for (const key of keys) {
+        const exists = await this.exists(key);
+        if (exists) {
+          await this.delete(key);
+          deletedCount++;
+        }
+      }
+      
+      this.logger.debug(`Cache batch delete: ${deletedCount}/${keys.length} keys`);
+      return deletedCount;
+    } catch (error) {
+      this.logger.error('Cache deleteBatch error:', error);
+      return 0;
+    }
   }
 }

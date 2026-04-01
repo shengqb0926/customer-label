@@ -6,6 +6,7 @@ import Dashboard from '@/pages/Dashboard';
 import UserManagement from '@/pages/UserManagement';
 import BasicLayout from '@/layouts/BasicLayout';
 import { AuthGuard } from '@/components/AuthGuard';
+import RuleManagement from '@/pages/RuleManagement';
 import RuleList from '@/pages/RuleManagement/RuleList';
 import RuleTester from '@/pages/RuleManagement/RuleTester';
 import RecommendationList from '@/pages/Recommendation/RecommendationList';
@@ -52,12 +53,22 @@ function App() {
               path="rules"
               element={
                 <AuthGuard roles={[UserRole.ADMIN, UserRole.ANALYST]}>
+                  <RuleManagement />
+                </AuthGuard>
+              }
+            />
+            
+            {/* 规则列表（兼容旧路由） */}
+            <Route
+              path="rules/list"
+              element={
+                <AuthGuard roles={[UserRole.ADMIN, UserRole.ANALYST]}>
                   <RuleList />
                 </AuthGuard>
               }
             />
             
-            {/* 规则测试工具 */}
+            {/* 规则测试工具（独立路由，兼容旧版） */}
             <Route
               path="rules/test"
               element={

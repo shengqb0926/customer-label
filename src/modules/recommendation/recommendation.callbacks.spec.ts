@@ -7,6 +7,7 @@ import { ClusteringEngineService } from './engines/clustering-engine.service';
 import { AssociationEngineService } from './engines/association-engine.service';
 import { FusionEngineService } from './engines/fusion-engine.service';
 import { ConflictDetectorService } from './services/conflict-detector.service';
+import { SimilarityService } from '../../common/similarity';
 
 /**
  * 回调函数与高阶函数专项测试
@@ -80,6 +81,11 @@ describe('RecommendationService - Callback & Higher-Order Functions', () => {
     find: jest.fn(),
   };
 
+  const mockSimilarityService = {
+    calculateSimilarity: jest.fn(),
+    findSimilarCustomers: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -90,6 +96,7 @@ describe('RecommendationService - Callback & Higher-Order Functions', () => {
         { provide: AssociationEngineService, useValue: mockAssociationEngine },
         { provide: FusionEngineService, useValue: mockFusionEngine },
         { provide: ConflictDetectorService, useValue: mockConflictDetector },
+        { provide: SimilarityService, useValue: mockSimilarityService },
         { provide: 'TagRecommendationRepository', useValue: mockRecommendationRepo },
         { provide: 'RecommendationRuleRepository', useValue: mockRuleRepo },
         { provide: 'ClusteringConfigRepository', useValue: mockConfigRepo },

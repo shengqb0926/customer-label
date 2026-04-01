@@ -6,6 +6,8 @@ import {
   Param,
   Query,
   Logger,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -305,10 +307,13 @@ export class RecommendationController {
   }
 
   /**
-   * 批量接受推荐
+   * 批量接受推荐（支持自动打标签）
    */
   @Post('batch-accept')
-  @ApiOperation({ summary: '批量接受推荐', description: '一次性接受多个推荐结果，提高操作效率' })
+  @ApiOperation({ 
+    summary: '批量接受推荐', 
+    description: '批量接受多个推荐，可选择是否自动为客户打上对应标签' 
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -317,7 +322,13 @@ export class RecommendationController {
           type: 'array',
           items: { type: 'integer' },
           description: '推荐 ID 列表',
-          example: [1, 2, 3, 4, 5],
+          example: [1, 2, 3],
+        },
+        autoTag: {
+          type: 'boolean',
+          description: '是否自动为客户打上对应标签',
+          default: false,
+          example: true,
         },
       },
       required: ['ids'],
@@ -335,10 +346,10 @@ export class RecommendationController {
     },
   })
   async batchAcceptRecommendations(
-    @Body() body: { ids: number[] }
+    @Body() body: { ids: number[]; autoTag?: boolean }
   ): Promise<{ success: number; total: number }> {
     const userId = 1; // TODO: 从认证上下文获取
-    const successCount = await this.service.batchAcceptRecommendations(body.ids, userId);
+    const successCount = await this.service.batchAcceptRecommendations(body.ids, userId, body.autoTag);
     return {
       success: successCount,
       total: body.ids.length,
@@ -349,7 +360,48 @@ export class RecommendationController {
    * 批量拒绝推荐
    */
   @Post('batch-reject')
-  @ApiOperation({ summary: '批量拒绝推荐', description: '批量拒绝多个推荐' })
+  @ApiOperation({ 
+    summary: '批量拒绝推荐', 
+    description: '批量拒绝多个推荐，需要提供拒绝原因' 
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        ids: {
+          type: 'array',
+          items: { type: 'integer' },
+          description: '推荐 ID 列表',
+          example: [1, 2, 3],
+        },
+        reason: {
+          type: 'string',
+          description: '拒绝原因',
+          example: '标签不准确，客户不符合条件',
+        },
+      },
+      required: ['ids', 'reason'],
+    },
+  })
+  async batchRejectRecommendations(
+    @Body() body: { ids: number[]; reason: string }
+  ): Promise<{ success: number; total: number }> {
+    const userId = 1; // TODO: 从认证上下文获取
+    const successCount = await this.service.batchRejectRecommendations(body.ids, userId, body.reason);
+    return {
+      success: successCount,
+      total: body.ids.length,
+    };
+  }
+
+  /**
+   * 批量撤销推荐操作
+   */
+  @Post('batch-undo')
+  @ApiOperation({ 
+    summary: '批量撤销推荐', 
+    description: '批量撤销已接受或已拒绝的推荐，恢复到待处理状态' 
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -364,15 +416,141 @@ export class RecommendationController {
       required: ['ids'],
     },
   })
-  async batchRejectRecommendations(
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回批量撤销的结果统计',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'number', description: '成功撤销的数量' },
+        total: { type: 'number', description: '总处理数量' },
+      },
+    },
+  })
+  async batchUndoRecommendations(
     @Body() body: { ids: number[] }
   ): Promise<{ success: number; total: number }> {
-    const userId = 1; // TODO: 从认证上下文获取
-    const successCount = await this.service.batchRejectRecommendations(body.ids, userId);
+    const successCount = await this.service.batchUndoRecommendations(body.ids);
     return {
       success: successCount,
       total: body.ids.length,
     };
+  }
+
+  /**
+   * 获取相似客户推荐
+   */
+  @Get(':id/similar')
+  @ApiOperation({ 
+    summary: '获取相似客户推荐', 
+    description: '基于客户特征相似度，查找有相同推荐标签的其他客户' 
+  })
+  @ApiParam({ name: 'id', description: '推荐 ID', type: Number })
+  @ApiQuery({ 
+    name: 'tagName', 
+    required: true, 
+    type: String, 
+    description: '推荐标签名称',
+    example: '高价值客户'
+  })
+  @ApiQuery({ 
+    name: 'limit', 
+    required: false, 
+    type: Number, 
+    description: '返回数量限制 (默认 5，范围 1-20)',
+    example: 5
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回相似客户推荐列表',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          customerId: { type: 'number', description: '客户 ID' },
+          customerName: { type: 'string', description: '客户名称' },
+          tagName: { type: 'string', description: '推荐标签' },
+          confidence: { type: 'number', description: '置信度' },
+          status: { type: 'string', enum: ['pending', 'accepted', 'rejected'] },
+          similarityScore: { type: 'number', description: '相似度分数 (0-1)' },
+        },
+      },
+    },
+  })
+  async getSimilarCustomerRecommendations(
+    @Param('id') id: number,
+    @Query('tagName') tagName: string,
+    @Query('limit') limit: number = 5
+  ): Promise<Array<{
+    customerId: number;
+    customerName?: string;
+    tagName: string;
+    confidence: number;
+    status: 'pending' | 'accepted' | 'rejected';
+    similarityScore: number;
+  }>> {
+    // 先获取推荐信息拿到 customerId
+    const recommendation = await this.service.getRecommendationById(id);
+    if (!recommendation) {
+      throw new HttpException(`推荐 ${id} 不存在`, HttpStatus.NOT_FOUND);
+    }
+    
+    return await this.service.getSimilarCustomerRecommendations(
+      recommendation.customerId,
+      tagName,
+      limit
+    );
+  }
+
+  /**
+   * 获取客户历史推荐记录
+   */
+  @Get('customer/:customerId/history')
+  @ApiOperation({ 
+    summary: '获取客户历史推荐', 
+    description: '获取某个客户的所有历史推荐记录' 
+  })
+  @ApiParam({ name: 'customerId', description: '客户 ID', type: Number })
+  @ApiQuery({ 
+    name: 'limit', 
+    required: false, 
+    type: Number, 
+    description: '返回数量限制 (默认 10，范围 1-50)',
+    example: 10
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: '返回历史推荐记录列表',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'number', description: '推荐 ID' },
+          tagName: { type: 'string', description: '推荐标签' },
+          tagCategory: { type: 'string', description: '标签类别' },
+          createdAt: { type: 'string', format: 'date-time' },
+          status: { type: 'string', enum: ['pending', 'accepted', 'rejected'] },
+          reason: { type: 'string', description: '推荐理由' },
+          acceptedAt: { type: 'string', format: 'date-time', description: '接受时间' },
+        },
+      },
+    },
+  })
+  async getCustomerRecommendationHistory(
+    @Param('customerId') customerId: number,
+    @Query('limit') limit: number = 10
+  ): Promise<Array<{
+    id: number;
+    tagName: string;
+    tagCategory?: string;
+    createdAt: Date;
+    status: 'pending' | 'accepted' | 'rejected';
+    reason: string;
+    acceptedAt?: Date;
+  }>> {
+    return await this.service.getCustomerRecommendationHistory(customerId, limit);
   }
 
   /**

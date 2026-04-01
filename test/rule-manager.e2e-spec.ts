@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { loginAndGetToken, setAuthHeader } from '../test-helpers';
 
 describe('Rule Manager E2E', () => {
   let app: INestApplication;
+  let authToken: string;
   let createdRuleId: number;
 
   beforeAll(async () => {
@@ -15,6 +17,10 @@ describe('Rule Manager E2E', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await app.init();
+
+    // 获取认证 token
+    const tokens = await loginAndGetToken(app);
+    authToken = tokens.accessToken;
   });
 
   afterAll(async () => {
@@ -35,8 +41,10 @@ describe('Rule Manager E2E', () => {
         isActive: true,
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/rules')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/rules'),
+        authToken
+      )
         .send(createRuleDto)
         .expect(201);
 
@@ -60,8 +68,10 @@ describe('Rule Manager E2E', () => {
         },
       };
 
-      return request(app.getHttpServer())
-        .post('/rules')
+      return setAuthHeader(
+        request(app.getHttpServer()).post('/rules'),
+        authToken
+      )
         .send(createRuleDto)
         .expect(400);
     });
@@ -78,8 +88,10 @@ describe('Rule Manager E2E', () => {
         },
       };
 
-      return request(app.getHttpServer())
-        .post('/rules')
+      return setAuthHeader(
+        request(app.getHttpServer()).post('/rules'),
+        authToken
+      )
         .send(createRuleDto)
         .expect(400);
     });
@@ -87,8 +99,10 @@ describe('Rule Manager E2E', () => {
 
   describe('/rules (GET)', () => {
     it('should get rules list', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/rules')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/rules'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -99,8 +113,10 @@ describe('Rule Manager E2E', () => {
     });
 
     it('should support pagination', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/rules?page=1&limit=5')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/rules?page=1&limit=5'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.data.length).toBeLessThanOrEqual(5);
@@ -109,8 +125,10 @@ describe('Rule Manager E2E', () => {
     });
 
     it('should filter by isActive status', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/rules?isActive=true')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/rules?isActive=true'),
+        authToken
+      )
         .expect(200);
 
       response.body.data.forEach((rule: any) => {
@@ -121,8 +139,10 @@ describe('Rule Manager E2E', () => {
 
   describe('/rules/:id (GET)', () => {
     it('should get rule by id', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/rules/${createdRuleId}`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get(`/rules/${createdRuleId}`),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.id).toBe(createdRuleId);
@@ -130,8 +150,10 @@ describe('Rule Manager E2E', () => {
     });
 
     it('should return 404 for non-existent rule', async () => {
-      return request(app.getHttpServer())
-        .get('/rules/999999')
+      return setAuthHeader(
+        request(app.getHttpServer()).get('/rules/999999'),
+        authToken
+      )
         .expect(404);
     });
   });
@@ -143,8 +165,10 @@ describe('Rule Manager E2E', () => {
         isActive: false,
       };
 
-      const response = await request(app.getHttpServer())
-        .put(`/rules/${createdRuleId}`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).put(`/rules/${createdRuleId}`),
+        authToken
+      )
         .send(updateDto)
         .expect(200);
 
@@ -165,16 +189,20 @@ describe('Rule Manager E2E', () => {
         },
       };
 
-      const createResponse = await request(app.getHttpServer())
-        .post('/rules')
+      const createResponse = await setAuthHeader(
+        request(app.getHttpServer()).post('/rules'),
+        authToken
+      )
         .send(createRuleDto)
         .expect(201);
 
       const otherRuleId = parseInt(createResponse.body.id);
 
       // Try to update name to match existing rule
-      return request(app.getHttpServer())
-        .put(`/rules/${otherRuleId}`)
+      return setAuthHeader(
+        request(app.getHttpServer()).put(`/rules/${otherRuleId}`),
+        authToken
+      )
         .send({ ruleName: '高价值客户规则' })
         .expect(400);
     });
@@ -182,8 +210,10 @@ describe('Rule Manager E2E', () => {
 
   describe('/rules/:id/activate (POST)', () => {
     it('should activate rule', async () => {
-      const response = await request(app.getHttpServer())
-        .post(`/rules/${createdRuleId}/activate`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post(`/rules/${createdRuleId}/activate`),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.isActive).toBe(true);
@@ -192,8 +222,10 @@ describe('Rule Manager E2E', () => {
 
   describe('/rules/:id/deactivate (POST)', () => {
     it('should deactivate rule', async () => {
-      const response = await request(app.getHttpServer())
-        .post(`/rules/${createdRuleId}/deactivate`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post(`/rules/${createdRuleId}/deactivate`),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.isActive).toBe(false);
@@ -210,10 +242,12 @@ describe('Rule Manager E2E', () => {
         },
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/rules/test')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/rules/test'),
+        authToken
+      )
         .send(testData)
-        .expect(201);
+        .expect(200);
 
       expect(response.body.valid).toBe(true);
       expect(response.body.result).toBe(true);
@@ -228,10 +262,12 @@ describe('Rule Manager E2E', () => {
         },
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/rules/test')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/rules/test'),
+        authToken
+      )
         .send(testData)
-        .expect(201);
+        .expect(200);
 
       expect(response.body.valid).toBe(true);
       expect(response.body.result).toBe(false);
@@ -243,10 +279,12 @@ describe('Rule Manager E2E', () => {
         testData: { orderCount: 10 },
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/rules/test')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/rules/test'),
+        authToken
+      )
         .send(testData)
-        .expect(201);
+        .expect(200);
 
       expect(response.body.valid).toBe(false);
       expect(response.body.error).toBeDefined();
@@ -255,8 +293,10 @@ describe('Rule Manager E2E', () => {
 
   describe('/rules/batch/export (GET)', () => {
     it('should export all rules', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/rules/batch/export')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/rules/batch/export'),
+        authToken
+      )
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -295,8 +335,10 @@ describe('Rule Manager E2E', () => {
         },
       ];
 
-      const response = await request(app.getHttpServer())
-        .post('/rules/batch/import')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/rules/batch/import'),
+        authToken
+      )
         .send(rulesToImport)
         .expect(201);
 
@@ -329,8 +371,10 @@ describe('Rule Manager E2E', () => {
         },
       ];
 
-      const response = await request(app.getHttpServer())
-        .post('/rules/batch/import')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/rules/batch/import'),
+        authToken
+      )
         .send(rulesToImport)
         .expect(201);
 
@@ -344,8 +388,10 @@ describe('Rule Manager E2E', () => {
   describe('/rules/:id (DELETE)', () => {
     it('should delete rule', async () => {
       // First create a rule to delete
-      const createResponse = await request(app.getHttpServer())
-        .post('/rules')
+      const createResponse = await setAuthHeader(
+        request(app.getHttpServer()).post('/rules'),
+        authToken
+      )
         .send({
           ruleName: '待删除规则',
           ruleExpression: 'orderCount >= 1',
@@ -361,13 +407,17 @@ describe('Rule Manager E2E', () => {
       const ruleIdToDelete = parseInt(createResponse.body.id);
 
       // Delete the rule
-      await request(app.getHttpServer())
-        .delete(`/rules/${ruleIdToDelete}`)
+      await setAuthHeader(
+        request(app.getHttpServer()).delete(`/rules/${ruleIdToDelete}`),
+        authToken
+      )
         .expect(200);
 
       // Verify deletion
-      return request(app.getHttpServer())
-        .get(`/rules/${ruleIdToDelete}`)
+      return setAuthHeader(
+        request(app.getHttpServer()).get(`/rules/${ruleIdToDelete}`),
+        authToken
+      )
         .expect(404);
     });
   });

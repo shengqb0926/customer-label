@@ -15,6 +15,8 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
+import { IsString, IsEmail, MinLength, IsOptional } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -22,6 +24,57 @@ export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(private readonly authService: AuthService) {}
+
+  /**
+   * 用户注册
+   */
+  @Post('register')
+  @ApiOperation({ summary: '用户注册' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        username: { type: 'string', example: 'newuser' },
+        email: { type: 'string', example: 'newuser@example.com' },
+        password: { type: 'string', example: 'Password123!' },
+        fullName: { type: 'string', example: 'New User' },
+      },
+      required: ['username', 'email', 'password'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: '注册成功',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number' },
+        username: { type: 'string' },
+        email: { type: 'string' },
+        fullName: { type: 'string' },
+        roles: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: '用户名或邮箱已存在',
+  })
+  async register(@Body() body: any) {
+    const { username, email, password, fullName } = body;
+    
+    this.logger.log(`Registering new user: ${username}`);
+    
+    const user = await this.authService.register(username, email, password, fullName);
+    
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      roles: user.roles,
+    };
+  }
 
   /**
    * 用户登录

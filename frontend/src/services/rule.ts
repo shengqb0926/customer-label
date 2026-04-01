@@ -160,20 +160,43 @@ export const recommendationService = {
     return await apiClient.post(`/recommendations/${id}/reject`, { feedbackReason });
   },
 
-  // 批量接受推荐
-  async batchAcceptRecommendations(ids: number[]) {
-    return await apiClient.post('/recommendations/batch-accept', { ids });
+  // 批量接受推荐（支持自动打标签）
+  async batchAcceptRecommendations(ids: number[], autoTag?: boolean) {
+    return await apiClient.post('/recommendations/batch-accept', { ids, autoTag });
   },
 
   // 批量拒绝推荐
-  async batchRejectRecommendations(ids: number[], feedbackReason?: string) {
+  async batchRejectRecommendations(ids: number[], reason?: string) {
     const payload: any = { ids };
-    if (feedbackReason) {
-      payload.feedbackReason = feedbackReason;
+    if (reason) {
+      payload.reason = reason;
     }
     
     return await apiClient.post('/recommendations/batch-reject', payload);
   },
+
+  // 批量撤销推荐
+  async batchUndoRecommendations(ids: number[]) {
+    return await apiClient.post('/recommendations/batch-undo', { ids });
+  },
+
+  // 获取相似客户推荐
+  async getSimilarCustomerRecommendations(recommendationId: number, tagName: string, limit?: number) {
+    const params = new URLSearchParams();
+    params.append('tagName', tagName);
+    if (limit) params.append('limit', limit.toString());
+    
+    return await apiClient.get(`/recommendations/${recommendationId}/similar?${params.toString()}`);
+  },
+
+  // 获取客户历史推荐记录
+  async getCustomerRecommendationHistory(customerId: number, limit?: number) {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    
+    return await apiClient.get(`/recommendations/customer/${customerId}/history?${params.toString()}`);
+  },
+
 };
 
 // 聚类配置相关类型
@@ -324,7 +347,7 @@ export const associationConfigService = {
    * 创建关联规则配置
    */
   async createConfig(dto: CreateAssociationConfigDto): Promise<AssociationConfig> {
-    const response = await apiClient.post('/association', dto);
+    const response = await apiClient.post('/association-configs', dto);
     return response.data;
   },
 
@@ -340,7 +363,7 @@ export const associationConfigService = {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<{ data: AssociationConfig[]; total: number }> {
-    const response = await apiClient.get('/association', { params });
+    const response = await apiClient.get('/association-configs', { params });
     return response.data;
   },
 
@@ -348,7 +371,7 @@ export const associationConfigService = {
    * 获取单个配置详情
    */
   async getConfigById(id: number): Promise<AssociationConfig> {
-    const response = await apiClient.get(`/association/${id}`);
+    const response = await apiClient.get(`/association-configs/${id}`);
     return response.data;
   },
 
@@ -356,7 +379,7 @@ export const associationConfigService = {
    * 更新关联规则配置
    */
   async updateConfig(id: number, dto: UpdateAssociationConfigDto): Promise<AssociationConfig> {
-    const response = await apiClient.put(`/association/${id}`, dto);
+    const response = await apiClient.put(`/association-configs/${id}`, dto);
     return response.data;
   },
 
@@ -364,14 +387,14 @@ export const associationConfigService = {
    * 删除关联规则配置
    */
   async deleteConfig(id: number): Promise<void> {
-    await apiClient.delete(`/association/${id}`);
+    await apiClient.delete(`/association-configs/${id}`);
   },
 
   /**
    * 激活关联规则配置
    */
   async activateConfig(id: number): Promise<AssociationConfig> {
-    const response = await apiClient.post(`/association/${id}/activate`);
+    const response = await apiClient.post(`/association-configs/${id}/activate`);
     return response.data;
   },
 
@@ -379,7 +402,7 @@ export const associationConfigService = {
    * 停用关联规则配置
    */
   async deactivateConfig(id: number): Promise<AssociationConfig> {
-    const response = await apiClient.post(`/association/${id}/deactivate`);
+    const response = await apiClient.post(`/association-configs/${id}/deactivate`);
     return response.data;
   },
 
@@ -387,7 +410,7 @@ export const associationConfigService = {
    * 手动运行关联规则挖掘任务
    */
   async runAssociation(id: number): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post(`/association/${id}/run`);
+    const response = await apiClient.post(`/association-configs/${id}/run`);
     return response.data;
   },
 
@@ -398,3 +421,75 @@ export const associationConfigService = {
     return this.runAssociation(id);
   },
 };
+
+// 规则测试与效果分析相关 API
+export const ruleTestService = {
+  /**
+   * 测试单个规则
+   */
+  async testRule(ruleId: number, customerData: Record<string, any>): Promise<TestResult & { rule?: Rule; tags?: string[] }> {
+    const response = await apiClient.post(`/rules/${ruleId}/test`, { customerData });
+    return response.data;
+  },
+
+  /**
+   * 批量评估客户（所有适用规则）
+   */
+  async evaluateCustomer(customerData: Record<string, any>): Promise<Array<TestResult & { rule?: Rule; tags?: string[] }>> {
+    const response = await apiClient.post('/rules/evaluate', { customerData });
+    return response.data;
+  },
+
+  /**
+   * 获取规则性能指标
+   */
+  async getPerformanceMetrics(
+    ruleId: number,
+    options?: { startDate?: string; endDate?: string }
+  ): Promise<PerformanceMetrics> {
+    const response = await apiClient.get(`/rules/${ruleId}/performance`, { params: options });
+    return response.data;
+  },
+
+  /**
+   * 获取版本历史
+   */
+  async getVersionHistory(ruleId: number): Promise<VersionHistoryItem[]> {
+    const response = await apiClient.get(`/rules/${ruleId}/versions`);
+    return response.data;
+  },
+
+  /**
+   * 回滚到指定版本
+   */
+  async rollback(versionId: number): Promise<void> {
+    await apiClient.post(`/rules/versions/${versionId}/rollback`);
+  },
+
+  /**
+   * 删除版本
+   */
+  async deleteVersion(versionId: number): Promise<void> {
+    await apiClient.delete(`/rules/versions/${versionId}`);
+  },
+};
+
+// 规则测试与效果分析相关类型
+export interface PerformanceMetrics {
+  totalExecutions: number;
+  matchedCount: number;
+  matchRate: number;
+  avgExecutionTime: number;
+  acceptedTags: number;
+  rejectedTags: number;
+  acceptanceRate: number;
+}
+
+export interface VersionHistoryItem {
+  id: number;
+  version: string;
+  createdAt: string;
+  createdBy?: string;
+  changeDescription?: string;
+  snapshot: Partial<Rule>;
+}

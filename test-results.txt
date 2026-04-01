@@ -1,4 +1,4 @@
 
 > customer-label@1.0.0 test
-> jest
+> jest queue.service.spec.ts notification.gateway.spec.ts notification.service.spec.ts --passWithNoTests
 

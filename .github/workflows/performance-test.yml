@@ -1,0 +1,306 @@
+name: Performance Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 每周日凌晨 2 点执行一次完整性能测试
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: '测试类型'
+        required: true
+        default: 'benchmark'
+        type: choice
+        options:
+          - benchmark
+          - load
+          - stress
+          - all
+      concurrent_users:
+        description: '并发用户数（负载测试）'
+        required: false
+        default: '50'
+        type: string
+      check_regression:
+        description: '检查性能回归'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+  POSTGRES_DB: customer_label_test
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  REDIS_URL: redis://localhost:6379
+  DB_HOST: localhost
+  DB_PORT: 5432
+  DB_USERNAME: postgres
+  DB_PASSWORD: postgres
+  DB_DATABASE: customer_label_test
+  TEST_DB_HOST: localhost
+  TEST_DB_PORT: 5432
+  TEST_DB_USERNAME: postgres
+  TEST_DB_PASSWORD: postgres
+  TEST_DB_DATABASE: customer_label_test
+  TEST_REDIS_URL: redis://localhost:6379
+  REGRESSION_THRESHOLD: 10  # 性能下降超过 10% 则失败
+
+jobs:
+  performance-test:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+        timeout-minutes: 10
+      
+      - name: Start application
+        run: |
+          NODE_ENV=test node dist/main.js &
+          echo "Waiting for application to start..."
+          sleep 15
+          
+          # 健康检查 - 需要包含 API 前缀 /api/v1
+          for i in {1..10}; do
+            if curl -f http://localhost:3000/api/v1/health && curl -f http://localhost:3000/api/v1/version; then
+              echo "Application is ready!"
+              break
+            fi
+            echo "Attempt $i: Waiting for application..."
+            sleep 2
+          done
+        timeout-minutes: 5
+      
+      - name: Run quick health check
+        run: |
+          echo "Testing basic endpoints..."
+          curl -f http://localhost:3000/api/v1/health || exit 1
+          curl -f http://localhost:3000/api/v1/version || exit 1
+          echo "✅ Health check passed"
+      
+      - name: Run benchmark tests
+        if: github.event.inputs.test_type == 'benchmark' || github.event.inputs.test_type == '' || github.event.inputs.test_type == 'all'
+        run: |
+          echo "Running performance benchmark tests..."
+          npm run test:benchmark -- --ci
+        timeout-minutes: 15
+        continue-on-error: false
+      
+      - name: Run load tests
+        if: github.event.inputs.test_type == 'load' || github.event.inputs.test_type == 'all'
+        env:
+          CONCURRENT_USERS: ${{ github.event.inputs.concurrent_users || 50 }}
+          TEST_DURATION: 30000
+        run: |
+          echo "Running load test with $CONCURRENT_USERS concurrent users..."
+          npm run load:test
+        timeout-minutes: 10
+        continue-on-error: false
+      
+      - name: Run stress tests
+        if: github.event.inputs.test_type == 'stress' || github.event.inputs.test_type == 'all'
+        env:
+          START_USERS: 10
+          MAX_USERS: 200
+          STEP_INCREASE: 20
+        run: |
+          echo "Running stress test..."
+          npm run stress:test
+        timeout-minutes: 20
+        continue-on-error: false
+      
+      - name: Check performance regression
+        if: always() && (github.event.inputs.check_regression == 'true' || github.event.inputs.check_regression == '')
+        run: |
+          echo "Checking for performance regression..."
+          node test/scripts/check-regression.js
+        continue-on-error: false
+      
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: |
+            test/results/*.json
+            test/results/*.xml
+            logs/*.log
+          retention-days: 30
+          if-no-files-found: ignore
+      
+      - name: Upload performance reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-reports-${{ github.sha }}
+          path: |
+            coverage/coverage-summary.json
+            coverage/lcov-report/index.html
+          retention-days: 7
+          if-no-files-found: ignore
+      
+      - name: Store baseline for comparison
+        if: github.ref == 'refs/heads/main' && success()
+        run: |
+          echo "Storing new baseline for performance comparison..."
+          mkdir -p .github/baselines
+          cp test/results/benchmark-results.json .github/baselines/latest.json 2>/dev/null || echo "No baseline to store"
+      
+      - name: Upload baseline artifact
+        if: github.ref == 'refs/heads/main' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-baseline-${{ github.sha }}
+          path: .github/baselines/latest.json
+          retention-days: 90
+          if-no-files-found: ignore
+      
+      - name: Comment PR with results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            let commentBody = '## 📊 Performance Test Results\n\n';
+            
+            // 尝试读取测试结果
+            try {
+              const benchmarkPath = path.join(process.env.RUNNER_TEMP || '.', 'benchmark-results.json');
+              if (fs.existsSync(benchmarkPath)) {
+                const results = JSON.parse(fs.readFileSync(benchmarkPath, 'utf8'));
+                
+                commentBody += '### Benchmark Summary\n\n';
+                commentBody += '| Metric | Value |\n';
+                commentBody += '|--------|-------|\n';
+                
+                if (results.summary) {
+                  commentBody += `| Total Requests | ${results.summary.totalRequests || 'N/A'} |\n`;
+                  commentBody += `| Success Rate | ${results.summary.successRate || 'N/A'} |\n`;
+                  commentBody += `| Avg Response Time | ${results.responseTime?.average || 'N/A'} |\n`;
+                  commentBody += `| P95 Response Time | ${results.responseTime?.p95 || 'N/A'} |\n`;
+                  commentBody += `| Throughput | ${results.summary.requestsPerSecond || 'N/A'} req/s |\n`;
+                }
+                
+                commentBody += '\n✅ Performance tests completed!\n';
+              } else {
+                commentBody += '⚠️ No benchmark results found.\n';
+              }
+            } catch (error) {
+              commentBody += `⚠️ Error reading results: ${error.message}\n`;
+            }
+            
+            commentBody += '\n---\n';
+            commentBody += `📦 Artifacts are available for download.\n`;
+            commentBody += `🔍 [View workflow logs](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})\n`;
+            
+            // 查找并更新现有评论或创建新评论
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const existingComment = comments.find(c => c.user.login === 'github-actions[bot]' && c.body.includes('Performance Test Results'));
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: commentBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody,
+              });
+            }
+      
+      - name: Fail if regression detected
+        if: failure()
+        run: |
+          echo "::error::Performance regression detected or tests failed!"
+          echo "Please review the performance results and artifacts."
+          exit 1
+
+  notify:
+    name: Performance Test Notification
+    needs: performance-test
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: ./benchmark-results
+        continue-on-error: true
+      
+      - name: Send notification (placeholder)
+        run: |
+          echo "Performance test completed for commit: ${{ github.sha }}"
+          echo "Workflow status: ${{ needs.performance-test.result }}"
+          
+          # 这里可以集成 Slack、钉钉等通知服务
+          # if: needs.performance-test.result == 'failure'
+          #   echo "Sending failure notification..."
+          #   # 调用通知 API

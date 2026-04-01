@@ -11,8 +11,6 @@ import {
 import { Customer } from './customer.entity';
 
 @Entity('customer_tags')
-@Index(['customer_id', 'tag_name'], { unique: true })
-@Index(['tag_name'])
 export class CustomerTag {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;

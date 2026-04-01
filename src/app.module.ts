@@ -2,17 +2,17 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { RedisModule } from './infrastructure/redis/index.js';
-import { QueueModule } from './infrastructure/queue/index.js';
-import { DatabaseModule } from './infrastructure/database/database.module.js';
-import { LockModule } from './infrastructure/lock/lock.module.js';
-import { WebSocketModule } from './infrastructure/websocket/websocket.module.js';
-import { AuthModule } from './modules/auth/auth.module.js';
-import { CommonModule } from './common/common.module.js';
-import { RecommendationModule } from './modules/recommendation/recommendation.module.js';
-import { ScoringModule } from './modules/scoring/scoring.module.js';
-import { FeedbackModule } from './modules/feedback/feedback.module.js';
-import { entities } from './entities.js';
+import { RedisModule } from './infrastructure/redis/index';
+import { QueueModule } from './infrastructure/queue/index';
+import { DatabaseModule } from './infrastructure/database/database.module';
+import { LockModule } from './infrastructure/lock/lock.module';
+import { WebSocketModule } from './infrastructure/websocket/websocket.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { CommonModule } from './common/common.module';
+import { RecommendationModule } from './modules/recommendation/recommendation.module';
+import { ScoringModule } from './modules/scoring/scoring.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
+import { entities } from './entities';
 
 @Module({
   imports: [

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Input, Select, Space, Tag, Popconfirm, message, Typography, DatePicker, Row, Col, Statistic, Card, Progress, Modal, Form } from 'antd';
+import { Table, Button, Input, Select, Space, Tag, Popconfirm, message, Typography, DatePicker, Row, Col, Statistic, Card, Progress, Modal, Form, Slider, Checkbox, Divider, Badge, Tooltip, Radio } from 'antd';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -10,6 +10,9 @@ import {
   LeftOutlined,
   RightOutlined,
   SearchOutlined,
+  UndoOutlined,
+  TagOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useRuleStore } from '@/stores/ruleStore';
@@ -25,16 +28,25 @@ const { RangePicker } = DatePicker;
 
 interface FilterState {
   customerName?: string;
-  category?: string;  // 改为 category，与后端 DTO 一致
+  category?: string;
   dateRange?: any[];
   status?: string;
-  source?: string;
+  source?: string | string[];
   minConfidence?: number;
-
+  maxConfidence?: number;
+  categories?: string[];
+  sources?: string[];
 }
 
 // 推荐状态类型（兼容后端枚举）
 type RecommendationStatus = 'pending' | 'accepted' | 'rejected' | boolean;
+
+// 置信度等级
+const CONFIDENCE_LEVELS = [
+  { label: '高', value: 'high', range: [0.7, 1], color: 'green' },
+  { label: '中', value: 'medium', range: [0.4, 0.7], color: 'orange' },
+  { label: '低', value: 'low', range: [0, 0.4], color: 'red' },
+];
 
 const RecommendationList: React.FC = () => {
   const {
@@ -56,6 +68,10 @@ const RecommendationList: React.FC = () => {
   const [filters, setFilters] = useState<FilterState>({});
   const [form] = Form.useForm();
   const [selectedRowKeys, setSelectedRowKeys] = React.useState<React.Key[]>([]);
+  const [advancedSearchVisible, setAdvancedSearchVisible] = React.useState(false);
+  const [confidenceLevel, setConfidenceLevel] = useState<string>('all');
+  const [batchProcessing, setBatchProcessing] = React.useState(false);
+  const [batchProgress, setBatchProgress] = React.useState({ percent: 0, status: 'active' as 'active' | 'exception' | 'success' | 'normal' });
 
   // 加载推荐列表和统计数据
   useEffect(() => {
@@ -100,6 +116,31 @@ const RecommendationList: React.FC = () => {
     setFilters(prev => ({ ...prev, dateRange: dates }));
   };
 
+  // 处理置信度等级筛选
+  const handleConfidenceLevelChange = (value: string) => {
+    setConfidenceLevel(value);
+    const level = CONFIDENCE_LEVELS.find(l => l.value === value);
+    if (level) {
+      setFilters(prev => ({ 
+        ...prev, 
+        minConfidence: level.range[0],
+        maxConfidence: level.range[1]
+      }));
+    } else {
+      setFilters(prev => ({ ...prev, minConfidence: undefined, maxConfidence: undefined }));
+    }
+  };
+
+  // 处理标签类别多选
+  const handleCategoriesChange = (values: string[]) => {
+    setFilters(prev => ({ ...prev, categories: values }));
+  };
+
+  // 处理来源多选
+  const handleSourcesChange = (values: string[]) => {
+    setFilters(prev => ({ ...prev, sources: values }));
+  };
+
   // 处理查询（点击查询按钮时触发）
   const handleQuery = () => {
     const values = form.getFieldsValue();
@@ -122,6 +163,15 @@ const RecommendationList: React.FC = () => {
     if (values.dateRange && values.dateRange.length === 2) {
       queryParams.startDate = values.dateRange[0].format('YYYY-MM-DD');
       queryParams.endDate = values.dateRange[1].format('YYYY-MM-DD');
+    }
+    if (filters.minConfidence !== undefined) {
+      queryParams.minConfidence = filters.minConfidence;
+    }
+    if (filters.categories && filters.categories.length > 0) {
+      queryParams.categories = filters.categories.join(',');
+    }
+    if (filters.sources && filters.sources.length > 0) {
+      queryParams.sources = filters.sources.join(',');
     }
 
     setFilters(values);
@@ -202,32 +252,62 @@ const RecommendationList: React.FC = () => {
     });
   };
 
-  // 处理批量接受
+  // 处理批量接受（带自动打标签选项和进度条）
   const handleBatchAccept = async (selectedRowKeys: React.Key[]) => {
     if (!selectedRowKeys.length) {
       message.warning('请选择要接受的推荐');
       return;
     }
     
-    try {
-      const result = await batchAcceptRecommendations(selectedRowKeys as number[]);
-      const successCount = (result as any)?.success || selectedRowKeys.length;
-      
-      if (successCount === selectedRowKeys.length) {
-        message.success(`已成功接受 ${successCount} 条推荐`);
-      } else if (successCount > 0) {
-        message.warning(`部分成功：成功接受 ${successCount} 条，失败 ${selectedRowKeys.length - successCount} 条`);
-      } else {
-        message.error('批量接受失败，请重试');
-      }
-      
-      loadRecommendations();
-    } catch (error: any) {
-      message.error(error.message || '批量接受失败');
-    }
+    let autoTag = false;
+    
+    Modal.confirm({
+      title: '批量接受推荐',
+      content: (
+        <div>
+          <p>确定要接受选中的 {selectedRowKeys.length} 条推荐吗？</p>
+          <Checkbox 
+            checked={autoTag}
+            onChange={(e) => { autoTag = e.target.checked; }}
+            style={{ marginTop: 16, display: 'block' }}
+          >
+            接受后自动为客户打上对应标签
+          </Checkbox>
+        </div>
+      ),
+      okText: '确认接受',
+      cancelText: '取消',
+      onOk: async () => {
+        setBatchProcessing(true);
+        setBatchProgress({ percent: 0, status: 'active' });
+        
+        try {
+          await batchAcceptRecommendations(
+            selectedRowKeys as number[], 
+            autoTag,
+            (processed, total) => {
+              const percent = Math.round((processed / total) * 100);
+              setBatchProgress({ percent, status: 'active' });
+            }
+          );
+          
+          setBatchProgress({ percent: 100, status: 'success' });
+          message.success(`已成功接受 ${selectedRowKeys.length} 条推荐${autoTag ? '并自动打标签' : ''}`);
+          loadRecommendations();
+        } catch (error: any) {
+          setBatchProgress({ percent: 0, status: 'exception' });
+          message.error(error.message || '批量接受失败');
+        } finally {
+          setTimeout(() => {
+            setBatchProcessing(false);
+            setBatchProgress({ percent: 0, status: 'active' });
+          }, 1000);
+        }
+      },
+    });
   };
 
-  // 处理批量拒绝
+  // 处理批量拒绝（带进度条）
   const handleBatchReject = async (selectedRowKeys: React.Key[]) => {
     if (!selectedRowKeys.length) {
       message.warning('请选择要拒绝的推荐');
@@ -260,24 +340,74 @@ const RecommendationList: React.FC = () => {
         // 验证是否输入了原因
         if (!reasonValue || reasonValue.trim() === '') {
           message.error('请输入拒绝原因');
-          return false; // 阻止关闭对话框
+          return false;
         }
         
+        setBatchProcessing(true);
+        setBatchProgress({ percent: 0, status: 'active' });
+        
         try {
-          const result = await batchRejectRecommendations(selectedRowKeys as number[], reasonValue.trim());
-          const successCount = (result as any)?.success || selectedRowKeys.length;
+          await batchRejectRecommendations(
+            selectedRowKeys as number[], 
+            reasonValue.trim(),
+            (processed, total) => {
+              const percent = Math.round((processed / total) * 100);
+              setBatchProgress({ percent, status: 'active' });
+            }
+          );
           
-          if (successCount === selectedRowKeys.length) {
-            message.success(`已成功拒绝 ${successCount} 条推荐`);
-          } else if (successCount > 0) {
-            message.warning(`部分成功：成功拒绝 ${successCount} 条，失败 ${selectedRowKeys.length - successCount} 条`);
-          } else {
-            message.error('批量拒绝失败，请重试');
-          }
-          
+          setBatchProgress({ percent: 100, status: 'success' });
+          message.success(`已成功拒绝 ${selectedRowKeys.length} 条推荐`);
           loadRecommendations();
         } catch (error: any) {
+          setBatchProgress({ percent: 0, status: 'exception' });
           message.error(error.message || '批量拒绝失败');
+        } finally {
+          setTimeout(() => {
+            setBatchProcessing(false);
+            setBatchProgress({ percent: 0, status: 'active' });
+          }, 1000);
+        }
+      },
+    });
+  };
+
+  // 处理批量撤销（带进度条）
+  const handleBatchUndo = async (selectedRowKeys: React.Key[]) => {
+    if (!selectedRowKeys.length) {
+      message.warning('请选择要撤销的推荐');
+      return;
+    }
+    
+    Modal.confirm({
+      title: '批量撤销操作',
+      content: `确定要撤销选中的 ${selectedRowKeys.length} 条推荐的操作吗？这将恢复到待处理状态。`,
+      okText: '确认撤销',
+      cancelText: '取消',
+      onOk: async () => {
+        setBatchProcessing(true);
+        setBatchProgress({ percent: 0, status: 'active' });
+        
+        try {
+          await batchUndoRecommendations(
+            selectedRowKeys as number[],
+            (processed, total) => {
+              const percent = Math.round((processed / total) * 100);
+              setBatchProgress({ percent, status: 'active' });
+            }
+          );
+          
+          setBatchProgress({ percent: 100, status: 'success' });
+          message.success(`已成功撤销 ${selectedRowKeys.length} 条推荐`);
+          loadRecommendations();
+        } catch (error: any) {
+          setBatchProgress({ percent: 0, status: 'exception' });
+          message.error(error.message || '批量撤销失败');
+        } finally {
+          setTimeout(() => {
+            setBatchProcessing(false);
+            setBatchProgress({ percent: 0, status: 'active' });
+          }, 1000);
         }
       },
     });
@@ -614,7 +744,7 @@ const RecommendationList: React.FC = () => {
             <Statistic
               title={<span style={{ color: '#fff', fontWeight: 500 }}>📄 总推荐数</span>}
               value={statistics?.total ?? 0}
-              valueStyle={{ fontSize: 32, fontWeight: 700, color: '#fff' }}
+              styles={{ content: { fontSize: 32, fontWeight: 700, color: '#fff' } }}
             />
           </Card>
         </Col>
@@ -631,7 +761,7 @@ const RecommendationList: React.FC = () => {
             <Statistic
               title={<span style={{ color: '#fff', fontWeight: 500 }}>⏰ 待处理</span>}
               value={statistics?.pending ?? 0}
-              valueStyle={{ fontSize: 32, fontWeight: 700, color: '#fff' }}
+              styles={{ content: { fontSize: 32, fontWeight: 700, color: '#fff' } }}
             />
           </Card>
         </Col>
@@ -648,7 +778,7 @@ const RecommendationList: React.FC = () => {
             <Statistic
               title={<span style={{ color: '#fff', fontWeight: 500 }}>✅ 已接受</span>}
               value={statistics?.accepted ?? 0}
-              valueStyle={{ fontSize: 32, fontWeight: 700, color: '#fff' }}
+              styles={{ content: { fontSize: 32, fontWeight: 700, color: '#fff' } }}
             />
           </Card>
         </Col>
@@ -665,7 +795,7 @@ const RecommendationList: React.FC = () => {
             <Statistic
               title={<span style={{ color: '#fff', fontWeight: 500 }}>❌ 已拒绝</span>}
               value={statistics?.rejected ?? 0}
-              valueStyle={{ fontSize: 32, fontWeight: 700, color: '#fff' }}
+              styles={{ content: { fontSize: 32, fontWeight: 700, color: '#fff' } }}
             />
           </Card>
         </Col>
@@ -680,6 +810,15 @@ const RecommendationList: React.FC = () => {
             <FilterOutlined style={{ color: '#1890ff' }} /> 
             高级筛选
           </span>
+        }
+        extra={
+          <Button 
+            type="link" 
+            onClick={() => setAdvancedSearchVisible(!advancedSearchVisible)}
+            icon={advancedSearchVisible ? <CloseCircleOutlined /> : <FilterOutlined />}
+          >
+            {advancedSearchVisible ? '收起' : '展开'}
+          </Button>
         }
       >
         <Form
@@ -769,8 +908,111 @@ const RecommendationList: React.FC = () => {
               </Button>
             </Space>
           </Form.Item>
+
+          {/* 高级筛选区域 */}
+          {advancedSearchVisible && (
+            <>
+              <Form.Item label={<span style={{ fontWeight: 500 }}>置信度等级</span>} name="confidenceLevel">
+                <Radio.Group 
+                  value={confidenceLevel}
+                  onChange={(e) => handleConfidenceLevelChange(e.target.value)}
+                  buttonStyle="solid"
+                >
+                  <Radio.Button value="all">全部</Radio.Button>
+                  <Radio.Button value="high">🟢 高 (70%+)</Radio.Button>
+                  <Radio.Button value="medium">🟡 中 (40-70%)</Radio.Button>
+                  <Radio.Button value="low">🔴 低 (&lt;40%)</Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+
+              <Form.Item label={<span style={{ fontWeight: 500 }}>置信度范围</span>}>
+                <div style={{ width: 200 }}>
+                  <Slider
+                    range
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={[filters.minConfidence || 0, filters.maxConfidence || 1]}
+                    onChange={(value) => {
+                      setFilters(prev => ({ 
+                        ...prev, 
+                        minConfidence: value[0], 
+                        maxConfidence: value[1] 
+                      }));
+                    }}
+                    marks={{
+                      0: '0%',
+                      0.4: '40%',
+                      0.7: '70%',
+                      1: '100%'
+                    }}
+                  />
+                </div>
+              </Form.Item>
+
+              <Form.Item label={<span style={{ fontWeight: 500 }}>标签类别多选</span>}>
+                <Checkbox.Group
+                  value={filters.categories || []}
+                  onChange={handleCategoriesChange}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+                >
+                  <Checkbox value="客户价值">📊 客户价值</Checkbox>
+                  <Checkbox value="行为特征">🎯 行为特征</Checkbox>
+                  <Checkbox value="人口统计">👥 人口统计</Checkbox>
+                  <Checkbox value="偏好分析">❤️ 偏好分析</Checkbox>
+                  <Checkbox value="风险特征">⚠️ 风险特征</Checkbox>
+                </Checkbox.Group>
+              </Form.Item>
+
+              <Form.Item label={<span style={{ fontWeight: 500 }}>来源多选</span>}>
+                <Checkbox.Group
+                  value={filters.sources || []}
+                  onChange={handleSourcesChange}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+                >
+                  <Checkbox value="rule">⚙️ 规则引擎</Checkbox>
+                  <Checkbox value="clustering">🔍 聚类分析</Checkbox>
+                  <Checkbox value="association">🔗 关联分析</Checkbox>
+                </Checkbox.Group>
+              </Form.Item>
+            </>
+          )}
         </Form>
       </Card>
+
+      {/* 批量操作进度条 */}
+      {batchProcessing && (
+        <Card 
+          style={{ marginBottom: 16, borderRadius: 8, borderColor: batchProgress.status === 'success' ? '#52c41a' : batchProgress.status === 'exception' ? '#ff4d4f' : '#1890ff' }}
+          size="small"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {batchProgress.status === 'active' && <LoadingOutlined spin style={{ fontSize: 24, color: '#1890ff' }} />}
+            {batchProgress.status === 'success' && <CheckCircleOutlined style={{ fontSize: 24, color: '#52c41a' }} />}
+            {batchProgress.status === 'exception' && <CloseCircleOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />}
+            
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text strong>
+                  {batchProgress.status === 'active' && '正在处理...'}
+                  {batchProgress.status === 'success' && '处理完成！'}
+                  {batchProgress.status === 'exception' && '处理失败'}
+                </Text>
+                <Text type="secondary">{batchProgress.percent}%</Text>
+              </div>
+              <Progress 
+                percent={batchProgress.percent} 
+                status={batchProgress.status}
+                strokeColor={{
+                  '0%': '#1890ff',
+                  '100%': '#52c41a',
+                }}
+                strokeWidth={8}
+              />
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* 数据表格 */}
       <Table
@@ -811,59 +1053,54 @@ const RecommendationList: React.FC = () => {
             Table.SELECTION_NONE,
           ],
         }}
-        locale={{
-          emptyText: recommendations.length === 0 
-            ? (
-              <div style={{ padding: '60px 0', textAlign: 'center' }}>
-                <div style={{ fontSize: 72, marginBottom: 16 }}>📭</div>
-                <div style={{ fontSize: 18, color: '#666', marginBottom: 12, fontWeight: 500 }}>
-                  暂无推荐数据
-                </div>
-                <div style={{ fontSize: 14, color: '#999' }}>
-                  {filters.customerName || filters.category || filters.source || filters.status 
-                    ? '🔍 当前筛选条件下没有数据，请尝试调整筛选条件' 
-                    : '💡 还没有生成任何推荐，请稍后刷新或查看规则配置'}
-                </div>
-              </div>
-            ) 
-            : '暂无数据',
-        }}
-        footer={() => (
-          <div style={{ 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            borderRadius: 8,
-            padding: '16px 24px',
-            margin: '-16px -24px -16px -24px',
-          }}>
-            <Space size="large">
-              <Button
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                onClick={() => handleBatchAccept(selectedRowKeys)}
-                disabled={selectedRowKeys.length === 0}
-                size="large"
-                style={{ 
-                  background: '#52c41a',
-                  borderColor: '#52c41a',
-                  fontWeight: 600,
-                }}
-              >
-                批量接受 ({selectedRowKeys.length})
-              </Button>
-              <Button
-                danger
-                icon={<CloseCircleOutlined />}
-                onClick={() => handleBatchReject(selectedRowKeys)}
-                disabled={selectedRowKeys.length === 0}
-                size="large"
-                style={{ fontWeight: 600 }}
-              >
-                批量拒绝 ({selectedRowKeys.length})
-              </Button>
-              <Text style={{ color: '#fff', fontWeight: 500 }}>
-                已选择 {selectedRowKeys.length} 条记录
-              </Text>
-            </Space>
+        title={() => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+            <div>
+              <Text strong>推荐列表</Text>
+              {selectedRowKeys.length > 0 && (
+                <Tag color="blue" style={{ marginLeft: 12 }}>
+                  已选择 {selectedRowKeys.length} 条
+                </Tag>
+              )}
+            </div>
+            {selectedRowKeys.length > 0 && (
+              <Space size="middle">
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => handleBatchAccept(selectedRowKeys)}
+                  style={{ fontWeight: 600 }}
+                >
+                  批量接受
+                </Button>
+                <Button
+                  danger
+                  size="small"
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => handleBatchReject(selectedRowKeys)}
+                  style={{ fontWeight: 600 }}
+                >
+                  批量拒绝
+                </Button>
+                <Button
+                  size="small"
+                  icon={<UndoOutlined />}
+                  onClick={() => handleBatchUndo(selectedRowKeys)}
+                  style={{ fontWeight: 600 }}
+                >
+                  批量撤销
+                </Button>
+                <Button
+                  size="small"
+                  icon={<DownloadOutlined />}
+                  onClick={() => handleExport()}
+                  style={{ fontWeight: 600 }}
+                >
+                  导出选中
+                </Button>
+              </Space>
+            )}
           </div>
         )}
       />

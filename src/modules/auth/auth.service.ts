@@ -82,4 +82,19 @@ export class AuthService {
   async changePassword(userId: number, oldPassword: string, newPassword: string): Promise<User> {
     return await this.userService.changePassword(userId, oldPassword, newPassword);
   }
+
+  /**
+   * 用户注册
+   */
+  async register(username: string, email: string, password: string, fullName?: string) {
+    const dto = {
+      username,
+      email,
+      password,
+      fullName,
+      roles: [UserRole.USER], // 默认角色
+    };
+    
+    return await this.userService.createUser(dto);
+  }
 }

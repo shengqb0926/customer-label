@@ -6,7 +6,6 @@ import {
   UserOutlined,
   SettingOutlined,
   ExperimentOutlined,
-  ClusterOutlined,
   TeamOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
@@ -63,7 +62,7 @@ export default function BasicLayout() {
       },
       {
         key: '/clustering-configs',
-        icon: <ClusterOutlined />,
+        icon: <ExperimentOutlined />,
         label: '聚类配置',
       },
       {

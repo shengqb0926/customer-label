@@ -21,6 +21,14 @@ import {
   Checkbox,
   Dropdown,
   Divider,
+  Tabs,
+  Alert,
+  Slider,
+  InputNumber,
+  TreeSelect,
+  Badge,
+  Tooltip,
+  Steps,
 } from 'antd';
 import type { InputRef } from 'antd';
 import {
@@ -35,16 +43,27 @@ import {
   ThunderboltOutlined,
   StopOutlined,
   AppstoreOutlined,
+  SettingOutlined,
+  BarChartOutlined,
+  DashboardOutlined,
+  ExperimentOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { clusteringConfigService } from '@/services/rule';
 import type { ClusteringConfig, CreateClusteringConfigDto, UpdateClusteringConfigDto } from '@/services/rule';
+import VisualConfigBuilder from './VisualConfigBuilder';
+import FeatureSelector from './FeatureSelector';
+import ExecutionMonitor from './ExecutionMonitor';
+import PerformanceAnalysis from './PerformanceAnalysis';
 
 const { Title } = Typography;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
 const ClusteringConfigManagement: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('list');
   const [configs, setConfigs] = useState<ClusteringConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -59,6 +78,7 @@ const ClusteringConfigManagement: React.FC = () => {
   // 批量操作相关状态
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [batchRunning, setBatchRunning] = useState(false);
+  const [selectedConfigForAction, setSelectedConfigForAction] = useState<number | null>(null);
 
   // 预设模板定义
   const configTemplates = [
@@ -123,7 +143,17 @@ const ClusteringConfigManagement: React.FC = () => {
         algorithm: algorithmFilter,
         isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
       });
-      setConfigs(response.data);
+      console.log('🔍 [DEBUG] loadConfigs - response:', response);
+      console.log('🔍 [DEBUG] loadConfigs - response.data:', response.data);
+      console.log('🔍 [DEBUG] loadConfigs - 设置前的数据长度:', response.data?.length || 0);
+      
+      // ✅ 修复：response 可能是数组或包含 data 属性的对象
+      const configsData = Array.isArray(response) ? response : (response.data || []);
+      console.log('🔍 [DEBUG] loadConfigs - 实际使用的数据:', configsData);
+      console.log('🔍 [DEBUG] loadConfigs - 实际数据长度:', configsData.length);
+      
+      setConfigs(configsData);
+      console.log('✅ [DEBUG] loadConfigs - 已调用 setConfigs');
     } catch (error: any) {
       message.error(`加载失败：${error.message}`);
     } finally {
@@ -134,6 +164,13 @@ const ClusteringConfigManagement: React.FC = () => {
   useEffect(() => {
     loadConfigs();
   }, []);
+
+  // 【调试用】监听 configs 状态变化
+  useEffect(() => {
+    console.log('🔍 [DEBUG] configs 状态变化:', configs);
+    console.log('🔍 [DEBUG] configs 长度:', configs?.length || 0);
+    console.log('🔍 [DEBUG] 活跃配置数:', configs?.filter(c => c.isActive).length || 0);
+  }, [configs]);
 
   // 处理搜索
   const handleSearch = () => {
@@ -168,12 +205,20 @@ const ClusteringConfigManagement: React.FC = () => {
       const values = await form.validateFields();
       const { k, maxIterations, minSupport, minConfidence, ...restValues } = values;
 
-      // 构建参数对象
+      // 构建参数对象，并确保数字类型正确
       const parameters: Record<string, any> = {};
-      if (k !== undefined) parameters.k = k;
-      if (maxIterations !== undefined) parameters.maxIterations = maxIterations;
-      if (minSupport !== undefined) parameters.minSupport = minSupport;
-      if (minConfidence !== undefined) parameters.minConfidence = minConfidence;
+      if (k !== undefined) {
+        parameters.k = typeof k === 'string' ? Number(k) : k;
+      }
+      if (maxIterations !== undefined) {
+        parameters.maxIterations = typeof maxIterations === 'string' ? Number(maxIterations) : maxIterations;
+      }
+      if (minSupport !== undefined) {
+        parameters.minSupport = typeof minSupport === 'string' ? Number(minSupport) : minSupport;
+      }
+      if (minConfidence !== undefined) {
+        parameters.minConfidence = typeof minConfidence === 'string' ? Number(minConfidence) : minConfidence;
+      }
 
       const dto: CreateClusteringConfigDto | UpdateClusteringConfigDto = {
         ...restValues,
@@ -508,9 +553,9 @@ const ClusteringConfigManagement: React.FC = () => {
           <Card>
             <Statistic
               title="总配置数"
-              value={configs.length}
+              value={(configs || []).length}
               suffix="个"
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff' } }}
             />
           </Card>
         </Col>
@@ -518,9 +563,9 @@ const ClusteringConfigManagement: React.FC = () => {
           <Card>
             <Statistic
               title="活跃配置"
-              value={configs.filter(c => c.isActive).length}
+              value={(configs || []).filter(c => c.isActive).length}
               suffix="个"
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
           </Card>
         </Col>
@@ -528,9 +573,9 @@ const ClusteringConfigManagement: React.FC = () => {
           <Card>
             <Statistic
               title="总运行次数"
-              value={configs.reduce((sum, c) => sum + c.runCount, 0)}
+              value={(configs || []).reduce((sum, c) => sum + (c.runCount || 0), 0)}
               suffix="次"
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14' } }}
             />
           </Card>
         </Col>
@@ -539,12 +584,12 @@ const ClusteringConfigManagement: React.FC = () => {
             <Statistic
               title="平均质量"
               value={
-                configs.filter(c => c.avgSilhouetteScore).length > 0
-                  ? (configs.reduce((sum, c) => sum + (c.avgSilhouetteScore || 0), 0) /
-                      configs.filter(c => c.avgSilhouetteScore).length).toFixed(3)
+                (configs || []).filter(c => c.avgSilhouetteScore).length > 0
+                  ? ((configs || []).reduce((sum, c) => sum + (c.avgSilhouetteScore || 0), 0) /
+                      (configs || []).filter(c => c.avgSilhouetteScore).length).toFixed(3)
                   : '0.000'
               }
-              valueStyle={{ color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1' } }}
             />
           </Card>
         </Col>
@@ -649,7 +694,7 @@ const ClusteringConfigManagement: React.FC = () => {
         <Table
           rowKey="id"
           columns={columns}
-          dataSource={configs}
+          dataSource={configs || []}
           loading={loading}
           rowSelection={rowSelection}
           pagination={{
@@ -664,7 +709,7 @@ const ClusteringConfigManagement: React.FC = () => {
       {/* 创建/编辑弹窗 */}
       <Modal
         title={editingConfig ? '编辑聚类配置' : '新建聚类配置'}
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={handleSubmit}
         width={700}
@@ -739,7 +784,7 @@ const ClusteringConfigManagement: React.FC = () => {
       {/* 模板选择弹窗 */}
       <Modal
         title="从模板创建配置"
-        visible={templateVisible}
+        open={templateVisible}
         onCancel={() => setTemplateVisible(false)}
         footer={null}
         width={900}
@@ -810,7 +855,7 @@ const ClusteringConfigManagement: React.FC = () => {
       {/* 详情弹窗 */}
       <Modal
         title="配置详情"
-        visible={detailVisible}
+        open={detailVisible}
         onCancel={() => setDetailVisible(false)}
         footer={null}
         width={800}

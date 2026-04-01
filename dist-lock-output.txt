@@ -1,0 +1,135 @@
+
+> customer-label@1.0.0 test
+> jest distributed-lock.service.spec.ts
+
+[95m[Nest] 19720  - [39m2026/03/31 20:43:10 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mAcquired lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:10 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mAcquired lock: test-lock[39m
+[33m[Nest] 19720  - [39m2026/03/31 20:43:11 [33m   WARN[39m [38;5;3m[DistributedLockService] [39m[33mFailed to acquire lock test-lock after 3 retries[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:11 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mAcquired lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:11 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mReleased lock: test-lock[39m
+[33m[Nest] 19720  - [39m2026/03/31 20:43:11 [33m   WARN[39m [38;5;3m[DistributedLockService] [39m[33mFailed to release lock test-lock: lock not held by this client[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:11 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mAcquired lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:11 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mStarted watchdog for lock test-lock with interval 10000ms[39m
+  console.warn
+    A function to advance timers was called but the timers APIs are not replaced with fake timers. Call `jest.useFakeTimers()` in this test file or enable fake timers for all tests by setting 'fakeTimers': {'enableGlobally': true} in Jest configuration file.
+    Stack Trace:
+    
+        [0m [90m 259 |[39m
+         [90m 260 |[39m       [90m// 模拟时间流逝，触发看门狗续期（1/3 TTL = 10 秒）[39m
+        [31m[1m>[22m[39m[90m 261 |[39m       jest[33m.[39madvanceTimersByTime([35m10000[39m)[33m;[39m
+         [90m     |[39m            [31m[1m^[22m[39m
+         [90m 262 |[39m
+         [90m 263 |[39m       [90m// 应该已经调用了 extend[39m
+         [90m 264 |[39m       expect(mockRedisService[33m.[39meval)[33m.[39mtoHaveBeenCalled()[33m;[39m[0m
+    
+          Error: 
+          at FakeTimers._checkFakeTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:158:13)
+          at FakeTimers.advanceTimersByTime (node_modules/@jest/fake-timers/build/modernFakeTimers.js:93:14)
+          at Object.<anonymous> (src/infrastructure/lock/distributed-lock.service.spec.ts:261:12)
+
+    [0m [90m 259 |[39m
+     [90m 260 |[39m       [90m// 模拟时间流逝，触发看门狗续期（1/3 TTL = 10 秒）[39m
+    [31m[1m>[22m[39m[90m 261 |[39m       jest[33m.[39madvanceTimersByTime([35m10000[39m)[33m;[39m
+     [90m     |[39m            [31m[1m^[22m[39m
+     [90m 262 |[39m
+     [90m 263 |[39m       [90m// 应该已经调用了 extend[39m
+     [90m 264 |[39m       expect(mockRedisService[33m.[39meval)[33m.[39mtoHaveBeenCalled()[33m;[39m[0m
+
+      at FakeTimers._checkFakeTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:152:28)
+      at FakeTimers.advanceTimersByTime (node_modules/@jest/fake-timers/build/modernFakeTimers.js:93:14)
+      at Object.<anonymous> (src/infrastructure/lock/distributed-lock.service.spec.ts:261:12)
+
+[95m[Nest] 19720  - [39m2026/03/31 20:43:21 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:31 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mAcquired lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mStarted watchdog for lock test-lock with interval 10000ms[39m
+  console.warn
+    A function to advance timers was called but the timers APIs are not replaced with fake timers. Call `jest.useFakeTimers()` in this test file or enable fake timers for all tests by setting 'fakeTimers': {'enableGlobally': true} in Jest configuration file.
+    Stack Trace:
+    
+        [0m [90m 286 |[39m
+         [90m 287 |[39m       [90m// 快进时间触发续期[39m
+        [31m[1m>[22m[39m[90m 288 |[39m       jest[33m.[39madvanceTimersByTime([35m10000[39m)[33m;[39m
+         [90m     |[39m            [31m[1m^[22m[39m
+         [90m 289 |[39m
+         [90m 290 |[39m       [90m// 等待微任务执行[39m
+         [90m 291 |[39m       [36mawait[39m jest[33m.[39mrunAllTicks()[33m;[39m[0m
+    
+          Error: 
+          at FakeTimers._checkFakeTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:158:13)
+          at FakeTimers.advanceTimersByTime (node_modules/@jest/fake-timers/build/modernFakeTimers.js:93:14)
+          at Object.<anonymous> (src/infrastructure/lock/distributed-lock.service.spec.ts:288:12)
+
+    [0m [90m 286 |[39m
+     [90m 287 |[39m       [90m// 快进时间触发续期[39m
+    [31m[1m>[22m[39m[90m 288 |[39m       jest[33m.[39madvanceTimersByTime([35m10000[39m)[33m;[39m
+     [90m     |[39m            [31m[1m^[22m[39m
+     [90m 289 |[39m
+     [90m 290 |[39m       [90m// 等待微任务执行[39m
+     [90m 291 |[39m       [36mawait[39m jest[33m.[39mrunAllTicks()[33m;[39m[0m
+
+      at FakeTimers._checkFakeTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:152:28)
+      at FakeTimers.advanceTimersByTime (node_modules/@jest/fake-timers/build/modernFakeTimers.js:93:14)
+      at Object.<anonymous> (src/infrastructure/lock/distributed-lock.service.spec.ts:288:12)
+
+  console.warn
+    A function to advance timers was called but the timers APIs are not replaced with fake timers. Call `jest.useFakeTimers()` in this test file or enable fake timers for all tests by setting 'fakeTimers': {'enableGlobally': true} in Jest configuration file.
+    Stack Trace:
+    
+        [0m [90m 289 |[39m
+         [90m 290 |[39m       [90m// 等待微任务执行[39m
+        [31m[1m>[22m[39m[90m 291 |[39m       [36mawait[39m jest[33m.[39mrunAllTicks()[33m;[39m
+         [90m     |[39m                  [31m[1m^[22m[39m
+         [90m 292 |[39m
+         [90m 293 |[39m       [90m// 看门狗应该已经停止[39m
+         [90m 294 |[39m       [36mawait[39m cancelFn()[33m;[39m[0m
+    
+          Error: 
+          at FakeTimers._checkFakeTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:158:13)
+          at FakeTimers.runAllTicks (node_modules/@jest/fake-timers/build/modernFakeTimers.js:103:14)
+          at Object.<anonymous> (src/infrastructure/lock/distributed-lock.service.spec.ts:291:18)
+
+    [0m [90m 289 |[39m
+     [90m 290 |[39m       [90m// 等待微任务执行[39m
+    [31m[1m>[22m[39m[90m 291 |[39m       [36mawait[39m jest[33m.[39mrunAllTicks()[33m;[39m
+     [90m     |[39m                  [31m[1m^[22m[39m
+     [90m 292 |[39m
+     [90m 293 |[39m       [90m// 看门狗应该已经停止[39m
+     [90m 294 |[39m       [36mawait[39m cancelFn()[33m;[39m[0m
+
+      at FakeTimers._checkFakeTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:152:28)
+      at FakeTimers.runAllTicks (node_modules/@jest/fake-timers/build/modernFakeTimers.js:103:14)
+      at Object.<anonymous> (src/infrastructure/lock/distributed-lock.service.spec.ts:291:18)
+
+[33m[Nest] 19720  - [39m2026/03/31 20:43:41 [33m   WARN[39m [38;5;3m[DistributedLockService] [39m[33mFailed to release lock test-lock: lock not held by this client[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mAcquired lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mReleased lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mAcquired lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mReleased lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mAcquired lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mReleased lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mAcquired lock: test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mReleased lock: test-lock[39m
+[33m[Nest] 19720  - [39m2026/03/31 20:43:42 [33m   WARN[39m [38;5;3m[DistributedLockService] [39m[33mFailed to acquire lock test-lock after 300 retries[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:43:51 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:44:01 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:44:11 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:44:21 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:44:31 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:44:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:44:51 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:45:01 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:45:11 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:45:21 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:45:31 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:45:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:45:51 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:46:01 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:46:11 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:46:21 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:46:31 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:46:41 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:46:51 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:47:01 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m
+[95m[Nest] 19720  - [39m2026/03/31 20:47:11 [95m  DEBUG[39m [38;5;3m[DistributedLockService] [39m[95mRenewed lock test-lock[39m

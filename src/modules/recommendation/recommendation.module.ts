@@ -26,6 +26,7 @@ import { Customer } from './entities/customer.entity';
 import { CustomerTag } from './entities/customer-tag.entity';
 import { RedisModule } from '../../infrastructure/redis';
 import { QueueModule } from '../../infrastructure/queue';
+import { SimilarityModule } from '../../common/similarity';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { QueueModule } from '../../infrastructure/queue';
     ]),
     RedisModule,
     QueueModule,
+    SimilarityModule, // ✨ 新增：相似度计算模块
   ],
   controllers: [
     RecommendationController, 
