@@ -114,9 +114,9 @@ jobs:
           echo "Waiting for application to start..."
           sleep 15
           
-          # 健康检查
+          # 健康检查 - 同时检查 health 和 version 端点
           for i in {1..10}; do
-            if curl -f http://localhost:3000/health; then
+            if curl -f http://localhost:3000/health && curl -f http://localhost:3000/version; then
               echo "Application is ready!"
               break
             fi
