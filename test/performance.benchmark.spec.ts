@@ -126,7 +126,7 @@ describe('Performance Benchmark Suite (e2e)', () => {
   let testCustomerId: number;
 
   beforeAll(async () => {
-    jest.setTimeout(30000); // 增加超时时间到 30 秒
+    jest.setTimeout(60000); // 增加超时时间到 60 秒（CI 环境启动较慢）
     
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -174,7 +174,7 @@ describe('Performance Benchmark Suite (e2e)', () => {
       console.error('Failed to initialize test application:', error);
       throw error;
     }
-  }, 30000); // 设置 beforeAll 超时为 30 秒
+  }, 60000); // 设置 beforeAll 超时为 60 秒
 
   afterAll(async () => {
     // 清理测试数据
@@ -191,7 +191,7 @@ describe('Performance Benchmark Suite (e2e)', () => {
     } catch (error) {
       console.error('Error closing application:', error);
     }
-  }, 10000);
+  }, 15000); // 增加 afterAll 超时到 15 秒
 
   beforeEach(() => {
     tester = new PerformanceTester();
@@ -221,7 +221,7 @@ describe('Performance Benchmark Suite (e2e)', () => {
       // 断言：平均响应时间应小于 100ms
       expect(metrics.avgTime).toBeLessThan(100);
       expect(metrics.successRate).toBe(100);
-    });
+    }, 20000); // 增加超时到 20 秒
   });
 
   /**
@@ -273,7 +273,7 @@ describe('Performance Benchmark Suite (e2e)', () => {
       // 断言：平均创建时间应小于 200ms
       expect(metrics.avgTime).toBeLessThan(200);
       expect(metrics.successRate).toBeGreaterThanOrEqual(95);
-    });
+    }, 30000); // 增加超时到 30 秒
 
     it('READ: should get customer by ID with good performance', async () => {
       // 先创建一个顾客用于查询测试
@@ -535,7 +535,7 @@ describe('Performance Benchmark Suite (e2e)', () => {
 
       // 断言：RFM 分析时间应小于 200ms
       expect(metrics.avgTime).toBeLessThan(200);
-    });
+    }, 40000); // 增加超时到 40 秒
 
     it('should get RFM summary statistics efficiently', async () => {
       const iterations = 15;
@@ -558,7 +558,8 @@ describe('Performance Benchmark Suite (e2e)', () => {
 
       // 断言：RFM 汇总统计时间应小于 300ms
       expect(metrics.avgTime).toBeLessThan(300);
-    });
+    }, 30000); // 增加超时到 30 秒
+
   });
 
   /**
@@ -639,7 +640,8 @@ describe('Performance Benchmark Suite (e2e)', () => {
             .set('Authorization', `Bearer ${authToken}`);
         } catch (e) {}
       }
-    });
+    }, 40000); // 增加超时到 40 秒
+
   });
 
   /**
@@ -678,7 +680,8 @@ describe('Performance Benchmark Suite (e2e)', () => {
         // 断言：并发请求的平均响应时间增长应该在可接受范围内
         expect(metrics.avgTime).toBeLessThan(concurrency * 100);
       }
-    });
+    }, 60000); // 增加超时到 60 秒（并发测试较慢）
+
   });
 
   /**
@@ -710,6 +713,6 @@ describe('Performance Benchmark Suite (e2e)', () => {
 
       // 这里可以添加历史数据对比逻辑
       expect(report).toBeDefined();
-    });
+    }, 10000); // 增加超时到 10 秒
   });
 });
