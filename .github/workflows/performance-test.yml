@@ -136,7 +136,7 @@ jobs:
         if: github.event.inputs.test_type == 'benchmark' || github.event.inputs.test_type == '' || github.event.inputs.test_type == 'all'
         run: |
           echo "Running performance benchmark tests..."
-          npm run test:benchmark -- --ci --reporters=default --reporters=jest-junit
+          npm run test:benchmark -- --ci
         timeout-minutes: 15
         continue-on-error: false
       
