@@ -19,6 +19,11 @@
     "test:cov": "jest --coverage",
     "test:e2e": "jest -config ./test/jest-e2e.json",
     "test:e2e:verbose": "jest -config ./test/jest-e2e.json --verbose",
+    "test:benchmark": "jest -config ./test/jest-benchmark.json --runInBand",
+    "test:benchmark:verbose": "jest -config ./test/jest-benchmark.json --verbose --runInBand",
+    "load:test": "node test/load-test-runner.js",
+    "stress:test": "node test/stress-test-runner.js",
+    "performance:all": "npm run test:benchmark && npm run load:test && npm run stress:test",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d data-source.ts",
@@ -83,6 +88,7 @@
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

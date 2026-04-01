@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, UnauthorizedException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { Repository, FindOptionsWhere, Like } from 'typeorm';
+import { User, UserRole } from '../entities/user.entity';
 import * as bcrypt from 'bcryptjs';
 
 export interface CreateUserDto {
@@ -67,7 +67,7 @@ export class UserService {
     // 加密密码
     const hashedPassword = await bcrypt.hash(dto.password, this.saltRounds);
 
-    // 默认角色
+    // 默认角色：如果未指定角色或角色数组为空，则使用默认角色 USER
     const roles = dto.roles && dto.roles.length > 0 ? dto.roles : [UserRole.USER];
 
     const user = this.userRepo.create({

@@ -1,5 +1,5 @@
 import * as winston from 'winston';
-import 'winston-daily-rotate-file';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import { join } from 'path';
 
 // 定义日志级别
@@ -40,7 +40,7 @@ const transports = [
   }),
 
   // 所有日志记录到文件（按日期轮转）
-  new winston.transports.DailyRotateFile({
+  new DailyRotateFile({
     dirname: logDir,
     filename: 'application-%DATE%.log',
     datePattern: 'YYYY-MM-DD',
@@ -51,7 +51,7 @@ const transports = [
   }),
 
   // 错误日志单独记录
-  new winston.transports.DailyRotateFile({
+  new DailyRotateFile({
     dirname: logDir,
     filename: 'error-%DATE%.log',
     datePattern: 'YYYY-MM-DD',
@@ -62,7 +62,7 @@ const transports = [
   }),
 
   // HTTP 请求日志
-  new winston.transports.DailyRotateFile({
+  new DailyRotateFile({
     dirname: logDir,
     filename: 'http-%DATE%.log',
     datePattern: 'YYYY-MM-DD',

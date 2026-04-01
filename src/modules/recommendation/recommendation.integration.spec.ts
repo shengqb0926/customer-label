@@ -13,6 +13,7 @@ import { ClusteringEngineService } from './engines/clustering-engine.service';
 import { AssociationEngineService } from './engines/association-engine.service';
 import { FusionEngineService } from './engines/fusion-engine.service';
 import { ConflictDetectorService } from './services/conflict-detector.service';
+import { SimilarityService } from '../../common/similarity';
 
 /**
  * 推荐系统集成测试
@@ -104,6 +105,11 @@ describe('RecommendationService Integration Tests', () => {
     resolveConflicts: jest.fn(),
   };
 
+  const mockSimilarityService = {
+    calculateSimilarity: jest.fn(),
+    findSimilarCustomers: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -151,6 +157,10 @@ describe('RecommendationService Integration Tests', () => {
         {
           provide: ConflictDetectorService,
           useValue: mockConflictDetector,
+        },
+        {
+          provide: SimilarityService,
+          useValue: mockSimilarityService,
         },
       ],
     }).compile();

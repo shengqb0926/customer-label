@@ -889,7 +889,7 @@ export class RecommendationService {
   /**
    * 批量撤销推荐操作
    */
-  async batchUndoRecommendations(ids: number[], userId: number): Promise<number> {
+  async batchUndoRecommendations(ids: number[], userId?: number): Promise<number> {
     let successCount = 0;
     
     for (const id of ids) {
@@ -907,7 +907,7 @@ export class RecommendationService {
   /**
    * 撤销单个推荐操作
    */
-  async undoRecommendation(id: number, userId: number): Promise<TagRecommendation> {
+  async undoRecommendation(id: number, userId?: number): Promise<TagRecommendation> {
     const recommendation = await this.recommendationRepo.findOne({ where: { id } });
     
     if (!recommendation) {
@@ -917,7 +917,7 @@ export class RecommendationService {
     // 重置状态为待处理
     recommendation.isAccepted = null;
     recommendation.acceptedAt = null;
-    recommendation.acceptedBy = null;
+    recommendation.acceptedBy = userId ?? null;
     recommendation.modifiedTagName = null;
     recommendation.feedbackReason = null;
     recommendation.updatedAt = new Date();

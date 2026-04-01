@@ -1,0 +1,9 @@
+
+> customer-label@1.0.0 test
+> jest association-manager.service.spec.ts
+
+[32m[Nest] 2716  - [39m2026/03/31 20:14:56 [32m    LOG[39m [38;5;3m[AssociationManagerService] [39m[32m创建关联规则配置：test-config (ID: 1)[39m
+[32m[Nest] 2716  - [39m2026/03/31 20:14:56 [32m    LOG[39m [38;5;3m[AssociationManagerService] [39m[32m更新关联规则配置：new-name (ID: 1)[39m
+[32m[Nest] 2716  - [39m2026/03/31 20:14:56 [32m    LOG[39m [38;5;3m[AssociationManagerService] [39m[32m删除关联规则配置：test-config (ID: 1)[39m
+[32m[Nest] 2716  - [39m2026/03/31 20:14:56 [32m    LOG[39m [38;5;3m[AssociationManagerService] [39m[32m运行关联规则配置：test (ID: 1), 运行次数：6[39m
+[32m[Nest] 2716  - [39m2026/03/31 20:14:56 [32m    LOG[39m [38;5;3m[AssociationManagerService] [39m[32m复制关联规则配置：original-config -> original-config (副本) (ID: 2)[39m

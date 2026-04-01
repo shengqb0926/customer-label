@@ -1,0 +1,27 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": "\\.benchmark\\.spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "testTimeout": 120000,
+  "verbose": true,
+  "collectCoverage": false,
+  "reporters": [
+    "default",
+    ["jest-junit", {
+      "outputDirectory": "./test/results",
+      "outputName": "benchmark-results.xml",
+      "classNameTemplate": "{classname}",
+      "titleTemplate": "{title}",
+      "ancestorSeparator": " › "
+    }]
+  ],
+  "globals": {
+    "ts-jest": {
+      "isolatedModules": true
+    }
+  }
+}

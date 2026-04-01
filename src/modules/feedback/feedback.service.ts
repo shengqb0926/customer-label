@@ -124,13 +124,14 @@ export class FeedbackService {
     // 构建查询条件
     const where: any = {};
     
-    if (startDate) {
-      where.date = `>= ${startDate}`;
-    }
-    
-    if (endDate) {
-      if (!where.date) where.date = {};
-      where.date['<='] = endDate;
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) {
+        where.date['>='] = startDate;
+      }
+      if (endDate) {
+        where.date['<='] = endDate;
+      }
     }
     
     if (minAcceptanceRate !== undefined || maxAcceptanceRate !== undefined) {
@@ -219,9 +220,9 @@ export class FeedbackService {
 
     return {
       totalDays: countResult,
-      totalRecommendations: parseInt(sumResult.totalRecs) || 0,
-      totalAccepted: parseInt(sumResult.totalAccepted) || 0,
-      avgAcceptanceRate: parseFloat(sumResult.avgRate) || 0,
+      totalRecommendations: parseInt(sumResult?.totalRecs) || 0,
+      totalAccepted: parseInt(sumResult?.totalAccepted) || 0,
+      avgAcceptanceRate: parseFloat(sumResult?.avgRate) || 0,
     };
   }
 }

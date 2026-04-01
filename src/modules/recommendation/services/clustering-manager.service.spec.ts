@@ -167,13 +167,90 @@ describe('ClusteringManagerService', () => {
   });
 
   describe('deactivateConfig', () => {
-    it('should deactivate config successfully', async () => {
+    it('应该停用配置成功', async () => {
       jest.spyOn(service, 'getConfigById').mockResolvedValue(mockClusteringConfig as any);
       jest.spyOn(configRepo, 'save').mockResolvedValue({ ...mockClusteringConfig, isActive: false } as any);
 
       const result = await service.deactivateConfig(1);
 
       expect(result.isActive).toBe(false);
+    });
+  });
+
+  describe('runClustering', () => {
+    it('应该执行聚类分析成功', async () => {
+      const activeConfig = { ...mockClusteringConfig, isActive: true };
+      
+      jest.spyOn(service, 'getConfigById').mockResolvedValue(activeConfig as any);
+      jest.spyOn(configRepo, 'save').mockResolvedValue(activeConfig as any);
+
+      const result = await service.runClustering(1);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('应该拒绝未激活的配置', async () => {
+      const inactiveConfig = { ...mockClusteringConfig, isActive: false };
+      
+      jest.spyOn(service, 'getConfigById').mockResolvedValue(inactiveConfig as any);
+
+      await expect(service.runClustering(1)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('validateAlgorithm', () => {
+    it('应该验证 k-means 算法有效', () => {
+      expect(() => service['validateAlgorithm']('k-means')).not.toThrow();
+    });
+
+    it('应该验证 dbscan 算法有效', () => {
+      expect(() => service['validateAlgorithm']('dbscan')).not.toThrow();
+    });
+
+    it('应该验证 hierarchical 算法有效', () => {
+      expect(() => service['validateAlgorithm']('hierarchical')).not.toThrow();
+    });
+
+    it('应该拒绝无效的算法', () => {
+      expect(() => service['validateAlgorithm']('invalid-algo')).toThrow(BadRequestException);
+    });
+  });
+
+  describe('validateParameters - k-means', () => {
+    it('应该验证有效的 k-means 参数', () => {
+      expect(() => service['validateParameters']('k-means', { k: 5 })).not.toThrow();
+    });
+
+    it('应该拒绝缺少 k 参数', () => {
+      expect(() => service['validateParameters']('k-means', {})).toThrow(BadRequestException);
+    });
+
+    it('应该拒绝 k < 2', () => {
+      expect(() => service['validateParameters']('k-means', { k: 1 })).toThrow(BadRequestException);
+    });
+  });
+
+  describe('validateParameters - dbscan', () => {
+    it('应该验证有效的 dbscan 参数', () => {
+      expect(() => service['validateParameters']('dbscan', { eps: 0.5, minPoints: 5 })).not.toThrow();
+    });
+
+    it('应该拒绝缺少 eps 参数', () => {
+      expect(() => service['validateParameters']('dbscan', { minPoints: 5 })).toThrow(BadRequestException);
+    });
+
+    it('应该拒绝 eps <= 0', () => {
+      expect(() => service['validateParameters']('dbscan', { eps: 0, minPoints: 5 })).toThrow(BadRequestException);
+    });
+  });
+
+  describe('validateParameters - common', () => {
+    it('应该拒绝 null 参数', () => {
+      expect(() => service['validateParameters']('k-means', null as any)).toThrow(BadRequestException);
+    });
+
+    it('应该拒绝 undefined 参数', () => {
+      expect(() => service['validateParameters']('k-means', undefined as any)).toThrow(BadRequestException);
     });
   });
 });

@@ -1,0 +1,2381 @@
+
+> customer-label@1.0.0 test:cov
+> jest --coverage
+
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache GET error for key invalid-key:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mSyntaxError: Unexpected token 'i', "invalid-json" is not valid JSON[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache GET error for key error-key:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mError: Redis error[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache SET error for key circular-key:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mTypeError: Converting circular structure to JSON
+    --> starting at object with constructor 'Object'
+    --- property 'self' closes the circle[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache DELETE error for key error-key:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mError: Delete error[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache EXISTS error for key error-key:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mError: Error[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache CLEAR error:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mTypeError: this.redis.flushdb is not a function[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mFailed to get keys:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mError: Keys error[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache getOrSet error for key error-key:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mError: Getter error[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache SET error for key key1:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mError: Set error[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mFailed to get keys:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mTypeError: this.redis.keys is not a function[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache deleteByPattern error for pattern *:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mError: Del error[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache EXISTS error for key key1:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mError: Exists error[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mCache EXISTS error for key key2:[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:55 [31m  ERROR[39m [38;5;3m[CacheService] [39m[31mError: Exists error[39m
+FAIL src/infrastructure/redis/cache.service.spec.ts (6.98 s)
+  CacheService
+    √ should be defined (22 ms)
+    getHitRate
+      √ should return 0 when no cache operations (3 ms)
+      √ should calculate hit rate correctly (3 ms)
+    resetStats
+      √ should reset all statistics to zero (2 ms)
+    get
+      √ should return cached data (5 ms)
+      √ should return null for non-existent key (2 ms)
+      √ should return null and delete expired cache (8 ms)
+      √ should handle JSON parse errors gracefully (3 ms)
+      √ should handle errors gracefully (4 ms)
+    set
+      √ should cache data with default TTL (3 ms)
+      √ should cache data with custom TTL (2 ms)
+      √ should handle serialization errors gracefully (3 ms)
+    delete
+      √ should delete cache key (2 ms)
+      √ should handle delete errors gracefully (2 ms)
+    exists
+      √ should return true when key exists (2 ms)
+      √ should return false when key does not exist (1 ms)
+      √ should return false on error (2 ms)
+    mget
+      √ should get multiple keys (3 ms)
+      √ should only return existing keys (2 ms)
+    wrap
+      √ should return cached value on hit (3 ms)
+      √ should execute callback and cache result on miss (2 ms)
+    clear
+      √ should clear all cache (2 ms)
+      √ should handle clear errors gracefully (2 ms)
+    getStats
+      √ should return cache statistics (2 ms)
+      √ should handle disconnected state (2 ms)
+      √ should handle stats retrieval errors gracefully (2 ms)
+    getOrSet
+      √ should return cached value on hit (3 ms)
+      √ should execute getter and cache result on miss (2 ms)
+      √ should throw error when getter fails (22 ms)
+    mset
+      √ should set multiple entries from Map (7 ms)
+      √ should set multiple entries from Object (2 ms)
+      × should handle mset errors gracefully (4 ms)
+    deleteByPattern
+      √ should delete keys matching pattern (2 ms)
+      √ should return 0 when no keys match (2 ms)
+      √ should handle cluster mode gracefully (2 ms)
+      √ should handle deletion errors gracefully (2 ms)
+    deleteBatch
+      √ should delete multiple keys (2 ms)
+      √ should only count existing keys (2 ms)
+      √ should handle batch delete errors gracefully (3 ms)
+
+  ● CacheService › mset › should handle mset errors gracefully
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+    [0m [90m 384 |[39m
+     [90m 385 |[39m       [90m// mset catches the error and re-throws, so we expect it to reject[39m
+    [31m[1m>[22m[39m[90m 386 |[39m       [36mawait[39m expect(service[33m.[39mmset(entries))[33m.[39mrejects[33m.[39mtoThrow()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 387 |[39m     })[33m;[39m
+     [90m 388 |[39m   })[33m;[39m
+     [90m 389 |[39m[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (src/infrastructure/redis/cache.service.spec.ts:386:13)
+
+PASS src/modules/recommendation/engines/fusion-engine.service.spec.ts
+  FusionEngineService
+    √ should be defined (5 ms)
+    fuseRecommendations
+      √ should fuse multiple recommendations for the same tag (4 ms)
+      √ should return empty array for empty input (2 ms)
+      √ should respect maxResults option (3 ms)
+      √ should filter by minConfidence (3 ms)
+      √ should use custom weights when provided (3 ms)
+      √ should handle deduplication (2 ms)
+    fuseSingleTag
+      √ should fuse multiple recommendations for a single tag (2 ms)
+      √ should calculate weighted confidence correctly (2 ms)
+      √ should cap fused confidence at 1.0 (1 ms)
+      √ should select best category from multiple recommendations (2 ms)
+    groupByTagName
+      √ should group recommendations by tag name (3 ms)
+      √ should handle empty array (3 ms)
+    selectBestCategory
+      √ should select most frequent category (2 ms)
+      √ should handle single recommendation (2 ms)
+    generateReason
+      √ should generate reason with multiple sources (1 ms)
+      √ should include average confidence for multi-source (2 ms)
+      √ should handle single source (2 ms)
+    filterExistingTags
+      √ should filter out existing tags (3 ms)
+      √ should be case-insensitive (3 ms)
+      √ should keep all tags when none exist (1 ms)
+    setWeights and getWeights
+      √ should update weights with setWeights (2 ms)
+      √ should return copy of weights with getWeights (2 ms)
+      √ should merge partial weights (2 ms)
+    default weights
+      √ should have default rule weight of 0.4 (7 ms)
+      √ should have default clustering weight of 0.35 (2 ms)
+      √ should have default association weight of 0.25 (1 ms)
+
+[31m[Nest] 18600  - [39m2026/03/31 19:57:56 [31m  ERROR[39m [38;5;3m[RedisClusterService] [39m[31mFailed to get cluster info: Cannot read properties of undefined (reading 'filter')[39m
+[31m[Nest] 18600  - [39m2026/03/31 19:57:56 [31m  ERROR[39m [38;5;3m[RedisClusterService] [39m[31mError destroying cluster connection: Quit failed[39m
+PASS src/infrastructure/redis/redis-cluster.service.spec.ts
+  RedisClusterService
+    √ should be defined (9 ms)
+    Initialization
+      √ should initialize with single node configuration (5 ms)
+      √ should initialize with cluster configuration when REDIS_CLUSTER_MODE is true (6 ms)
+    Basic Operations
+      ping
+        √ should return pong on successful ping (4 ms)
+      get
+        √ should retrieve value by key (3 ms)
+        √ should return null for non-existent key (7 ms)
+      set
+        √ should set value without TTL (2 ms)
+        √ should set value with TTL using SETEX (3 ms)
+      del
+        √ should delete single key (3 ms)
+        √ should delete multiple keys (2 ms)
+      exists
+        √ should return 1 if key exists (2 ms)
+        √ should return 0 if key does not exist (2 ms)
+    Hash Operations
+      hgetall
+        √ should retrieve all fields of a hash (2 ms)
+      hset
+        √ should set single field in hash (2 ms)
+        √ should set multiple fields in hash (3 ms)
+      hdel
+        √ should delete single field from hash (3 ms)
+        √ should delete multiple fields from hash (2 ms)
+      hget
+        √ should retrieve field value from hash (3 ms)
+    Counter Operations
+      incr
+        √ should increment counter (2 ms)
+      decr
+        √ should decrement counter (3 ms)
+    TTL Operations
+      expire
+        √ should set expiration time (7 ms)
+      ttl
+        √ should return remaining TTL (2 ms)
+    Batch Operations
+      mget
+        √ should get multiple values (4 ms)
+    Pub/Sub Operations
+      publish
+        √ should publish message to channel (2 ms)
+      subscribe
+        √ should subscribe to channel and receive messages (23 ms)
+    Cluster Information
+      getClusterInfo
+        √ should return cluster information (3 ms)
+        √ should handle errors gracefully (3 ms)
+      isClusterMode
+        √ should return true when multiple nodes are present (2 ms)
+        √ should return false when single node is present (4 ms)
+      getNodes
+        √ should return all cluster nodes (3 ms)
+      getCluster
+        √ should return the underlying cluster instance (2 ms)
+      isConnected
+        √ should return connection status (2 ms)
+    Lifecycle Hooks
+      onModuleInit
+        √ should initialize and log cluster info (3 ms)
+        √ should handle initialization failure gracefully (3 ms)
+      onModuleDestroy
+        √ should close cluster connection (4 ms)
+        √ should handle destroy error gracefully (7 ms)
+
+PASS src/modules/recommendation/services/conflict-detector.service.spec.ts (8.111 s)
+  ConflictDetectorService
+    √ should be defined (42 ms)
+    Custom Exclusion Rules
+      √ should add custom exclusion rule (7 ms)
+      √ should remove custom exclusion rule (4 ms)
+      √ should toggle exclusion rule (4 ms)
+    detectCustomerConflicts with batching
+      √ should process recommendations in batches (42 ms)
+      √ should skip specified conflict types (2 ms)
+    detectTagMutualExclusions
+      √ should detect tag mutual exclusion conflicts (3 ms)
+      √ should not detect conflict when no mutual exclusion tags exist (4 ms)
+    detectDuplicateRecommendations
+      √ should detect duplicate recommendations (6 ms)
+      √ should not detect duplicates when all tags are unique (4 ms)
+    detectRecommendationConflicts
+      √ should detect opposite recommendations within same category (2 ms)
+      √ should detect confidence disparity (3 ms)
+      √ should not detect conflict when tags are in different categories (3 ms)
+    Edge Cases and Boundary Conditions
+      √ should handle empty recommendations (5 ms)
+      √ should handle single recommendation (2 ms)
+      √ should handle large batch (performance test) (18 ms)
+      √ should handle recommendations with undefined tagCategory (3 ms)
+    Performance Optimization
+      √ should efficiently process batch operations (17 ms)
+    Rule Contradiction Detection
+      √ should detect contradictory rules on same field with opposite operators (4 ms)
+      √ should only check active rules (4 ms)
+      √ should handle complex nested rule expressions (3 ms)
+      √ should not detect contradiction when rules use different fields (3 ms)
+    Conflict Resolution
+      √ should resolve duplicate conflicts by removing lower confidence (3 ms)
+      √ should handle HIGH severity conflicts with manual review (2 ms)
+      √ should return original recommendations when no conflicts (3 ms)
+    Cache Mechanism
+      √ should use in-memory cache for repeated detections (3 ms)
+      √ should skip cache when disabled (3 ms)
+    Edge Cases - Extreme Scenarios
+      √ should handle all tags being mutually exclusive (2 ms)
+      √ should handle zero-confidence recommendations (2 ms)
+      √ should handle very long tag names (2 ms)
+      √ should handle special characters in tag names (2 ms)
+
+  console.log
+    ✓ All mocks configured
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:220:15)
+
+  console.log
+    - RuleEngine: function
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:221:15)
+
+  console.log
+    - ClusteringEngine: function
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:222:15)
+
+  console.log
+    - AssociationEngine: function
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:223:15)
+
+  console.log
+    - FusionEngine: function
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:224:15)
+
+  console.log
+    Starting test with mockCustomerData: {
+      id: 1,
+      totalAssets: 500000,
+      monthlyIncome: 30000,
+      annualSpend: 150000,
+      lastLoginDays: 5,
+      registerDays: 365,
+      orderCount: 25,
+      productCount: 8,
+      riskLevel: 'MEDIUM',
+      age: 35,
+      gender: 'M',
+      city: '北京',
+      membershipLevel: 'GOLD'
+    }
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:253:15)
+
+  console.log
+    ClusteringEngine called with vectors: 1
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:211:17)
+
+  console.log
+    AssociationEngine called with customerId: 1 tags: 0
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:216:17)
+
+  console.log
+    Final Result: [
+      {
+        id: 1,
+        customerId: 1,
+        tagName: '高价值客户',
+        tagCategory: '价值标签',
+        confidence: 0.9,
+        source: 'RULE',
+        reason: '资产和消费双高',
+        createdAt: 2026-03-31T11:57:57.296Z,
+        updatedAt: 2026-03-31T11:57:57.296Z,
+        status: 'pending'
+      }
+    ]
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:258:15)
+
+  console.log
+    Final Result length: 1
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:259:15)
+
+  console.log
+    RuleEngine called: 1
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:262:15)
+
+[31m[Nest] 9244  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 9244  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mNotFoundException: Customer 999 not found[39m
+[31m[Nest] 9244  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 9244  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mError: Engine error[39m
+  console.log
+    FusionEngine called: 1
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:263:15)
+
+  console.log
+    Insert called: 1
+
+      at Object.<anonymous> (src/modules/recommendation/recommendation.integration.spec.ts:264:15)
+
+[31m[Nest] 1700  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate for customer 999:[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mError: Customer not found[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate for customer 888:[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mError: Customer not found[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mNotFoundException: Customer 999999 not found[39m
+PASS src/modules/scoring/scoring.service.spec.ts (8.544 s)
+  ScoringService
+    √ should be defined (24 ms)
+    calculateOverallScore
+      √ should calculate weighted average correctly (3 ms)
+      √ should handle zero scores (3 ms)
+      √ should handle perfect scores (10 ms)
+      √ should return score with 4 decimal places (4 ms)
+    determineRecommendation
+      √ should return 强烈推荐 for score >= 0.85 (3 ms)
+      √ should return 推荐 for score between 0.75 and 0.85 (3 ms)
+      √ should return 中性 for score between 0.65 and 0.75 (5 ms)
+      √ should return 不推荐 for score between 0.5 and 0.65 (3 ms)
+      √ should return 禁用 for score < 0.5 (2 ms)
+    updateTagScore
+      √ should create new tag score if not exists (4 ms)
+      √ should update existing tag score (17 ms)
+      √ should use custom recommendation if provided (4 ms)
+    batchUpdateScores
+      √ should batch update multiple tag scores (4 ms)
+    getTagScore
+      √ should return cached tag score if available (3 ms)
+      √ should fetch from database if not in cache (3 ms)
+      √ should return null if tag score not found (2 ms)
+    getAllScores
+      √ should return all tag scores sorted by overallScore (3 ms)
+    findAllWithPagination
+      √ should return paginated tag scores (6 ms)
+      √ should filter by tagName (3 ms)
+      √ should filter by recommendation (2 ms)
+      √ should filter by score range (3 ms)
+      √ should apply sorting correctly (3 ms)
+    getByRecommendation
+      √ should return tags by recommendation type from database (6 ms)
+      √ should return empty array when no tags match (2 ms)
+      √ should sort results by overallScore descending (2 ms)
+    invalidateCache
+      √ should clear cache for specific tag (2 ms)
+    getStats
+      √ should return statistics about tag scores (2 ms)
+      √ should handle zero tags (3 ms)
+
+[31m[Nest] 17064  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 17064  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mTypeError: Cannot read properties of undefined (reading 'length')[39m
+[31m[Nest] 17064  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 17064  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mTypeError: clusteringRecs is not iterable (cannot read property undefined)[39m
+[31m[Nest] 17064  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 17064  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mTypeError: Cannot read properties of undefined (reading 'length')[39m
+PASS src/modules/recommendation/recommendation.integration.fixed.spec.ts (8.536 s)
+  RecommendationService Integration Tests - Fixed
+    核心推荐流程测试
+      √ 应该完成从客户数据到推荐生成的完整流程 (32 ms)
+      √ 应该优先使用缓存的推荐结果 (5 ms)
+      √ 应该在缓存未命中时生成新推荐并缓存 (5 ms)
+    多模式推荐测试
+      √ 应该支持 rule 模式 (9 ms)
+      √ 应该支持 clustering 模式 (5 ms)
+      √ 应该支持 all 模式（默认） (3 ms)
+    错误处理测试
+      √ 应该在客户不存在时返回空数组 (7 ms)
+      √ 应该在引擎失败时返回空数组 (4 ms)
+      √ 应该处理缓存失败的降级逻辑 (47 ms)
+    边界情况测试
+      √ 应该处理零资产客户 (4 ms)
+      √ 应该处理超高净值客户 (3 ms)
+
+PASS src/modules/recommendation/recommendation.integration.spec.ts (8.611 s)
+  RecommendationService Integration Tests
+    完整推荐流程测试
+      √ 应该完成从客户数据到推荐生成的完整流程 (141 ms)
+      √ 应该优先使用缓存的推荐结果 (8 ms)
+      √ 应该在缓存未命中时生成新推荐并缓存 (7 ms)
+    RFM 分析到标签生成流程
+      √ 应该基于 RFM 分数为客户生成价值分类标签 (12 ms)
+    批量处理场景测试
+      √ 应该支持批量生成客户推荐并统计成功率 (13 ms)
+      √ 应该在部分失败时继续处理剩余客户 (6 ms)
+    并发场景测试
+      √ 应该支持多个客户同时请求推荐 (10 ms)
+      √ 应该正确处理缓存命中和未命中的混合场景 (12 ms)
+    边界情况测试
+      √ 应该处理零资产客户 (7 ms)
+      √ 应该处理超高净值客户 (3 ms)
+      √ 应该处理不存在的客户 (3 ms)
+
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mTypeError: Cannot read properties of undefined (reading 'length')[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mTypeError: Cannot read properties of undefined (reading 'length')[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mTypeError: Cannot read properties of undefined (reading 'length')[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mTypeError: tags is not iterable[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:57:57 [31m  ERROR[39m [38;5;3m[RecommendationService] [39m[31mError: Engine error[39m
+  console.error
+    导入规则失败：规则 2 Error: 数据库错误
+        at Object.<anonymous> (D:\VsCode\customer-label\src\modules\recommendation\services\rule-engine.service.spec.ts:366:32)
+        at Promise.then.completed (D:\VsCode\customer-label\node_modules\jest-circus\build\utils.js:298:28)
+        at new Promise (<anonymous>)
+        at callAsyncCircusFn (D:\VsCode\customer-label\node_modules\jest-circus\build\utils.js:231:10)
+        at _callCircusTest (D:\VsCode\customer-label\node_modules\jest-circus\build\run.js:316:40)
+        at processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at _runTest (D:\VsCode\customer-label\node_modules\jest-circus\build\run.js:252:3)
+        at _runTestsForDescribeBlock (D:\VsCode\customer-label\node_modules\jest-circus\build\run.js:126:9)
+        at _runTestsForDescribeBlock (D:\VsCode\customer-label\node_modules\jest-circus\build\run.js:121:9)
+        at _runTestsForDescribeBlock (D:\VsCode\customer-label\node_modules\jest-circus\build\run.js:121:9)
+        at run (D:\VsCode\customer-label\node_modules\jest-circus\build\run.js:71:3)
+        at runAndTransformResultsToJestFormat (D:\VsCode\customer-label\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+        at jestAdapter (D:\VsCode\customer-label\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+        at runTestInternal (D:\VsCode\customer-label\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (D:\VsCode\customer-label\node_modules\jest-runner\build\runTest.js:444:34)
+        at Object.worker (D:\VsCode\customer-label\node_modules\jest-runner\build\testWorker.js:106:12)
+
+    [0m [90m 216 |[39m         }
+     [90m 217 |[39m       } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 218 |[39m         console[33m.[39merror([32m`导入规则失败：${ruleData.ruleName}`[39m[33m,[39m error)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 219 |[39m         [90m// 继续导入其他规则[39m
+     [90m 220 |[39m       }
+     [90m 221 |[39m     }[0m
+
+      at RuleEngineService.error [as importRules] (src/modules/recommendation/services/rule-engine.service.ts:218:17)
+      at Object.<anonymous> (src/modules/recommendation/services/rule-engine.service.spec.ts:374:22)
+
+PASS src/modules/recommendation/services/rule-engine.service.spec.ts
+  RuleEngineService
+    √ 应被定义 (6 ms)
+    testRule()
+      √ 应返回成功的测试结果 (3 ms)
+      √ 应返回失败的测试结果（表达式错误） (3 ms)
+    getRules()
+      √ 应返回规则列表 (3 ms)
+      √ 应使用默认参数当未提供参数时 (3 ms)
+      √ 应过滤 isActive 参数 (2 ms)
+      √ 应处理分页参数 (3 ms)
+    createRule()
+      √ 应创建新规则 (2 ms)
+      √ 应拒绝重复的规则名称 (33 ms)
+      √ 应处理 create 时 JSON.stringify 失败的情况 (3 ms)
+    updateRule()
+      √ 应更新规则的基本信息 (3 ms)
+      √ 应拒绝更新为已存在的规则名称 (3 ms)
+      √ 应允许保持原有规则名称 (2 ms)
+      √ 应更新规则的表达式 (1 ms)
+      √ 应更新多个字段 (2 ms)
+    importRules()
+      √ 应导入新规则 (2 ms)
+      √ 应更新已存在的规则 (9 ms)
+      √ 应处理混合情况（部分新增，部分更新） (2 ms)
+      √ 应继续处理即使有规则失败 (82 ms)
+      √ 应处理没有 ruleName 的规则 (2 ms)
+    exportRules()
+      √ 应导出所有规则 (3 ms)
+      √ 应返回空数组当没有规则时 (2 ms)
+    generateRecommendations()
+      √ 应生成推荐并保存 (2 ms)
+      √ 应返回空数组当没有推荐时 (2 ms)
+    activateRule() / deactivateRule()
+      √ 应激活规则 (6 ms)
+      √ 应停用规则 (2 ms)
+    deleteRule()
+      √ 应删除规则 (2 ms)
+    边界情况
+      √ 应处理 getRuleById 找不到规则的情况 (3 ms)
+      √ 应处理 save 失败的情况 (2 ms)
+      √ 应处理 create 时 JSON.stringify 失败的情况 (6 ms)
+
+PASS src/modules/recommendation/engines/rule-engine.service.spec.ts
+  RuleEngineService
+    √ should be defined (6 ms)
+    loadActiveRules
+      √ should return active rules ordered by priority (4 ms)
+      √ should return empty array when no active rules (3 ms)
+    generateRecommendations
+      √ should generate recommendations for matching rules (4 ms)
+      √ should skip rules with confidence below threshold (12 ms)
+      √ should handle malformed rule expressions gracefully (3 ms)
+      √ should infer correct category from rule name (18 ms)
+      √ should cap confidence at 0.9999 (2 ms)
+      √ should handle evaluation errors gracefully (3 ms)
+    getRules
+      √ should return paginated rules (4 ms)
+      √ should filter by isActive status (2 ms)
+    getRuleById
+      √ should return rule by id (2 ms)
+      √ should throw NotFoundException when rule not found (75 ms)
+    createRule
+      √ should create rule successfully (5 ms)
+      √ should throw BadRequestException when rule name exists (3 ms)
+      √ should throw BadRequestException when expression is invalid (3 ms)
+    updateRule
+      √ should update rule successfully (4 ms)
+      √ should throw NotFoundException when rule not found (5 ms)
+      √ should validate new expression if provided (3 ms)
+    deleteRule
+      √ should delete rule successfully (5 ms)
+      √ should throw NotFoundException when rule not found (3 ms)
+    activateRule
+      √ should activate rule (5 ms)
+    deactivateRule
+      √ should deactivate rule (2 ms)
+    testRule
+      √ should test rule expression with customer data (2 ms)
+      √ should throw BadRequestException on invalid expression (5 ms)
+    importRules
+      √ should import new rules successfully (3 ms)
+      √ should skip existing rules (7 ms)
+      √ should handle mixed existing and new rules (2 ms)
+    exportRules
+      √ should export all rules (2 ms)
+      √ should return empty array when no rules (2 ms)
+
+PASS src/modules/recommendation/recommendation.service.spec.ts (8.834 s)
+  RecommendationService
+    √ should be defined (48 ms)
+    generateForCustomer
+      √ should generate recommendations using all engines in "all" mode (14 ms)
+      √ should return cached recommendations when available (8 ms)
+      √ should use only rule engine in "rule" mode (6 ms)
+      √ should use only clustering engine in "clustering" mode (5 ms)
+      √ should skip conflict detection when detectConflicts is false (3 ms)
+      √ should handle errors gracefully (5 ms)
+    generateMockCustomerData
+      √ should generate mock data for a customer ID (3 ms)
+      √ should generate different data for different customer IDs (3 ms)
+    extractFeatures
+      √ should extract feature vector from customer data (3 ms)
+    saveRecommendations
+      √ should save recommendations to database (5 ms)
+      √ should cache saved recommendations (3 ms)
+    integration with conflict detection
+      √ should detect and resolve conflicts when enabled (7 ms)
+    default options
+      √ should use "all" mode by default (4 ms)
+      √ should enable cache by default (4 ms)
+      √ should enable conflict detection by default (3 ms)
+
+PASS src/modules/recommendation/recommendation.callbacks.spec.ts (8.854 s)
+  RecommendationService - Callback & Higher-Order Functions
+    回调函数测试
+      数组方法回调
+        √ 应该正确执行 map 回调函数转换数据 (32 ms)
+        √ 应该正确执行 filter 回调函数过滤数据 (8 ms)
+        √ 应该正确执行 reduce 回调函数聚合数据 (17 ms)
+        √ 应该正确执行 forEach 回调函数遍历数据 (4 ms)
+      Promise 链式回调
+        √ 应该正确执行 then 回调处理成功结果 (10 ms)
+        √ 应该正确执行 catch 回调处理异常 (2 ms)
+        √ 应该支持异步回调函数 (3 ms)
+      事件监听器回调
+        √ 应该注册并触发事件回调 (32 ms)
+        √ 应该支持 once 回调（只触发一次） (8 ms)
+    高阶函数测试
+      工厂函数
+        √ 应该返回配置对象的工厂函数 (5 ms)
+        √ 应该支持 currying 的高阶函数 (3 ms)
+      策略模式实现
+        √ 应该根据策略选择不同的处理函数 (3 ms)
+        √ 应该支持自定义策略注入 (3 ms)
+    验证函数测试
+      validatorFn
+        √ 应该执行验证回调函数 (52 ms)
+        √ 应该支持多个验证器组合 (6 ms)
+      parseFn
+        √ 应该执行解析回调函数 (2 ms)
+        √ 应该支持转换器回调 (4 ms)
+    复杂回调场景
+      √ 应该支持嵌套回调函数 (3 ms)
+      √ 应该正确处理回调中的异常 (37 ms)
+      √ 应该支持异步迭代器回调 (2 ms)
+      √ 应该正确调用多次回调 (3 ms)
+    边界情况回调测试
+      √ 应该处理空数组的回调 (3 ms)
+      √ 应该处理 undefined 返回值的回调 (3 ms)
+      √ 应该处理 null 返回值的回调 (3 ms)
+      √ 应该处理抛出异常的回调 (3 ms)
+
+PASS src/modules/feedback/feedback.service.spec.ts
+  FeedbackService
+    √ 应被定义 (5 ms)
+    calculateAcceptanceRate()
+      √ 应该正确计算采纳率 (6 ms)
+      √ 应该处理总数为 0 的情况 (12 ms)
+      √ 应该保留 4 位小数 (2 ms)
+      √ 应该处理全部采纳的情况 (2 ms)
+      √ 应该处理全部拒绝的情况 (2 ms)
+    recordDailyFeedback()
+      √ 应该创建新的反馈记录 (4 ms)
+      √ 应该更新现有的反馈记录 (4 ms)
+      √ 应该使用提供的 rejectedCount (10 ms)
+      √ 应该自动计算 rejectedCount 当未提供时 (2 ms)
+    getByDate()
+      √ 应该获取指定日期的反馈 (2 ms)
+      √ 应该返回 null 当日期不存在 (1 ms)
+    getRecentDays()
+      √ 应该获取最近 N 天的反馈 (2 ms)
+      √ 应该使用默认值 30 天 (6 ms)
+      √ 应该返回空数组当没有数据 (2 ms)
+    findAllWithPagination()
+      √ 应该分页获取反馈列表 (4 ms)
+      √ 应该应用日期范围过滤 (2 ms)
+      √ 应该只应用开始日期过滤 (2 ms)
+      √ 应该只应用结束日期过滤 (7 ms)
+      √ 应该应用采纳率范围过滤 (2 ms)
+      √ 应该支持自定义排序 (2 ms)
+      √ 应该处理复杂的多条件查询 (2 ms)
+    getAverageAcceptanceRate()
+      √ 应该计算平均采纳率 (2 ms)
+      √ 应该返回 0 当没有数据 (2 ms)
+      √ 应该保留 4 位小数 (8 ms)
+    getTrend()
+      √ 应该获取反馈趋势数据 (3 ms)
+      √ 应该按日期升序排序 (2 ms)
+      √ 应该处理 Date 对象类型的日期 (2 ms)
+      √ 应该返回空数组当没有数据 (2 ms)
+    getSummary()
+      √ 应该获取统计摘要 (2 ms)
+      √ 应该处理空数据情况 (3 ms)
+      √ 应该处理 undefined 值 (3 ms)
+
+PASS src/modules/feedback/feedback.controller.spec.ts
+  FeedbackController
+    √ should be defined (7 ms)
+    recordDaily
+      √ 应该记录每日反馈统计 (3 ms)
+      √ 应该处理无效的请求体 (20 ms)
+    getByDate
+      √ 应该获取指定日期的反馈统计 (3 ms)
+      √ 应该返回 null 当日期不存在时 (2 ms)
+      √ 应该处理无效的日期格式 (7 ms)
+    getAllFeedback
+      √ 应该获取分页反馈列表（默认参数） (3 ms)
+      √ 应该处理分页和过滤参数 (4 ms)
+      √ 应该处理空结果 (7 ms)
+      √ 应该处理排序参数 asc (3 ms)
+      √ 应该处理排序参数 desc (3 ms)
+    getRecentDays
+      √ 应该获取最近 30 天的反馈统计（默认值） (5 ms)
+      √ 应该获取指定天数的反馈统计 (3 ms)
+      √ 应该处理大天数参数 (2 ms)
+    getAverageAcceptanceRate
+      √ 应该获取平均采纳率（默认 30 天） (2 ms)
+      √ 应该获取指定天数的平均采纳率 (1 ms)
+      √ 应该处理 0 天参数 (3 ms)
+    getTrend
+      √ 应该获取反馈趋势数据（默认 30 天） (3 ms)
+      √ 应该获取指定天数的趋势数据 (2 ms)
+      √ 应该处理空趋势数据 (4 ms)
+    getSummary
+      √ 应该获取统计摘要 (3 ms)
+      √ 应该处理空摘要数据 (9 ms)
+      √ 应该处理大数据量 (5 ms)
+
+[31m[Nest] 1700  - [39m2026/03/31 19:57:58 [31m  ERROR[39m [38;5;3m[RecommendationController] [39m[31mFailed to generate recommendations:[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:58 [31m  ERROR[39m [38;5;3m[RecommendationController] [39m[31mError: 生成失败[39m
+PASS src/modules/auth/auth.controller.spec.ts
+  AuthController
+    √ should be defined (9 ms)
+    login
+      √ should return access token on successful login (3 ms)
+      √ should call authService.login with correct user from request (2 ms)
+    refresh
+      √ should return new access token (2 ms)
+    getCurrentUser
+      √ should return current user info (2 ms)
+      √ should return user object from request (3 ms)
+
+PASS src/modules/recommendation/services/association-manager.service.spec.ts
+  AssociationManagerService
+    √ should be defined (6 ms)
+    createConfig
+      √ should create config successfully (4 ms)
+      √ should throw BadRequestException if config name exists (24 ms)
+    getConfigs
+      √ should return paginated configs (3 ms)
+      √ should filter by configName (3 ms)
+    getConfigById
+      √ should return config by id (3 ms)
+      √ should throw NotFoundException when config not found (2 ms)
+    updateConfig
+      √ should update config successfully (2 ms)
+      √ should throw NotFoundException when updating non-existent config (4 ms)
+    deleteConfig
+      √ should delete config successfully (3 ms)
+      √ should throw NotFoundException when deleting non-existent config (5 ms)
+
+PASS src/modules/recommendation/controllers/rule-engine.controller.spec.ts
+  RuleEngineController
+    √ 应被定义 (21 ms)
+    getRules()
+      √ 应返回规则列表 (6 ms)
+    getRule()
+      √ 应返回规则详情 (2 ms)
+    createRule()
+      √ 应创建新规则 (1 ms)
+    updateRule()
+      √ 应更新规则 (5 ms)
+    deleteRule()
+      √ 应删除规则 (2 ms)
+    activateRule()
+      √ 应激活规则 (3 ms)
+    deactivateRule()
+      √ 应停用规则 (2 ms)
+    testRule()
+      √ 应测试规则 (4 ms)
+    exportRules()
+      √ 应导出规则 (4 ms)
+
+PASS src/modules/recommendation/recommendation.controller.spec.ts
+  RecommendationController
+    √ should be defined (7 ms)
+    getCustomerRecommendations
+      √ 应该获取客户的推荐列表（默认参数） (3 ms)
+      √ 应该处理分页和过滤参数 (3 ms)
+      √ 应该处理空结果 (4 ms)
+      √ 应该处理排序参数 asc (6 ms)
+      √ 应该处理排序参数 desc (3 ms)
+    getAllRecommendations
+      √ 应该获取全局推荐列表 (6 ms)
+      √ 应该处理多条件查询 (3 ms)
+    getSimpleRecommendations
+      √ 应该获取简化版推荐列表 (7 ms)
+    generateRecommendations
+      √ 应该使用 rule 引擎生成推荐（默认模式） (4 ms)
+      √ 应该使用 clustering 引擎生成推荐 (4 ms)
+      √ 应该使用 association 引擎生成推荐 (3 ms)
+      √ 应该处理生成失败 (32 ms)
+    batchGenerate
+      √ 应该批量生成推荐 (3 ms)
+      √ 应该拒绝空的 customerIds (31 ms)
+      √ 应该处理部分成功 (4 ms)
+    getStats
+      √ 应该获取统计信息 (10 ms)
+    getStatusStats
+      √ 应该获取状态统计 (4 ms)
+      √ 应该处理带过滤条件的状态统计 (2 ms)
+    acceptRecommendation
+      √ 应该接受推荐（无额外参数） (2 ms)
+      √ 应该接受推荐并修改标签名 (12 ms)
+      √ 应该接受推荐并提供反馈原因 (2 ms)
+    rejectRecommendation
+      √ 应该拒绝推荐（无原因） (2 ms)
+      √ 应该拒绝推荐并提供原因 (2 ms)
+    batchAcceptRecommendations
+      √ 应该批量接受推荐 (2 ms)
+      √ 应该批量接受推荐并自动打标签 (7 ms)
+    batchRejectRecommendations
+      √ 应该批量拒绝推荐 (4 ms)
+
+PASS src/modules/user/services/user.service.spec.ts
+  UserService
+    √ should be defined (7 ms)
+    getUserById
+      √ should return user by id (3 ms)
+      √ should throw NotFoundException when user not found (40 ms)
+    getUsers
+      √ 应该返回分页用户列表（默认参数） (4 ms)
+      √ 应该处理空结果 (2 ms)
+      √ 应该处理用户名模糊查询 (2 ms)
+      √ 应该处理邮箱模糊查询 (3 ms)
+      √ 应该处理激活状态过滤 - isActive = true (9 ms)
+      √ 应该处理激活状态过滤 - isActive = false (2 ms)
+      √ 应该处理激活状态过滤 - isActive = undefined (2 ms)
+      √ 应该处理角色过滤 - ADMIN 角色 (4 ms)
+      √ 应该处理角色过滤 - USER 角色 (3 ms)
+      √ 应该处理多个查询条件组合 (2 ms)
+    createUser
+      √ should create a new user successfully (3 ms)
+      √ should throw error if username already exists (3 ms)
+    updateUser
+      √ should update user successfully (5 ms)
+      √ should throw NotFoundException when updating non-existent user (9 ms)
+    deleteUser
+      √ should delete user successfully (2 ms)
+      √ should throw NotFoundException when deleting non-existent user (8 ms)
+    changePassword
+      √ 应该修改密码成功 (3 ms)
+      √ 应该处理错误密码 (3 ms)
+      √ 应该处理用户不存在的情况 (2 ms)
+    toggleUserStatus
+      √ 应该激活用户 - isActive = true (3 ms)
+      √ 应该停用用户 - isActive = false (2 ms)
+      √ 应该处理不存在的用户 (3 ms)
+    validateUser
+      √ 应该验证用户登录成功 (2 ms)
+      √ 应该拒绝未激活的用户 (2 ms)
+      √ 应该拒绝错误的密码 (4 ms)
+      √ 应该拒绝不存在的用户 (2 ms)
+    resetPassword
+      √ 应该重置密码成功 (2 ms)
+      √ 应该处理不存在的用户 (6 ms)
+    createUser - 分支覆盖
+      √ 应该使用默认角色创建用户（当 roles 为空数组） (7 ms)
+      √ 应该使用默认角色创建用户（当 roles 为 undefined） (2 ms)
+      √ 应该使用指定的角色创建用户 (3 ms)
+      √ 应该抛出邮箱已存在的错误 (4 ms)
+
+PASS src/modules/recommendation/services/clustering-manager.service.spec.ts
+  ClusteringManagerService
+    √ should be defined (6 ms)
+    createConfig
+      √ should create config successfully (3 ms)
+      √ should throw BadRequestException if config name exists (46 ms)
+    getConfigs
+      √ should return paginated configs (6 ms)
+      √ should filter by configName (3 ms)
+    getConfigById
+      √ should return config by id (3 ms)
+      √ should throw NotFoundException when config not found (3 ms)
+    updateConfig
+      √ should update config successfully (9 ms)
+      √ should throw NotFoundException when updating non-existent config (6 ms)
+    deleteConfig
+      √ should delete config successfully (2 ms)
+      √ should throw NotFoundException when deleting non-existent config (2 ms)
+    activateConfig
+      √ should activate config successfully (2 ms)
+    deactivateConfig
+      √ 应该停用配置成功 (3 ms)
+    runClustering
+      √ 应该执行聚类分析成功 (2 ms)
+      √ 应该拒绝未激活的配置 (5 ms)
+    validateAlgorithm
+      √ 应该验证 k-means 算法有效 (2 ms)
+      √ 应该验证 dbscan 算法有效 (3 ms)
+      √ 应该验证 hierarchical 算法有效 (4 ms)
+      √ 应该拒绝无效的算法 (7 ms)
+    validateParameters - k-means
+      √ 应该验证有效的 k-means 参数 (3 ms)
+      √ 应该拒绝缺少 k 参数 (7 ms)
+      √ 应该拒绝 k < 2 (15 ms)
+    validateParameters - dbscan
+      √ 应该验证有效的 dbscan 参数 (4 ms)
+      √ 应该拒绝缺少 eps 参数 (2 ms)
+      √ 应该拒绝 eps <= 0 (2 ms)
+    validateParameters - common
+      √ 应该拒绝 null 参数 (3 ms)
+      √ 应该拒绝 undefined 参数 (4 ms)
+
+PASS src/modules/scoring/scoring.controller.spec.ts
+  ScoringController
+    √ 应该被定义 (12 ms)
+    getTagScore
+      √ 应该返回标签评分 (3 ms)
+      √ 当标签不存在时应该返回 null (7 ms)
+    getAllScores
+      √ 应该返回分页的评分列表 (2 ms)
+      √ 应该处理带过滤条件的查询 (2 ms)
+    getSimpleAllScores
+      √ 应该返回所有评分列表（简化版） (2 ms)
+      √ 当没有数据时返回空数组 (2 ms)
+    updateScore
+      √ 应该更新标签评分 (2 ms)
+    batchUpdate
+      √ 应该批量更新标签评分 (3 ms)
+      √ 应该处理空的批量更新 (3 ms)
+    getByRecommendation
+      √ 应该按推荐等级获取标签 (3 ms)
+      √ 当没有符合条件的标签时返回空数组 (2 ms)
+    getStats
+      √ 应该返回评分统计信息 (1 ms)
+      √ 应该处理空的统计数据 (1 ms)
+    控制器依赖注入
+      √ 应该有正确的 ScoringService 实例 (7 ms)
+      √ Logger 应该被正确初始化 (1 ms)
+
+PASS src/modules/recommendation/services/customer.service.spec.ts
+  CustomerService
+    √ should be defined (7 ms)
+    create
+      √ should create a new customer successfully (4 ms)
+      √ should throw BadRequestException if email already exists (36 ms)
+    findById
+      √ should return customer by id (3 ms)
+      √ should throw NotFoundException when customer not found (6 ms)
+    findAll
+      √ should return paginated customers with filters (3 ms)
+      √ should handle empty results (3 ms)
+    update
+      √ should update customer successfully (15 ms)
+      √ should throw NotFoundException when updating non-existent customer (3 ms)
+    remove
+      √ should remove customer successfully (2 ms)
+      √ should throw NotFoundException when removing non-existent customer (5 ms)
+    batchCreate
+      √ should create multiple customers and skip failures (2 ms)
+    findAll - 复杂条件分支覆盖
+      √ 应该处理关键词搜索 (3 ms)
+      √ 应该处理邮箱筛选 (2 ms)
+      √ 应该处理城市筛选 (2 ms)
+      √ 应该处理等级筛选 (2 ms)
+      √ 应该处理风险等级筛选 (4 ms)
+      √ 应该处理性别筛选 (2 ms)
+      √ 应该处理最小年龄筛选 (8 ms)
+      √ 应该处理最大年龄筛选 (2 ms)
+      √ 应该同时处理年龄范围筛选 (3 ms)
+      √ 应该处理最小资产筛选 (3 ms)
+      √ 应该处理最大资产筛选 (2 ms)
+      √ 应该同时处理资产范围筛选 (2 ms)
+      √ 应该处理激活状态筛选 - true (2 ms)
+      √ 应该处理激活状态筛选 - false (2 ms)
+      √ 应该忽略 undefined 的激活状态 (2 ms)
+      √ 应该处理升序排序 (4 ms)
+      √ 应该处理降序排序 (5 ms)
+      √ 应该处理分页参数 (2 ms)
+      √ 应该处理所有条件的组合查询 (3 ms)
+
+PASS src/modules/scoring/scoring.service.simple.spec.ts
+  ScoringService
+    √ should be defined (6 ms)
+    calculateOverallScore
+      √ should calculate weighted average correctly (7 ms)
+      √ should return score with 4 decimal places (2 ms)
+    determineRecommendation
+      √ should return 强烈推荐 for score >= 0.85 (2 ms)
+      √ should return 推荐 for score between 0.75 and 0.85 (2 ms)
+      √ should return 中性 for score between 0.65 and 0.75 (4 ms)
+      √ should return 不推荐 for score between 0.5 and 0.65 (3 ms)
+      √ should return 禁用 for score < 0.5 (5 ms)
+    getTagScore
+      √ should return cached tag score if available (3 ms)
+      √ should fetch from database if not in cache (2 ms)
+      √ should return null if tag score not found (7 ms)
+    getAllScores
+      √ should return all tag scores sorted by overallScore (2 ms)
+    getByRecommendation
+      √ should return tag scores filtered by recommendation (2 ms)
+    invalidateCache
+      √ should clear cache for specific tag (2 ms)
+
+PASS src/modules/auth/strategies/jwt.strategy.spec.ts
+  JwtStrategy
+    √ should be defined (6 ms)
+    constructor
+      √ 应该使用环境变量中的 JWT_SECRET (2 ms)
+      √ 应该在没有 JWT_SECRET 时使用默认密钥 (5 ms)
+      √ 应该配置正确的 JWT 提取方式 (2 ms)
+    validate
+      √ 应该从 JWT payload 中提取用户信息 (2 ms)
+      √ 应该处理包含多个角色的 payload (6 ms)
+      √ 应该处理没有 roles 的 payload (2 ms)
+      √ 应该只返回必要的字段（过滤掉 iat 和 exp） (5 ms)
+      √ 应该处理字符串类型的用户 ID (3 ms)
+      √ 应该处理空的角色数组 (3 ms)
+    安全性测试
+      √ 不应该修改原始 payload 对象 (14 ms)
+      √ 应该正确处理嵌套的对象数据 (1 ms)
+
+PASS src/modules/recommendation/controllers/customer.controller.spec.ts
+  CustomerController
+    √ 应该被定义 (12 ms)
+    create
+      √ 应该创建客户 (4 ms)
+    findAll
+      √ 应该获取客户列表 (3 ms)
+      √ 应该支持空参数查询 (3 ms)
+    findOne
+      √ 应该获取单个客户详情 (8 ms)
+    update
+      √ 应该更新客户 (3 ms)
+    remove
+      √ 应该删除客户 (2 ms)
+
+PASS src/common/similarity/similarity.service.spec.ts
+  SimilarityService
+    √ should be defined (6 ms)
+    CosineSimilarity Algorithm
+      √ should calculate cosine similarity correctly (4 ms)
+      √ should handle zero vectors (4 ms)
+      √ should throw error for mismatched dimensions (13 ms)
+    vectorize
+      √ should convert customer to feature vector (4 ms)
+      √ should handle missing fields gracefully (3 ms)
+    calculateCustomerSimilarity
+      √ should calculate similarity between two customers (3 ms)
+      √ should throw error when customer not found (12 ms)
+      ○ skipped should return low similarity for different customers
+    findSimilarCustomers
+      √ should find similar customers sorted by similarity (5 ms)
+      √ should respect limit parameter (3 ms)
+      √ should handle empty candidate list (6 ms)
+      ○ skipped should exclude the target customer from candidates
+
+[31m[Nest] 9244  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[ClusteringEngineService] [39m[31mClustering engine failed:[39m
+[31m[Nest] 9244  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[ClusteringEngineService] [39m[31mTypeError: Cannot read properties of undefined (reading 'parameters')[39m
+PASS src/modules/recommendation/controllers/clustering-manager.controller.spec.ts
+  ClusteringManagerController
+    √ 应该被定义 (8 ms)
+    createConfig
+      √ 应该创建聚类配置 (5 ms)
+    getConfigs
+      √ 应该获取聚类配置列表 (8 ms)
+      √ 应该支持空参数查询 (3 ms)
+    getConfigById
+      √ 应该获取配置详情 (2 ms)
+    updateConfig
+      √ 应该更新聚类配置 (2 ms)
+    deleteConfig
+      √ 应该删除聚类配置 (2 ms)
+
+[31m[Nest] 9244  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[ClusteringEngineService] [39m[31mClustering engine failed:[39m
+[31m[Nest] 9244  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[ClusteringEngineService] [39m[31mTypeError: Cannot read properties of undefined (reading 'parameters')[39m
+[31m[Nest] 9244  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[ClusteringEngineService] [39m[31mClustering engine failed:[39m
+[31m[Nest] 9244  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[ClusteringEngineService] [39m[31mError: Database error[39m
+PASS src/modules/recommendation/engines/clustering-engine.service.spec.ts
+  ClusteringEngineService
+    √ should be defined (6 ms)
+    generateRecommendations
+      √ should generate recommendations for clustered customers (6 ms)
+      √ should use default config when not provided (4 ms)
+      √ should handle empty customer list (8 ms)
+      √ should return empty array on error (4 ms)
+    kMeans algorithm
+      √ should cluster data points correctly (3 ms)
+      √ should throw error for invalid k value (63 ms)
+      √ should throw error for empty data (3 ms)
+    initializeCentroids (K-Means++)
+      √ should initialize k centroids (3 ms)
+      √ should select centroids from data points (2 ms)
+    distance calculations
+      √ should calculate euclidean distance correctly (2 ms)
+      √ should calculate squared distance correctly (2 ms)
+      √ should return 0 for same point (1 ms)
+    findNearestCentroid
+      √ should find the nearest centroid index (2 ms)
+      √ should handle single centroid (1 ms)
+    calculateCentroid
+      √ should calculate mean of points (3 ms)
+      √ should handle single point (6 ms)
+    arraysEqual
+      √ should return true for equal arrays (4 ms)
+      √ should return false for different arrays (93 ms)
+      √ should return false for different lengths (2 ms)
+    randomPoint
+      √ should generate random point with correct dimensions (59 ms)
+    loadDefaultConfig
+      √ should return default config when none exists in database (3 ms)
+      √ should return existing default config (2 ms)
+    analyzeClusters
+      √ should analyze cluster characteristics (4 ms)
+    inferTagsFromCluster
+      √ should infer tags based on cluster profile (2 ms)
+
+  console.error
+    DailyRotateFile is a legacy winston transport. Consider upgrading: 
+    - Upgrade docs: https://github.com/winstonjs/winston/blob/master/UPGRADE-3.0.md
+
+    [0m [90m 75 |[39m
+     [90m 76 |[39m [90m// 创建 Logger 实例[39m
+    [31m[1m>[22m[39m[90m 77 |[39m [36mexport[39m [36mconst[39m logger [33m=[39m winston[33m.[39mcreateLogger({
+     [90m    |[39m                               [31m[1m^[22m[39m
+     [90m 78 |[39m   level[33m:[39m process[33m.[39menv[33m.[39m[33mLOG_LEVEL[39m [33m||[39m [32m'debug'[39m[33m,[39m
+     [90m 79 |[39m   levels[33m,[39m
+     [90m 80 |[39m   defaultMeta[33m:[39m { service[33m:[39m [32m'customer-label-api'[39m }[33m,[39m[0m
+
+      at LegacyTransportStream._deprecated (node_modules/winston-transport/legacy.js:99:11)
+      at new LegacyTransportStream (node_modules/winston-transport/legacy.js:26:8)
+      at DerivedLogger.add (node_modules/winston/lib/winston/logger.js:376:11)
+      at node_modules/winston/lib/winston/logger.js:125:44
+          at Array.forEach (<anonymous>)
+      at DerivedLogger.configure (node_modules/winston/lib/winston/logger.js:125:18)
+      at new Logger (node_modules/winston/lib/winston/logger.js:42:10)
+      at new DerivedLogger (node_modules/winston/lib/winston/create-logger.js:44:7)
+      at Object.<anonymous>.module.exports (node_modules/winston/lib/winston/create-logger.js:48:18)
+      at Object.createLogger (src/common/logger/winston.config.ts:77:31)
+      at Object.require (src/common/logger/http-logger.middleware.ts:3:1)
+      at Object.<anonymous> (src/common/logger/http-logger.middleware.spec.ts:23:1)
+
+  console.error
+    DailyRotateFile is a legacy winston transport. Consider upgrading: 
+    - Upgrade docs: https://github.com/winstonjs/winston/blob/master/UPGRADE-3.0.md
+
+    [0m [90m 75 |[39m
+     [90m 76 |[39m [90m// 创建 Logger 实例[39m
+    [31m[1m>[22m[39m[90m 77 |[39m [36mexport[39m [36mconst[39m logger [33m=[39m winston[33m.[39mcreateLogger({
+     [90m    |[39m                               [31m[1m^[22m[39m
+     [90m 78 |[39m   level[33m:[39m process[33m.[39menv[33m.[39m[33mLOG_LEVEL[39m [33m||[39m [32m'debug'[39m[33m,[39m
+     [90m 79 |[39m   levels[33m,[39m
+     [90m 80 |[39m   defaultMeta[33m:[39m { service[33m:[39m [32m'customer-label-api'[39m }[33m,[39m[0m
+
+      at LegacyTransportStream._deprecated (node_modules/winston-transport/legacy.js:99:11)
+      at new LegacyTransportStream (node_modules/winston-transport/legacy.js:26:8)
+      at DerivedLogger.add (node_modules/winston/lib/winston/logger.js:376:11)
+      at node_modules/winston/lib/winston/logger.js:125:44
+          at Array.forEach (<anonymous>)
+      at DerivedLogger.configure (node_modules/winston/lib/winston/logger.js:125:18)
+      at new Logger (node_modules/winston/lib/winston/logger.js:42:10)
+      at new DerivedLogger (node_modules/winston/lib/winston/create-logger.js:44:7)
+      at Object.<anonymous>.module.exports (node_modules/winston/lib/winston/create-logger.js:48:18)
+      at Object.createLogger (src/common/logger/winston.config.ts:77:31)
+      at Object.require (src/common/logger/http-logger.middleware.ts:3:1)
+      at Object.<anonymous> (src/common/logger/http-logger.middleware.spec.ts:23:1)
+
+  console.error
+    DailyRotateFile is a legacy winston transport. Consider upgrading: 
+    - Upgrade docs: https://github.com/winstonjs/winston/blob/master/UPGRADE-3.0.md
+
+    [0m [90m 75 |[39m
+     [90m 76 |[39m [90m// 创建 Logger 实例[39m
+    [31m[1m>[22m[39m[90m 77 |[39m [36mexport[39m [36mconst[39m logger [33m=[39m winston[33m.[39mcreateLogger({
+     [90m    |[39m                               [31m[1m^[22m[39m
+     [90m 78 |[39m   level[33m:[39m process[33m.[39menv[33m.[39m[33mLOG_LEVEL[39m [33m||[39m [32m'debug'[39m[33m,[39m
+     [90m 79 |[39m   levels[33m,[39m
+     [90m 80 |[39m   defaultMeta[33m:[39m { service[33m:[39m [32m'customer-label-api'[39m }[33m,[39m[0m
+
+      at LegacyTransportStream._deprecated (node_modules/winston-transport/legacy.js:99:11)
+      at new LegacyTransportStream (node_modules/winston-transport/legacy.js:26:8)
+      at DerivedLogger.add (node_modules/winston/lib/winston/logger.js:376:11)
+      at node_modules/winston/lib/winston/logger.js:125:44
+          at Array.forEach (<anonymous>)
+      at DerivedLogger.configure (node_modules/winston/lib/winston/logger.js:125:18)
+      at new Logger (node_modules/winston/lib/winston/logger.js:42:10)
+      at new DerivedLogger (node_modules/winston/lib/winston/create-logger.js:44:7)
+      at Object.<anonymous>.module.exports (node_modules/winston/lib/winston/create-logger.js:48:18)
+      at Object.createLogger (src/common/logger/winston.config.ts:77:31)
+      at Object.require (src/common/logger/http-logger.middleware.ts:3:1)
+      at Object.<anonymous> (src/common/logger/http-logger.middleware.spec.ts:23:1)
+
+2026-03-31 19:57:59 [32mhttp[39m: [32mGET /api/test 200 - 27ms[39m
+2026-03-31 19:57:59 [34mdebug[39m: [34mGET /api/test[39m
+2026-03-31 19:57:59 [32mhttp[39m: [32mGET /api/test 200 - 71ms[39m
+2026-03-31 19:57:59 [34mdebug[39m: [34mGET /api/test[39m
+2026-03-31 19:57:59 [32mhttp[39m: [32mGET /api/test 200 - 71ms[39m
+2026-03-31 19:57:59 [34mdebug[39m: [34mGET /api/test[39m
+2026-03-31 19:57:59 [32mhttp[39m: [32mGET /api/test 200 - 25ms[39m
+PASS src/common/logger/http-logger.middleware.spec.ts
+  HttpLoggerMiddleware
+    √ 应该被定义 (3 ms)
+    √ 应该调用 next() 继续处理请求 (1 ms)
+    √ 应该监听响应 finish 事件
+    √ 在开发环境下应该记录详细日志 (73 ms)
+    √ 在生产环境下不应该记录详细日志 (58 ms)
+
+[31m[Nest] 1700  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[NotificationService] [39m[31mFailed to send recommendation notification: Send failed[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[NotificationService] [39m[31mFailed to send clustering notification: Send failed[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[NotificationService] [39m[31mFailed to send scoring notification: Send failed[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[NotificationService] [39m[31mFailed to send system alert: Send failed[39m
+PASS src/modules/recommendation/services/customer.spec.ts
+  CustomerService
+    √ should be defined (9 ms)
+    create
+      √ should create a new customer successfully (7 ms)
+      √ should throw BadRequestException if email or phone already exists (97 ms)
+    batchCreate
+      √ should batch create customers successfully (4 ms)
+      √ should handle partial failures in batch creation (3 ms)
+    findById
+      √ should return customer by id (2 ms)
+      √ should throw NotFoundException when customer not found (4 ms)
+    findAll
+      √ should return paginated customers with filters (8 ms)
+      √ should handle keyword search (8 ms)
+      √ should handle empty results (3 ms)
+      √ should apply sorting correctly (2 ms)
+    update
+      √ should throw NotFoundException when updating non-existent customer (4 ms)
+      √ should throw BadRequestException if email is duplicated (3 ms)
+    remove
+      √ should delete customer successfully (3 ms)
+      √ should throw NotFoundException when deleting non-existent customer (5 ms)
+    batchRemove
+      √ should batch delete customers (4 ms)
+    getStatistics
+      √ should return complete customer statistics (4 ms)
+      √ should handle zero customers (4 ms)
+
+[31m[Nest] 1700  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[NotificationService] [39m[31mFailed to send rule trigger notification: Send failed[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:57:59 [31m  ERROR[39m [38;5;3m[NotificationService] [39m[31mFailed to broadcast notification: Broadcast failed[39m
+PASS src/infrastructure/websocket/notification.service.spec.ts
+  NotificationService
+    初始化
+      √ 应该成功初始化 (6 ms)
+    notifyRecommendationGenerated
+      √ 应该发送推荐生成通知 (4 ms)
+      √ 如果发送失败应该记录错误但不抛出异常 (2 ms)
+    notifyClusteringCompleted
+      √ 应该发送聚类完成通知（带轮廓分数） (3 ms)
+      √ 应该发送聚类完成通知（不带轮廓分数） (3 ms)
+      √ 如果发送失败应该记录错误 (2 ms)
+    notifyScoringCompleted
+      √ 应该发送评分完成通知 (3 ms)
+      √ 如果发送失败应该记录错误 (2 ms)
+    sendSystemAlert
+      √ 应该发送系统告警（默认 info 级别） (2 ms)
+      √ 应该发送系统告警（指定级别和错误码） (2 ms)
+      √ 如果发送失败应该记录错误 (2 ms)
+    notifyRuleTriggered
+      √ 应该发送规则触发通知 (1 ms)
+      √ 如果发送失败应该记录错误 (2 ms)
+    broadcastNotification
+      √ 应该广播通知 (4 ms)
+      √ 如果广播失败应该记录错误 (2 ms)
+    isUserOnline
+      √ 应该检查用户是否在线 (2 ms)
+      √ 当用户不在线时返回 false (2 ms)
+    getOnlineStats
+      √ 应该获取在线统计信息 (3 ms)
+
+PASS src/modules/recommendation/services/rfm-analysis.spec.ts
+  RfmAnalysisService
+    √ should be defined (18 ms)
+    analyzeRfm
+      √ should return RFM analysis results for active customers (6 ms)
+      √ should return empty array when no active customers (3 ms)
+      √ should calculate RFM scores correctly (3 ms)
+      √ should assign correct customer segments (3 ms)
+    getRfmAnalysis
+      √ should return paginated RFM analysis (2 ms)
+      √ should filter by segment (4 ms)
+      √ should filter by minTotalScore (3 ms)
+      √ should filter by maxTotalScore (2 ms)
+    getRfmSummary
+      √ should return RFM summary statistics (6 ms)
+      √ should handle zero customers (7 ms)
+      √ should calculate high value ratio correctly (5 ms)
+    getRfmBySegment
+      √ should return customers for specific segment (4 ms)
+      √ should filter by segment correctly (5 ms)
+    getHighValueCustomers
+      √ should return high value customers sorted by score (3 ms)
+      √ should respect the limit parameter (5 ms)
+    calculateRfmScore
+      √ should calculate score in range 1-5 (3 ms)
+      √ should calculate reverse score correctly (lower is better) (6 ms)
+    determineCustomerSegment
+      √ should classify as 重要价值客户 for high scores (3 ms)
+      √ should classify as 重要发展客户 for high R,F but lower M (3 ms)
+      √ should classify as 重要保持客户 for high R,M but lower F (2 ms)
+      √ should classify as 重要挽留客户 for low R but high F,M (2 ms)
+      √ should include strategy for each segment (9 ms)
+
+PASS src/common/similarity/index.spec.ts
+  Similarity Module Exports
+    √ 应该导出 SimilarityService (3 ms)
+    √ 应该导出 SimilarityModule (2 ms)
+    √ 应该导出 CosineSimilarity (1 ms)
+    √ 应该导出 EuclideanSimilarity
+    √ 应该导出 similarity types (1 ms)
+    √ 算法类应该可以被实例化
+    √ CosineSimilarity 应该有 calculate 方法
+    √ EuclideanSimilarity 应该有 calculate 方法 (1 ms)
+
+PASS src/modules/recommendation/controllers/association-manager.controller.spec.ts
+  AssociationManagerController
+    √ 应该被定义 (10 ms)
+    createConfig
+      √ 应该创建关联规则配置 (9 ms)
+    getConfigs
+      √ 应该获取配置列表 (6 ms)
+      √ 应该支持空参数查询 (5 ms)
+    getConfigById
+      √ 应该获取配置详情 (3 ms)
+    updateConfig
+      √ 应该更新配置 (7 ms)
+    deleteConfig
+      √ 应该删除配置 (3 ms)
+
+PASS src/modules/recommendation/dto/get-recommendations.dto.spec.ts
+  GetRecommendationsDto
+    √ should create with default values (1 ms)
+    √ should set pagination parameters (1 ms)
+    √ should validate page minimum value
+    √ should validate limit range (1 ms)
+    √ should set filter parameters
+    √ should support all recommendation sources (1 ms)
+    √ should set date range filters
+    √ should set sorting parameters (1 ms)
+    √ should allow all fields to be optional
+    √ should support deprecated isAccepted field (1 ms)
+  RecommendationSource Enum
+    √ should have correct enum values
+    √ should be usable as string (1 ms)
+  PaginatedResponse
+    √ should create paginated response correctly (1 ms)
+    √ should calculate totalPages correctly (1 ms)
+    √ should work with different page numbers
+    √ should handle empty data array (6 ms)
+    √ should preserve generic type in data array
+
+[31m[Nest] 1700  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DatabasePoolMonitorService] [39m[31mFailed to get pool stats: queryRunner.release is not a function[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DatabasePoolMonitorService] [39m[31mFailed to get pool stats: Database error[39m
+PASS src/modules/user/controllers/user.controller.spec.ts
+  UserController
+    √ 应该被定义 (10 ms)
+    createUser
+      √ 应该创建新用户 (4 ms)
+    getUsers
+      √ 应该返回用户列表 (3 ms)
+    getUserById
+      √ 应该返回单个用户 (4 ms)
+    updateUser
+      √ 应该更新用户 (3 ms)
+    deleteUser
+      √ 应该删除用户 (2 ms)
+
+[31m[Nest] 1700  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DatabasePoolMonitorService] [39m[31mFailed to get pool stats: Cannot read properties of undefined (reading '0')[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DatabasePoolMonitorService] [39m[31mFailed to get database info: queryRunner.release is not a function[39m
+PASS src/infrastructure/database/database.controller.spec.ts
+  DatabaseController
+    √ 应该被定义 (7 ms)
+    healthCheck
+      √ 应该检查数据库健康状态 (3 ms)
+      √ 连接失败时返回错误状态 (3 ms)
+    getPoolStats
+      √ 应该获取连接池统计 (7 ms)
+      √ 统计信息应该包含所有必需字段 (6 ms)
+    getDatabaseInfo
+      √ 应该获取数据库信息 (3 ms)
+      √ 数据库信息应该包含版本和配置 (2 ms)
+    错误处理
+      √ healthCheck 出错时应该捕获异常 (15 ms)
+      √ getPoolStats 出错时应该捕获异常 (4 ms)
+      √ getDatabaseInfo 出错时应该捕获异常 (4 ms)
+
+[31m[Nest] 1700  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DatabasePoolMonitorService] [39m[31mFailed to get pool stats: queryRunner.release is not a function[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DatabasePoolMonitorService] [39m[31mFailed to get pool stats: queryRunner.release is not a function[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DatabasePoolMonitorService] [39m[31mFailed to get pool stats: queryRunner.release is not a function[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DatabasePoolMonitorService] [39m[31mFailed to get pool stats: queryRunner.release is not a function[39m
+PASS src/infrastructure/database/database-pool-monitor.service.spec.ts
+  DatabasePoolMonitorService
+    √ 应该被定义 (25 ms)
+    getPoolStats
+      √ 应该获取连接池统计信息 (7 ms)
+      √ 查询出错时应该返回默认值 (7 ms)
+    testConnection
+      √ 应该测试数据库连接 (5 ms)
+      √ 连接失败时返回错误状态 (2 ms)
+    getDatabaseInfo
+      √ 应该获取数据库信息 (5 ms)
+      √ 查询失败时应该抛出异常 (30 ms)
+    checkPoolHealth
+      √ 应该检查连接池健康状态 (6 ms)
+      √ 利用率高时应该记录警告日志 (2 ms)
+    生命周期
+      √ onModuleInit 应该启动监控 (2 ms)
+      √ onModuleDestroy 应该清理定时器 (5 ms)
+    边界情况
+      √ 应该处理空结果 (4 ms)
+      √ 应该处理 null 值 (5 ms)
+
+PASS src/modules/recommendation/services/recommendation-seed.service.spec.ts
+  RecommendationSeedService
+    √ should be defined (6 ms)
+    generateTestData
+      √ should generate test data with default count (5 ms)
+      √ should generate test data with custom count (4 ms)
+      √ should generate data with correct structure (3 ms)
+    clearTestData
+      √ should clear all test data (2 ms)
+
+[31m[Nest] 9944  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DistributedLockService] [39m[31mError acquiring lock test-lock: Redis error[39m
+PASS src/modules/auth/auth.service.spec.ts
+  AuthService
+    √ should be defined (14 ms)
+    validateUser
+      √ should return user if valid (5 ms)
+      √ should return null if invalid (2 ms)
+    login
+      √ should return access token and user info (11 ms)
+      √ should call jwtService.sign with correct payload (6 ms)
+    refreshToken
+      √ should return new token using login method (5 ms)
+    changePassword
+      √ should call userService.changePassword (9 ms)
+
+PASS src/modules/user/entities/user.entity.spec.ts
+  User Entity
+    Basic Properties
+      √ should create a user with required fields (2 ms)
+      √ should initialize roles with default value
+      √ should set multiple roles (1 ms)
+      √ should allow optional fields to be null
+    Role Checking Methods
+      hasRole
+        √ should return true when user has the specified role
+        √ should return false when user does not have the specified role (1 ms)
+        √ should handle empty roles array (1 ms)
+      isAdmin
+        √ should return true when user is admin
+        √ should return false when user is not admin
+        √ should return true when user has multiple roles including admin (1 ms)
+      isAnalyst
+        √ should return true when user is analyst
+        √ should return false when user is not analyst
+        √ should return true when user has multiple roles including analyst (1 ms)
+      isUser
+        √ should return true when user has USER role
+        √ should return false when user does not have USER role
+        √ should return true for regular user with multiple roles
+      Combined Role Tests
+        √ should correctly identify roles for admin user
+        √ should correctly identify roles for analyst user (14 ms)
+        √ should correctly identify roles for regular user (1 ms)
+        √ should correctly identify roles for user with all roles
+    User Entity - Additional Fields
+      √ should store timestamps correctly (1 ms)
+      √ should track last login information (1 ms)
+      √ should support audit fields (1 ms)
+      √ should support full name and phone (3 ms)
+    UserRole Enum
+      √ should have correct enum values
+      √ should be usable in array (2 ms)
+
+[31m[Nest] 9944  - [39m2026/03/31 19:58:00 [31m  ERROR[39m [38;5;3m[DistributedLockService] [39m[31mError releasing lock test-lock: Redis error[39m
+PASS src/infrastructure/lock/distributed-lock.service.spec.ts
+  DistributedLockService
+    √ 应该被定义 (6 ms)
+    acquire
+      √ 应该成功获取锁 (56 ms)
+      √ 获取锁失败时返回 false (3 ms)
+      √ 应该使用自定义 TTL 获取锁 (5 ms)
+      √ 应该重试获取锁 (38 ms)
+      √ 超过最大重试次数后返回 false (41 ms)
+      √ 发生错误时抛出异常 (42 ms)
+    tryAcquire
+      √ 应该非阻塞地尝试获取锁 (9 ms)
+      √ 获取锁失败时立即返回 false (3 ms)
+    release
+      √ 应该释放自己持有的锁 (4 ms)
+      √ 不能释放其他人的锁 (3 ms)
+      √ 发生错误时返回 false (3 ms)
+    extend
+      √ 应该延长锁的 TTL (3 ms)
+      √ 不能延长其他人的锁 (3 ms)
+    isLocked
+      √ 应该检查锁是否被持有 (2 ms)
+      √ 锁不存在时返回 false (13 ms)
+    executeWithLock
+      √ 应该在锁的保护下执行函数 (3 ms)
+      √ 获取锁失败时抛出异常 (14 ms)
+      √ 执行出错时释放锁 (4 ms)
+    边界情况
+      √ 应该处理空字符串键名 (5 ms)
+      √ 应该处理特殊字符键名 (6 ms)
+      √ 应该处理很长的键名 (4 ms)
+
+PASS src/common/cache/cache.interceptor.spec.ts
+  CacheInterceptor
+    √ should be defined (7 ms)
+    intercept
+      √ should return cached data if available (4 ms)
+      √ should execute handler and cache result on cache miss (5 ms)
+      √ should evict cache when @CacheEvict is used (2 ms)
+      √ should evict cache by pattern when @CacheEvict has pattern option (2 ms)
+
+PASS src/infrastructure/redis/redis.service.spec.ts
+  RedisService
+    √ should be defined (13 ms)
+    constructor
+      √ 应该使用默认配置创建 Redis 客户端 (11 ms)
+      √ 应该从环境变量读取配置 (3 ms)
+      √ 应该注册事件监听器 (10 ms)
+    onModuleInit
+      √ 应该成功初始化并记录日志 (3 ms)
+      √ 应该处理 Redis 不可用的情况 (2 ms)
+    onModuleDestroy
+      √ 应该正确关闭连接 (7 ms)
+    ping
+      √ 应该返回 PONG (6 ms)
+      √ 应该处理 ping 失败 (35 ms)
+    get
+      √ 应该获取存在的键值 (4 ms)
+      √ 应该返回 null 当键不存在时 (3 ms)
+    set
+      √ 应该设置键值（无 TTL） (2 ms)
+      √ 应该设置键值并指定 TTL (3 ms)
+      √ 应该处理空字符串值 (5 ms)
+      √ 应该处理 TTL 为 0 (4 ms)
+    del
+      √ 应该删除存在的键 (3 ms)
+      √ 应该返回 0 当键不存在时 (2 ms)
+      √ 应该支持删除多个键 (2 ms)
+    exists
+      √ 应该返回 1 当键存在时 (2 ms)
+      √ 应该返回 0 当键不存在时 (4 ms)
+    hgetall
+      √ 应该获取哈希的所有字段 (5 ms)
+      √ 应该返回 null 当哈希不存在时 (2 ms)
+      √ 应该返回空对象当哈希为空时 (2 ms)
+    hset
+      √ 应该设置哈希字段 (3 ms)
+      √ 应该处理更新已存在的字段 (4 ms)
+    hdel
+      √ 应该删除哈希字段 (5 ms)
+      √ 应该返回 0 当字段不存在时 (3 ms)
+    keys
+      √ 应该匹配模式的键列表 (3 ms)
+      √ 应该返回空数组当没有匹配的键时 (2 ms)
+    flushdb
+      √ 应该清空当前数据库 (2 ms)
+    isConnected
+      √ 应该返回连接状态 (10 ms)
+    getClient
+      √ 应该返回 Redis 客户端实例 (4 ms)
+    集成场景测试
+      √ 应该支持缓存操作链式调用 (7 ms)
+      √ 应该支持哈希操作组合 (2 ms)
+      √ 应该处理批量删除 (3 ms)
+
+PASS src/modules/recommendation/dto/create-rule.dto.spec.ts
+  CreateRuleDto
+    √ should create a valid CreateRuleDto instance (3 ms)
+    √ should allow empty description
+    √ should validate priority range
+    √ should support multiple tag templates (1 ms)
+  UpdateRuleDto
+    √ should create an UpdateRuleDto with all fields optional (1 ms)
+    √ should update partial fields
+    √ should update all fields (1 ms)
+    √ should support null values for optional fields
+  TagTemplateDto
+    √ should create a valid TagTemplateDto instance (1 ms)
+    √ should validate baseConfidence range [0, 1]
+    √ should accept decimal confidence values (1 ms)
+
+PASS src/modules/recommendation/engines/rule-parser.spec.ts
+  RuleParser
+    parse()
+      √ 应正确解析简单条件 (3 ms)
+      √ 应正确解析 AND 表达式 (1 ms)
+      √ 应正确解析嵌套表达式 (1 ms)
+      √ 应拒绝无效的运算符 (16 ms)
+      √ 应拒绝缺失 field 的条件 (2 ms)
+      √ 应拒绝缺失 value 的条件 (1 ms)
+    stringify()
+      √ 应将表达式序列化为可读格式 (1 ms)
+      √ 应正确处理嵌套表达式
+    validate()
+      √ 应返回 true 对于有效的表达式
+      √ 应返回 false 对于无效的表达式
+
+PASS src/common/pipes/validation.pipe.spec.ts
+  CustomValidationPipe
+    √ 应该被定义 (9 ms)
+    transform 方法
+      √ 应该通过普通值（没有 metatype 时）
+      √ 应该通过对象（没有 metatype 时） (1 ms)
+      √ 应该处理数组（没有 metatype 时） (2 ms)
+    sanitizeInput - XSS 防护
+      √ 应该转义 HTML 特殊字符 (1 ms)
+      √ 应该转义 & 符号
+      √ 应该转义双引号
+      √ 应该转义单引号 (1 ms)
+      √ 应该转义小于号
+      √ 应该转义大于号 (1 ms)
+      √ 应该递归清洗数组中的项 (1 ms)
+      √ 应该递归清洗对象的属性 (1 ms)
+      √ 空字符串应该保持不变 (1 ms)
+      √ null 值应该保持不变 (3 ms)
+      √ undefined 应该保持不变
+    escapeHtml 边界测试
+      √ 应该处理只有普通字符的字符串
+      √ 应该处理包含所有特殊字符的字符串
+      √ 应该处理连续的特殊字符 (5 ms)
+    formatErrors 方法
+      √ 应该格式化验证错误 (1 ms)
+      √ 应该格式化嵌套错误 (3 ms)
+      √ 没有子元素时 children 应该是 undefined (1 ms)
+    集成测试
+      √ 应该同时执行 sanitization（当没有 metatype 时）
+      √ 应该处理复杂的嵌套结构 (5 ms)
+
+PASS src/common/cache/index.spec.ts
+  Cache Module Exports
+    √ 应该导出所有装饰器 (2 ms)
+    √ 应该导出所有元数据常量 (1 ms)
+    √ 应该导出 cache types (1 ms)
+    √ 装饰器应该是函数
+    √ 装饰器应该接受函数作为 key (1 ms)
+    √ 元数据常量应该是字符串
+
+[31m[Nest] 1700  - [39m2026/03/31 19:58:01 [31m  ERROR[39m [38;5;3m[QueueService] [39m[31mQueue "non-existent-queue" not found[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:58:01 [31m  ERROR[39m [38;5;3m[QueueService] [39m[31mFailed to add job to queue "default":[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:58:01 [31m  ERROR[39m [38;5;3m[QueueService] [39m[31mError: Queue error[39m
+  console.error
+    DailyRotateFile is a legacy winston transport. Consider upgrading: 
+    - Upgrade docs: https://github.com/winstonjs/winston/blob/master/UPGRADE-3.0.md
+
+    [0m [90m 75 |[39m
+     [90m 76 |[39m [90m// 创建 Logger 实例[39m
+    [31m[1m>[22m[39m[90m 77 |[39m [36mexport[39m [36mconst[39m logger [33m=[39m winston[33m.[39mcreateLogger({
+     [90m    |[39m                               [31m[1m^[22m[39m
+     [90m 78 |[39m   level[33m:[39m process[33m.[39menv[33m.[39m[33mLOG_LEVEL[39m [33m||[39m [32m'debug'[39m[33m,[39m
+     [90m 79 |[39m   levels[33m,[39m
+     [90m 80 |[39m   defaultMeta[33m:[39m { service[33m:[39m [32m'customer-label-api'[39m }[33m,[39m[0m
+
+      at LegacyTransportStream._deprecated (node_modules/winston-transport/legacy.js:99:11)
+      at new LegacyTransportStream (node_modules/winston-transport/legacy.js:26:8)
+      at DerivedLogger.add (node_modules/winston/lib/winston/logger.js:376:11)
+      at node_modules/winston/lib/winston/logger.js:125:44
+          at Array.forEach (<anonymous>)
+      at DerivedLogger.configure (node_modules/winston/lib/winston/logger.js:125:18)
+      at new Logger (node_modules/winston/lib/winston/logger.js:42:10)
+      at new DerivedLogger (node_modules/winston/lib/winston/create-logger.js:44:7)
+      at Object.<anonymous>.module.exports (node_modules/winston/lib/winston/create-logger.js:48:18)
+      at Object.createLogger (src/common/logger/winston.config.ts:77:31)
+      at Object.<anonymous> (src/common/logger/winston.config.spec.ts:23:1)
+
+  console.error
+    DailyRotateFile is a legacy winston transport. Consider upgrading: 
+    - Upgrade docs: https://github.com/winstonjs/winston/blob/master/UPGRADE-3.0.md
+
+    [0m [90m 75 |[39m
+     [90m 76 |[39m [90m// 创建 Logger 实例[39m
+    [31m[1m>[22m[39m[90m 77 |[39m [36mexport[39m [36mconst[39m logger [33m=[39m winston[33m.[39mcreateLogger({
+     [90m    |[39m                               [31m[1m^[22m[39m
+     [90m 78 |[39m   level[33m:[39m process[33m.[39menv[33m.[39m[33mLOG_LEVEL[39m [33m||[39m [32m'debug'[39m[33m,[39m
+     [90m 79 |[39m   levels[33m,[39m
+     [90m 80 |[39m   defaultMeta[33m:[39m { service[33m:[39m [32m'customer-label-api'[39m }[33m,[39m[0m
+
+      at LegacyTransportStream._deprecated (node_modules/winston-transport/legacy.js:99:11)
+      at new LegacyTransportStream (node_modules/winston-transport/legacy.js:26:8)
+      at DerivedLogger.add (node_modules/winston/lib/winston/logger.js:376:11)
+      at node_modules/winston/lib/winston/logger.js:125:44
+          at Array.forEach (<anonymous>)
+      at DerivedLogger.configure (node_modules/winston/lib/winston/logger.js:125:18)
+      at new Logger (node_modules/winston/lib/winston/logger.js:42:10)
+      at new DerivedLogger (node_modules/winston/lib/winston/create-logger.js:44:7)
+      at Object.<anonymous>.module.exports (node_modules/winston/lib/winston/create-logger.js:48:18)
+      at Object.createLogger (src/common/logger/winston.config.ts:77:31)
+      at Object.<anonymous> (src/common/logger/winston.config.spec.ts:23:1)
+
+[31m[Nest] 1700  - [39m2026/03/31 19:58:01 [31m  ERROR[39m [38;5;3m[QueueService] [39m[31mFailed to clear queue "default":[39m
+[31m[Nest] 1700  - [39m2026/03/31 19:58:01 [31m  ERROR[39m [38;5;3m[QueueService] [39m[31mError: Clear error[39m
+  console.error
+    DailyRotateFile is a legacy winston transport. Consider upgrading: 
+    - Upgrade docs: https://github.com/winstonjs/winston/blob/master/UPGRADE-3.0.md
+
+    [0m [90m 75 |[39m
+     [90m 76 |[39m [90m// 创建 Logger 实例[39m
+    [31m[1m>[22m[39m[90m 77 |[39m [36mexport[39m [36mconst[39m logger [33m=[39m winston[33m.[39mcreateLogger({
+     [90m    |[39m                               [31m[1m^[22m[39m
+     [90m 78 |[39m   level[33m:[39m process[33m.[39menv[33m.[39m[33mLOG_LEVEL[39m [33m||[39m [32m'debug'[39m[33m,[39m
+     [90m 79 |[39m   levels[33m,[39m
+     [90m 80 |[39m   defaultMeta[33m:[39m { service[33m:[39m [32m'customer-label-api'[39m }[33m,[39m[0m
+
+      at LegacyTransportStream._deprecated (node_modules/winston-transport/legacy.js:99:11)
+      at new LegacyTransportStream (node_modules/winston-transport/legacy.js:26:8)
+      at DerivedLogger.add (node_modules/winston/lib/winston/logger.js:376:11)
+      at node_modules/winston/lib/winston/logger.js:125:44
+          at Array.forEach (<anonymous>)
+      at DerivedLogger.configure (node_modules/winston/lib/winston/logger.js:125:18)
+      at new Logger (node_modules/winston/lib/winston/logger.js:42:10)
+      at new DerivedLogger (node_modules/winston/lib/winston/create-logger.js:44:7)
+      at Object.<anonymous>.module.exports (node_modules/winston/lib/winston/create-logger.js:48:18)
+      at Object.createLogger (src/common/logger/winston.config.ts:77:31)
+      at Object.<anonymous> (src/common/logger/winston.config.spec.ts:23:1)
+
+2026-03-31 19:58:01 [34mdebug[39m: [34mTest debug message[39m
+PASS src/common/logger/winston.config.spec.ts
+  Winston Logger Configuration
+    √ 应该导出 logger 对象 (1 ms)
+    √ logger 应该有 error 方法 (8 ms)
+    √ logger 应该有 warn 方法 (1 ms)
+    √ logger 应该有 info 方法
+    √ logger 应该有 http 方法
+    √ logger 应该有 debug 方法 (1 ms)
+    √ logger.debug 应该可以调用 (5 ms)
+
+PASS src/infrastructure/queue/queue.service.spec.ts
+  QueueService
+    初始化
+      √ 应该成功初始化并创建默认队列 (7 ms)
+    createQueue
+      √ 应该创建新队列并返回队列实例 (3 ms)
+      √ 如果队列已存在应该返回现有队列 (2 ms)
+      √ 应该为新队列注册事件监听器 (6 ms)
+    getQueue
+      √ 应该返回已存在的队列 (2 ms)
+      √ 如果队列不存在应该返回 null (2 ms)
+    addJob
+      √ 应该添加任务到队列 (3 ms)
+      √ 如果队列不存在应该返回 null (3 ms)
+      √ 应该支持自定义任务选项 (2 ms)
+      √ 如果添加失败应该抛出错误 (31 ms)
+    getQueueStats
+      √ 应该获取队列统计信息 (8 ms)
+      √ 如果队列不存在应该返回 null (8 ms)
+    clearQueue
+      √ 应该清空队列 (2 ms)
+      √ 如果队列不存在应该跳过清空操作 (8 ms)
+      √ 如果清空失败应该抛出错误 (7 ms)
+    closeAll
+      √ 应该关闭所有队列 (10 ms)
+      √ 如果没有队列应该正常完成 (10 ms)
+    onModuleDestroy
+      √ 在模块销毁时应该关闭所有队列 (10 ms)
+
+[31m[Nest] 18600  - [39m2026/03/31 19:58:01 [31m  ERROR[39m [38;5;3m[NotificationGateway] [39m[31mConnection error: Invalid token[39m
+PASS src/common/metrics/metrics.service.spec.ts
+  MetricsService
+    √ 应该被定义 (5 ms)
+    √ 应该实现 OnModuleInit 接口 (2 ms)
+    onModuleInit
+      √ 应该注册默认指标 (6 ms)
+    createCounter
+      √ 应该创建计数器 (1 ms)
+    createHistogram
+      √ 应该创建直方图 (1 ms)
+    createGauge
+      √ 应该创建 Gauge (1 ms)
+    getMetrics
+      √ 应该获取所有指标 (7 ms)
+    clearMetrics
+      √ 应该清空所有指标 (2 ms)
+
+PASS src/common/cache/cache.decorator.spec.ts
+  Cache Decorators
+    Cacheable
+      √ should set cacheable metadata to true (6 ms)
+      √ should set key generator function (8 ms)
+      √ should set TTL metadata (1 ms)
+      √ should use default TTL when not provided
+      √ should work with different key patterns
+    CacheEvict
+      √ should set evict metadata with key (5 ms)
+      √ should support pattern option (1 ms)
+      √ should work without pattern option
+    CachePut
+      √ should set put metadata with options (6 ms)
+      √ should work with complex object keys (1 ms)
+      √ should preserve all options
+    Multiple Decorators on Same Method
+      √ should handle multiple cache decorators (1 ms)
+    Edge Cases
+      √ should handle null/undefined in key generator (3 ms)
+      √ should handle special characters in generated keys (1 ms)
+      √ should handle large TTL values
+
+PASS src/common/health/health.controller.spec.ts
+  HealthController
+    √ 应该被定义 (12 ms)
+    √ 应该返回欢迎信息 (3 ms)
+    √ 应该返回健康状态 (3 ms)
+    √ 应该返回就绪状态 (2 ms)
+    √ 应该返回指标 (2 ms)
+
+PASS src/infrastructure/websocket/notification.gateway.spec.ts
+  NotificationGateway
+    初始化
+      √ 应该成功初始化 (30 ms)
+      √ afterInit 应该记录日志 (8 ms)
+    handleConnection
+      √ 应该允许带有有效 token 的客户端连接 (15 ms)
+      √ 应该拒绝没有 token 的客户端 (8 ms)
+      √ 应该拒绝带有无效 token 的客户端 (10 ms)
+      √ 应该拒绝 token 中没有 userId 的客户端 (7 ms)
+      √ 应该支持从查询参数获取 token (5 ms)
+    handleDisconnect
+      √ 应该处理客户端断开连接 (9 ms)
+    handlePing
+      √ 应该响应 ping 请求 (5 ms)
+    sendToUser
+      √ 应该发送通知给特定用户 (4 ms)
+    notifyRecommendationGenerated
+      √ 应该发送推荐生成通知 (5 ms)
+    notifyRecommendationAccepted
+      √ 应该发送推荐接受通知 (19 ms)
+    notifyRecommendationRejected
+      √ 应该发送推荐拒绝通知 (3 ms)
+    notifyClusteringCompleted
+      √ 应该发送聚类完成通知 (7 ms)
+    notifyScoringCompleted
+      √ 应该发送评分完成通知 (2 ms)
+    notifySystemAlert
+      √ 应该发送系统告警通知 (7 ms)
+      √ 应该支持不同级别的告警 (12 ms)
+    notifyRuleTriggered
+      √ 应该发送规则触发通知 (3 ms)
+    broadcast
+      √ 应该广播通知给所有用户 (2 ms)
+    getOnlineStats
+      √ 应该返回在线用户统计 (2 ms)
+      √ 如果没有用户在线应该返回 0 (2 ms)
+    isUserOnline
+      √ 如果用户在线应该返回 true (2 ms)
+      √ 如果用户不在线应该返回 false (2 ms)
+
+PASS src/infrastructure/lock/lock.interceptor.spec.ts
+  LockInterceptor
+    intercept
+      √ 没有装饰器时应该直接执行 (2 ms)
+      √ 有装饰器且获取锁成功时应该执行 (2 ms)
+      √ 有装饰器但获取锁失败时应该抛出异常 (14 ms)
+      √ 执行出错时应该释放锁 (3 ms)
+    generateLockValue
+      √ 应该生成包含用户 ID 和时间戳的锁值 (2 ms)
+    resolveLockKey
+      √ 应该替换单个参数 (1 ms)
+      √ 应该替换多个参数
+      √ 无法替换的参数应该保持原样 (1 ms)
+
+[32m[Nest] 19012  - [39m2026/03/31 19:58:01 [32m    LOG[39m [38;5;3m[PerformanceMiddleware] [39m[32mGET /api/users 200 19ms[39m
+[32m[Nest] 19012  - [39m2026/03/31 19:58:01 [32m    LOG[39m [38;5;3m[PerformanceMiddleware] [39m[32mGET /api/users 200 18ms[39m
+[32m[Nest] 19012  - [39m2026/03/31 19:58:01 [32m    LOG[39m [38;5;3m[PerformanceMiddleware] [39m[32mGET /api/users 200 17ms[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"search":"SELECT * FROM users"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in request body: {"data":"INSERT INTO users VALUES (1)"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"q":"UPDATE users SET name='test'"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in request body: {"cmd":"DELETE FROM users WHERE id=1"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"table":"DROP TABLE users"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"search":"1 UNION SELECT * FROM passwords"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"id":"1; --"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"where":"1 OR 1=1"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in request body: {"delay":"WAITFOR DELAY '00:00:05'"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"test":"BENCHMARK(10000000, SHA1('test'))"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"username":"admin","password":"SELECT * FROM users"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in request body: {"username":"admin' --","action":"login"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"sql":"SELECT * FROM users"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"sql":"DROP TABLE users"}[39m
+PASS src/entities.spec.ts
+  Entities Export
+    √ 应该导出 entities 数组 (1 ms)
+    √ 应该导出 TagRecommendation 实体
+    √ 应该导出 RecommendationRule 实体
+    √ 应该导出 ClusteringConfig 实体 (1 ms)
+    √ 应该导出 Customer 实体
+    √ 应该导出 TagScore 实体
+    √ 应该导出 FeedbackStatistic 实体
+    √ 应该导出 User 实体
+    √ entities 数组应该包含所有导出的实体 (1 ms)
+
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"sql":"DELETE FROM users"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"search":"SeLeCt * FrOm users"}[39m
+[33m[Nest] 18600  - [39m2026/03/31 19:58:01 [33m   WARN[39m [38;5;3m[SqlInjectionMiddleware] [39m[33mSQL injection attempt detected in query params: {"data":"'; DROP TABLE users--"}[39m
+PASS src/common/middleware/sql-injection.middleware.spec.ts
+  SqlInjectionMiddleware
+    √ 应该被定义 (1 ms)
+    √ 应该有 Logger 实例
+    SQL 注入检测
+      √ 应该允许正常请求通过 (2 ms)
+      √ 应该检测 SELECT 关键词 (1 ms)
+      √ 应该检测 INSERT 关键词 (1 ms)
+      √ 应该检测 UPDATE 关键词
+      √ 应该检测 DELETE 关键词 (1 ms)
+      √ 应该检测 DROP 关键词
+      √ 应该检测 UNION 关键词 (1 ms)
+      √ 应该检测 SQL 注释符号 (1 ms)
+      √ 应该检测 OR 数字相等攻击
+      √ 应该检测 WAITFOR 延迟攻击 (1 ms)
+      √ 应该检测 BENCHMARK 攻击
+    查询参数检测
+      √ 应该检测查询参数中的 SQL 注入 (6 ms)
+      √ 空查询参数应该通过 (1 ms)
+    请求体检测
+      √ 应该检测请求体中的 SQL 注入 (3 ms)
+      √ 非对象请求体不应该报错 (1 ms)
+      √ null 请求体应该通过
+    错误响应格式
+      √ 应该返回正确的错误状态码 (1 ms)
+      √ 应该返回错误消息 (1 ms)
+      √ 应该包含时间戳 (1 ms)
+    containsSqlInjection 方法
+      √ 应该检测大小写混合的 SQL 注入 (2 ms)
+      √ 应该检测编码的 SQL 注入 (1 ms)
+
+[32m[Nest] 19012  - [39m2026/03/31 19:58:01 [32m    LOG[39m [38;5;3m[PerformanceMiddleware] [39m[32mGET /api/users 200 15ms[39m
+PASS src/common/controllers/version.controller.spec.ts
+  VersionController
+    √ 应该被定义 (8 ms)
+    getVersion
+      √ 应该返回版本信息 (9 ms)
+    healthCheck
+      √ 应该返回健康状态 (6 ms)
+      √ 应该返回合理的运行时间 (3 ms)
+
+PASS src/common/middleware/performance.middleware.spec.ts
+  PerformanceMiddleware
+    √ 应该被定义 (3 ms)
+    √ 应该有 Logger 实例
+    √ 应该初始化性能指标 (2 ms)
+    use 方法
+      √ 应该调用 next() 继续处理请求
+      √ 应该监听响应 finish 事件
+      √ 应该记录请求总数 (64 ms)
+      √ 应该计算平均响应时间 (65 ms)
+    getMetrics
+      √ 应该返回性能指标副本 (1 ms)
+    getAvgResponseTime
+      √ 不存在的端点应该返回 0 (1 ms)
+
+PASS src/common/middleware/api-version.middleware.spec.ts
+  ApiVersionMiddleware
+    √ 应该被定义 (1 ms)
+    √ 应该从配置服务获取默认版本 (1 ms)
+    use 方法
+      √ 应该支持版本化路径 /api/v1/ (1 ms)
+      √ 应该支持版本化路径 /api/v2/ (1 ms)
+      √ 没有指定版本时应该使用默认版本
+      √ 应该设置 X-API-Version 响应头 (1 ms)
+      √ 不支持的版本应该返回 400 错误
+      √ 根路径应该使用默认版本 (5 ms)
+      √ 健康检查路径应该使用默认版本 (1 ms)
+    配置测试
+      √ 应该使用配置的默认版本
+      √ 应该使用配置的支持版本列表 (1 ms)
+
+PASS src/infrastructure/queue/index.spec.ts
+  Queue Module Exports
+    √ 应该导出 QueueModule (1 ms)
+    √ 应该导出 QueueService
+    √ QueueModule 应该是有效的 NestJS 模块类 (1 ms)
+    √ QueueService 和 QueueModule 应该是不同的类
+
+PASS src/common/metrics/prometheus.middleware.spec.ts
+  PrometheusMiddleware
+    √ 应该被定义 (7 ms)
+    √ 应该调用 next() 继续处理请求 (2 ms)
+    √ 应该监听响应 finish 事件
+    √ 应该清理路径参数 (1 ms)
+    √ 应该替换多个数字 ID
+
+PASS src/common/guards/roles.guard.spec.ts
+  RolesGuard
+    √ 应该被定义 (1 ms)
+    canActivate
+      √ 当没有角色要求时应该返回 true (1 ms)
+      √ 当用户有要求的角色时应该返回 true
+      √ 当用户没有要求的角色时应该返回 false (1 ms)
+      √ 当没有用户时应该返回 false
+
+PASS src/modules/recommendation/entities/index.spec.ts
+  Recommendation Entities Exports
+    √ 应该导出 TagRecommendation (1 ms)
+    √ 应该导出 RecommendationRule
+    √ 应该导出 ClusteringConfig (1 ms)
+    √ 所有实体类都应该可以被实例化
+    √ TagRecommendation 应该有必要的属性 (2 ms)
+    √ RecommendationRule 应该有必要的属性
+    √ ClusteringConfig 应该有必要的属性 (2 ms)
+
+PASS src/common/decorators/throttle.decorator.spec.ts
+  Throttle Decorators
+    ThrottleShort
+      √ 应该返回装饰器函数 (1 ms)
+      √ 应该是一个有效的装饰器
+    ThrottleMedium
+      √ 应该返回装饰器函数 (1 ms)
+      √ 应该是一个有效的装饰器
+    ThrottleLong
+      √ 应该返回装饰器函数
+      √ 应该是一个有效的装饰器 (1 ms)
+    ThrottleCustom
+      √ 应该接受 ttl 和 limit 参数并返回装饰器
+      √ 应该使用正确的参数创建装饰器 (1 ms)
+      √ 应该处理不同的 ttl 和 limit 值 (3 ms)
+    装饰器组合
+      √ 所有装饰器都应该正确导出
+      √ 装饰器应该是独立的
+      √ 装饰器应该都是函数 (1 ms)
+
+PASS src/modules/recommendation/entities/tag-recommendation.entity.spec.ts
+  TagRecommendation Entity
+    Basic Properties
+      √ should create a recommendation with required fields (2 ms)
+      √ should initialize status to PENDING by default (1 ms)
+      √ should allow optional fields to be null
+    RecommendationStatus Enum
+      √ should have correct enum values (1 ms)
+      √ should be usable in status field
+      √ should support all status values (1 ms)
+    Source Field Validation
+      √ should accept rule as source
+      √ should accept clustering as source (1 ms)
+      √ should accept association as source
+    Confidence Field
+      √ should support confidence values between 0 and 1
+      √ should support exact boundary values
+    Timestamps
+      √ should store createdAt timestamp
+      √ should store updatedAt timestamp
+      √ should store expiresAt timestamp (1 ms)
+    Acceptance Tracking Fields
+      √ should track acceptance information (1 ms)
+      √ should store feedback reason (1 ms)
+      √ should store modified tag name
+    Score Overall Field
+      √ should store overall score (1 ms)
+      √ should support score boundary values (15 ms)
+    Complete Recommendation Example
+      √ should create a complete recommendation with all fields (1 ms)
+
+[31m[Nest] 19012  - [39m2026/03/31 19:58:02 [31m  ERROR[39m [38;5;3m[AssociationEngineService] [39m[31mAssociation engine failed:[39m
+[31m[Nest] 19012  - [39m2026/03/31 19:58:02 [31m  ERROR[39m [38;5;3m[AssociationEngineService] [39m[31mTypeError: Cannot read properties of undefined (reading 'support')[39m
+PASS src/modules/recommendation/engines/association-engine.service.spec.ts
+  AssociationEngineService
+    √ should be defined (12 ms)
+    generateRecommendations
+      √ should return empty array when customer has no existing tags (10 ms)
+      √ should generate recommendations based on association rules (6 ms)
+      √ should handle empty allCustomerTags (2 ms)
+
+PASS src/common/decorators/roles.decorator.spec.ts
+  Roles Decorator
+    √ Roles 装饰器应该是一个函数 (1 ms)
+    √ Roles 应该接受字符串参数并返回装饰器 (1 ms)
+    √ Roles 可以接受多个角色参数
+    √ Roles 可以接受空参数
+    √ Roles 装饰器使用 SetMetadata (1 ms)
+
+PASS src/infrastructure/redis/index.spec.ts
+  Redis Module Exports
+    √ 应该导出 RedisModule (1 ms)
+    √ 应该导出 RedisService
+    √ 应该导出 CacheService (1 ms)
+    √ RedisModule 应该是一个有效的 NestJS 模块类
+    √ RedisService 和 CacheService 应该是不同的类
+
+PASS src/infrastructure/lock/lock.decorator.spec.ts
+  Lock Decorator
+    √ 应该导出 USE_LOCK_KEY 常量 (1 ms)
+    √ UseLock 装饰器应该是一个函数 (1 ms)
+    √ UseLock 应该接受 key 参数并返回装饰器
+    √ UseLock 可以接受 key 和 ttl 参数 (1 ms)
+    √ UseLock 装饰器应该使用 SetMetadata
+
+PASS src/modules/scoring/entities/index.spec.ts
+  Scoring Entities Exports
+    √ 应该导出 TagScore (1 ms)
+    √ TagScore 应该可以被实例化 (1 ms)
+    √ TagScore 应该有必要的属性 (1 ms)
+    √ TagScore 的 recommendation 应该有默认值 (1 ms)
+
+PASS src/modules/auth/guards/local-auth.guard.spec.ts
+  LocalAuthGuard
+    √ 应该定义 LocalAuthGuard 类 (1 ms)
+    √ LocalAuthGuard 应该是 AuthGuard 的子类
+    √ LocalAuthGuard 应该可以被实例化 (3 ms)
+    √ LocalAuthGuard 的实例应该有 canActivate 方法（继承自 AuthGuard）
+
+PASS src/modules/feedback/entities/index.spec.ts
+  Feedback Entities Exports
+    √ 应该导出 FeedbackStatistic (1 ms)
+    √ FeedbackStatistic 应该可以被实例化 (1 ms)
+    √ FeedbackStatistic 应该有必要的属性 (2 ms)
+    √ FeedbackStatistic 的数值属性应该有默认值 0 (1 ms)
+
+PASS src/modules/auth/strategies/index.spec.ts
+  Auth Strategies Module Exports
+    √ 应该导出 JwtStrategy (5 ms)
+    √ 应该导出 LocalStrategy
+    √ JwtStrategy 和 LocalStrategy 应该是不同的类
+    √ 策略类应该可以被实例化（需要依赖注入）
+
+PASS src/database/migrations/1711507100000-CreateUsersTable.spec.ts
+  CreateUsersTable Migration
+    up 方法
+      √ 应该定义 up 方法 (4 ms)
+      √ up 方法应该返回 Promise (1 ms)
+    down 方法
+      √ 应该定义 down 方法 (1 ms)
+      √ down 方法应该返回 Promise
+    迁移名称
+      √ 应该有正确的类名
+
+PASS src/common/similarity/algorithms/cosine.algorithm.spec.ts
+  CosineSimilarity
+    基本信息
+      √ 应该有正确的名称
+    calculate
+      √ 应该计算两个相同向量的相似度为 1
+      √ 应该计算两个正交向量的相似度为 0
+      √ 应该计算不同向量的相似度在 0-1 之间 (1 ms)
+      √ 空向量应该返回 0
+      √ 维度不一致应该抛出错误 (15 ms)
+      √ 零向量应该返回 0
+      √ 应该处理单位向量
+      √ 应该处理负值向量 (1 ms)
+      √ 应该映射结果到 [0, 1] 范围 (3 ms)
+    batchCalculate
+      √ 应该批量计算相似度 (1 ms)
+      √ 空候选列表应该返回空数组
+      √ 目标向量为零向量应该返回全 0 (1 ms)
+      √ 候选向量为零向量应该返回 0
+      √ 维度不一致应该抛出错误 (1 ms)
+      √ 应该处理大量候选向量 (16 ms)
+    边界情况
+      √ 应该处理非常大的数值 (1 ms)
+      √ 应该处理非常小的数值
+      √ 单个元素的向量
+    实际场景测试
+      √ 客户特征相似度计算 (1 ms)
+
+PASS src/common/similarity/algorithms/euclidean.algorithm.spec.ts
+  EuclideanSimilarity
+    基本信息
+      √ 应该有正确的名称 (1 ms)
+    calculate
+      √ 应该计算两个相同向量的相似度为 1 (1 ms)
+      √ 应该计算两个不同向量的相似度在 0-1 之间 (1 ms)
+      √ 距离越大相似度越小 (1 ms)
+      √ 空向量应该返回 0 (1 ms)
+      √ 维度不一致应该抛出错误 (13 ms)
+      √ 零向量应该返回 1
+      √ 一个为零向量应该返回较小的相似度
+      √ 应该处理单位向量 (1 ms)
+      √ 应该处理负值向量 (1 ms)
+      √ 正负相反的向量应该返回较小的相似度 (1 ms)
+    边界情况
+      √ 应该处理空向量 (1 ms)
+      √ 应该处理一个为空的情况 (1 ms)
+      √ 应该处理维度不匹配的情况 (2 ms)
+      √ 两个差异很大的向量应该接近 0 (1 ms)
+      √ 应该处理非常大的数值
+      √ 应该处理非常小的数值
+      √ 单个元素的向量 (1 ms)
+      √ 两个差异很大的向量
+    实际场景测试
+      √ 客户特征相似度计算
+      √ 地理位置坐标相似度 (1 ms)
+    性能测试
+      √ 应该快速计算高维向量 (1 ms)
+
+PASS src/modules/recommendation/seeds/default-rules.seed.spec.ts
+  Default Rules Seed
+    √ 应该导出 DEFAULT_RULES 数组 (2 ms)
+    √ DEFAULT_RULES 应该包含 4 个默认规则
+    √ 每个规则都应该有所需的属性 (12 ms)
+    √ 第一个规则应该是高价值客户识别 (1 ms)
+    √ 第二个规则应该是流失风险预警
+    √ 第三个规则应该是潜力客户挖掘 (1 ms)
+    √ 第四个规则应该是频繁购买者 (1 ms)
+    √ 所有规则的优先级应该在合理范围内 (0-100) (1 ms)
+    √ 所有规则的 hitCount 初始值应该为 0
+    √ 所有规则的 isActive 应该为 true (1 ms)
+    √ 所有规则的 tagTemplate 都应该有 baseConfidence (1 ms)
+    规则表达式结构验证
+      √ 所有规则表达式都应该是 AND 逻辑 (1 ms)
+      √ 所有规则表达式都应该有 conditions 数组 (1 ms)
+      √ conditions 中的每个条件都应该有 field、operator 和 value (4 ms)
+
+PASS src/modules/recommendation/engines/rule-evaluator.spec.ts
+  RuleEvaluator
+    evaluateCondition()
+      √ 应评估数值大于比较 (1 ms)
+      √ 应评估数值小于比较
+      √ 应评估数值范围（between） (1 ms)
+      √ 应评估数组包含（in）
+      √ 应评估嵌套字段访问
+      √ 应处理空值返回 false
+    evaluateExpression()
+      √ 应评估 AND 表达式 (1 ms)
+      √ 应评估 OR 表达式 (1 ms)
+      √ 应评估 NOT 表达式 (1 ms)
+      √ 应计算置信度分数 (1 ms)
+      √ 应处理嵌套表达式 (1 ms)
+    边界情况处理
+      √ 应处理字符串比较
+      √ 应处理数组字段包含
+      √ 应处理字符串包含 (1 ms)
+
+--------------------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------
+File                                              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                            
+--------------------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------
+All files                                         |   80.49 |    67.21 |    75.6 |   80.69 |                                                                                              
+ common/cache                                     |   67.81 |    68.42 |   43.47 |   68.67 |                                                                                              
+  cache.decorator.ts                              |     100 |      100 |     100 |     100 |                                                                                              
+  cache.interceptor.ts                            |      75 |     64.7 |      70 |   74.07 | 47,79-110,127,155                                                                            
+  cache.types.ts                                  |     100 |      100 |     100 |     100 |                                                                                              
+  index.ts                                        |       0 |      100 |       0 |       0 | 2-15                                                                                         
+ common/controllers                               |     100 |      100 |     100 |     100 |                                                                                              
+  version.controller.ts                           |     100 |      100 |     100 |     100 |                                                                                              
+ common/decorators                                |     100 |      100 |     100 |     100 |                                                                                              
+  roles.decorator.ts                              |     100 |      100 |     100 |     100 |                                                                                              
+  throttle.decorator.ts                           |     100 |      100 |     100 |     100 |                                                                                              
+ common/guards                                    |     100 |      100 |     100 |     100 |                                                                                              
+  roles.guard.ts                                  |     100 |      100 |     100 |     100 |                                                                                              
+ common/health                                    |     100 |      100 |     100 |     100 |                                                                                              
+  health.controller.ts                            |     100 |      100 |     100 |     100 |                                                                                              
+ common/logger                                    |   90.32 |    66.66 |     100 |   89.65 |                                                                                              
+  http-logger.middleware.ts                       |   89.47 |       60 |     100 |   88.23 | 22,24                                                                                        
+  winston.config.ts                               |   91.66 |    71.42 |     100 |   91.66 | 86                                                                                           
+ common/metrics                                   |   85.71 |      100 |    90.9 |   83.33 |                                                                                              
+  metrics.service.ts                              |     100 |      100 |     100 |     100 |                                                                                              
+  prometheus.middleware.ts                        |      75 |      100 |      75 |   71.42 | 35-46                                                                                        
+ common/middleware                                |   92.64 |       80 |      90 |   93.22 |                                                                                              
+  api-version.middleware.ts                       |     100 |      100 |     100 |     100 |                                                                                              
+  performance.middleware.ts                       |   83.33 |       50 |      80 |   84.61 | 42-43,57,83                                                                                  
+  sql-injection.middleware.ts                     |     100 |      100 |     100 |     100 |                                                                                              
+ common/pipes                                     |   84.84 |    81.81 |     100 |   82.14 |                                                                                              
+  validation.pipe.ts                              |   84.84 |    81.81 |     100 |   82.14 | 18-30                                                                                        
+ common/similarity                                |   89.36 |    59.52 |   83.33 |   91.56 |                                                                                              
+  index.ts                                        |     100 |      100 |       0 |     100 |                                                                                              
+  similarity.service.ts                           |   88.37 |    59.52 |   93.75 |    90.9 | 92-93,113,212-214,229,273                                                                    
+  similarity.types.ts                             |     100 |      100 |     100 |     100 |                                                                                              
+ common/similarity/algorithms                     |     100 |      100 |     100 |     100 |                                                                                              
+  cosine.algorithm.ts                             |     100 |      100 |     100 |     100 |                                                                                              
+  euclidean.algorithm.ts                          |     100 |      100 |     100 |     100 |                                                                                              
+ database/migrations                              |    14.7 |      100 |   16.66 |    14.7 |                                                                                              
+  1711507100000-CreateUsersTable.ts               |   83.33 |      100 |     100 |   83.33 | 104                                                                                          
+  1711507200000-CreateTagRecommendationsTable.ts  |       0 |      100 |       0 |       0 | 1-131                                                                                        
+  1711507260000-CreateTagScoresTable.ts           |       0 |      100 |       0 |       0 | 1-132                                                                                        
+  1711507320000-CreateRecommendationRulesTable.ts |       0 |      100 |       0 |       0 | 1-105                                                                                        
+  1711507380000-CreateClusteringConfigsTable.ts   |       0 |      100 |       0 |       0 | 1-72                                                                                         
+  1711507440000-CreateFeedbackStatisticsTable.ts  |       0 |      100 |       0 |       0 | 1-82                                                                                         
+ infrastructure/database                          |   94.36 |       76 |   91.66 |   94.02 |                                                                                              
+  database-pool-monitor.service.ts                |    93.1 |       76 |    87.5 |   92.85 | 39,133,139,154                                                                               
+  database.controller.ts                          |     100 |      100 |     100 |     100 |                                                                                              
+ infrastructure/lock                              |   70.63 |    76.47 |   81.81 |   69.49 |                                                                                              
+  distributed-lock.service.ts                     |   60.63 |    73.07 |   71.42 |      60 | 90-91,137-152,177-237                                                                        
+  lock.decorator.ts                               |     100 |      100 |     100 |     100 |                                                                                              
+  lock.interceptor.ts                             |     100 |     87.5 |     100 |     100 | 54                                                                                           
+ infrastructure/queue                             |   84.37 |      100 |   52.94 |   86.66 |                                                                                              
+  index.ts                                        |       0 |      100 |       0 |       0 | 1-2                                                                                          
+  queue.service.ts                                |      90 |      100 |      60 |   89.65 | 73,77,81,85,89,93                                                                            
+ infrastructure/queue/handlers                    |       0 |      100 |     100 |       0 |                                                                                              
+  recommendation.handler.ts                       |       0 |      100 |     100 |       0 | 207                                                                                          
+ infrastructure/redis                             |    88.8 |    80.32 |   83.11 |   88.25 |                                                                                              
+  cache.service.ts                                |   94.53 |      100 |     100 |    94.4 | 185-186,220,273-274,327-328                                                                  
+  index.ts                                        |     100 |      100 |   33.33 |     100 |                                                                                              
+  redis-cluster.service.ts                        |   86.13 |    64.51 |   82.05 |   85.41 | 89,107-108,112-113,117-121,125-126,130,134,138                                               
+  redis.service.ts                                |   76.19 |    88.88 |   78.94 |      75 | 31-35,40-41,45-46,50-51                                                                      
+ infrastructure/websocket                         |     100 |      100 |     100 |     100 |                                                                                              
+  notification.gateway.ts                         |     100 |      100 |     100 |     100 |                                                                                              
+  notification.service.ts                         |     100 |      100 |     100 |     100 |                                                                                              
+ modules/auth                                     |   86.84 |      100 |      90 |   85.29 |                                                                                              
+  auth.controller.ts                              |     100 |      100 |     100 |     100 |                                                                                              
+  auth.service.ts                                 |   76.19 |      100 |   83.33 |   73.68 | 70-75                                                                                        
+ modules/auth/guards                              |    90.9 |      100 |       0 |   85.71 |                                                                                              
+  jwt-auth.guard.ts                               |   83.33 |      100 |       0 |      75 | 7                                                                                            
+  local-auth.guard.ts                             |     100 |      100 |     100 |     100 |                                                                                              
+ modules/auth/strategies                          |   62.96 |    66.66 |   33.33 |    61.9 |                                                                                              
+  index.ts                                        |       0 |      100 |       0 |       0 | 1-2                                                                                          
+  jwt.strategy.ts                                 |     100 |      100 |     100 |     100 |                                                                                              
+  local.strategy.ts                               |   53.84 |        0 |       0 |   45.45 | 8-17                                                                                         
+ modules/feedback                                 |     100 |    94.59 |     100 |     100 |                                                                                              
+  feedback.controller.ts                          |     100 |      100 |     100 |     100 |                                                                                              
+  feedback.service.ts                             |     100 |    94.11 |     100 |     100 | 165,181                                                                                      
+ modules/feedback/dto                             |      60 |      100 |       0 |      75 |                                                                                              
+  get-feedback.dto.ts                             |      60 |      100 |       0 |      75 | 12,24,53,65                                                                                  
+ modules/feedback/entities                        |    87.5 |      100 |       0 |    92.3 |                                                                                              
+  feedback-statistic.entity.ts                    |     100 |      100 |     100 |     100 |                                                                                              
+  index.ts                                        |       0 |      100 |       0 |       0 | 1                                                                                            
+ modules/recommendation                           |   43.44 |    38.33 |   41.93 |   43.25 |                                                                                              
+  recommendation.controller.ts                    |   73.17 |    41.66 |      60 |    72.5 | 230,238,433-434,494-499,553,578-588,602-610,664-702                                          
+  recommendation.service.ts                       |   36.06 |    38.09 |   33.33 |   35.93 | 109,264-266,339,362-419,430-431,463-1028                                                     
+ modules/recommendation/controllers               |   75.79 |        0 |   51.85 |   74.49 |                                                                                              
+  association-manager.controller.ts               |   85.18 |      100 |      60 |      84 | 96,104,124,132                                                                               
+  clustering-manager.controller.ts                |   85.18 |      100 |      60 |      84 | 96,104,127,150                                                                               
+  customer.controller.ts                          |   57.57 |        0 |   26.08 |   56.25 | 29,36,63,91,97,103-104,114,125,135,149-155,168,179-182,189-190,200,218,230-231,239           
+  rule-engine.controller.ts                       |   94.59 |      100 |    90.9 |   94.28 | 122-123                                                                                      
+ modules/recommendation/dto                       |   88.49 |      100 |      25 |   93.77 |                                                                                              
+  association-config.dto.ts                       |   76.66 |      100 |       0 |   88.46 | 71,76,91                                                                                     
+  clustering-config.dto.ts                        |   93.33 |      100 |     100 |     100 |                                                                                              
+  create-rule.dto.ts                              |     100 |      100 |     100 |     100 |                                                                                              
+  customer.dto.ts                                 |   92.52 |      100 |     100 |     100 |                                                                                              
+  get-recommendations.dto.ts                      |    92.5 |      100 |      40 |   91.66 | 26,38,76                                                                                     
+  test-rule.dto.ts                                |     100 |      100 |     100 |     100 |                                                                                              
+  update-recommendation.dto.ts                    |       0 |      100 |     100 |       0 | 1-38                                                                                         
+  update-rule.dto.ts                              |     100 |      100 |     100 |     100 |                                                                                              
+ modules/recommendation/engines                   |   82.21 |    70.56 |   85.18 |   82.46 |                                                                                              
+  association-engine.service.ts                   |   76.37 |    72.22 |   78.94 |   76.99 | 59-69,102-104,131-153,263,274-284,300                                                        
+  clustering-engine.service.ts                    |   85.93 |    68.96 |   86.11 |   87.73 | 165,343,351,360,406-430,478,525                                                              
+  fusion-engine.service.ts                        |     100 |     86.2 |     100 |     100 | 126-127,153,201                                                                              
+  rule-engine.service.ts                          |    93.7 |    73.68 |     100 |      95 | 86,120-121,228,240,337                                                                       
+  rule-engine.ts                                  |    17.3 |        0 |       0 |   14.28 | 24-144                                                                                       
+  rule-evaluator.ts                               |   82.75 |    73.17 |     100 |   80.39 | 34,53,113-117,122,130,136,148-151                                                            
+  rule-parser.ts                                  |   91.66 |     86.2 |     100 |   91.11 | 39,68,84,105                                                                                 
+ modules/recommendation/entities                  |   93.33 |      100 |      40 |   95.79 |                                                                                              
+  association-config.entity.ts                    |     100 |      100 |     100 |     100 |                                                                                              
+  clustering-config.entity.ts                     |     100 |      100 |     100 |     100 |                                                                                              
+  customer-tag.entity.ts                          |   92.85 |      100 |       0 |   91.66 | 38                                                                                           
+  customer.entity.ts                              |   95.34 |      100 |      60 |    97.5 | 108                                                                                          
+  index.ts                                        |       0 |      100 |       0 |       0 | 1-3                                                                                          
+  recommendation-rule.entity.ts                   |     100 |      100 |     100 |     100 |                                                                                              
+  tag-recommendation.entity.ts                    |     100 |      100 |     100 |     100 |                                                                                              
+ modules/recommendation/seeds                     |     100 |      100 |     100 |     100 |                                                                                              
+  default-rules.seed.ts                           |     100 |      100 |     100 |     100 |                                                                                              
+ modules/recommendation/services                  |   82.24 |    67.25 |    88.4 |    82.3 |                                                                                              
+  association-manager.service.ts                  |   62.66 |    59.25 |   66.66 |   61.64 | 63,67,105,110,115-120,143-193,202,213,217,221                                                
+  clustering-manager.service.ts                   |   82.65 |    58.62 |   91.66 |   82.29 | 80,84,126,132-134,215-240,279,288-293                                                        
+  conflict-detector.service.ts                    |   82.29 |    63.49 |   83.92 |   82.14 | 173,196-199,248-249,317-338,360,627,663,696,753,756,759,762,767,770,833-850,920-951,977-1002 
+  customer.service.ts                             |   65.54 |    54.34 |   85.71 |   67.85 | 206-289                                                                                      
+  recommendation-seed.service.ts                  |     100 |       80 |     100 |     100 | 22                                                                                           
+  rfm-analysis.service.ts                         |     100 |    93.47 |     100 |     100 | 141-147                                                                                      
+  rule-engine.service.ts                          |    95.4 |    82.35 |     100 |    98.7 | 142                                                                                          
+ modules/scoring                                  |     100 |      100 |     100 |     100 |                                                                                              
+  scoring.controller.ts                           |     100 |      100 |     100 |     100 |                                                                                              
+  scoring.service.ts                              |     100 |      100 |     100 |     100 |                                                                                              
+ modules/scoring/dto                              |   69.23 |      100 |      20 |   78.26 |                                                                                              
+  get-scores.dto.ts                               |   69.23 |      100 |      20 |   78.26 | 20,32,62,75,94                                                                               
+ modules/scoring/entities                         |   86.36 |      100 |       0 |   89.47 |                                                                                              
+  index.ts                                        |       0 |      100 |       0 |       0 | 1                                                                                            
+  tag-score.entity.ts                             |      95 |      100 |       0 |   94.44 | 55                                                                                           
+ modules/user/controllers                         |   88.88 |      100 |   66.66 |      88 |                                                                                              
+  user.controller.ts                              |   88.88 |      100 |   66.66 |      88 | 102,111,123                                                                                  
+ modules/user/entities                            |     100 |      100 |     100 |     100 |                                                                                              
+  user.entity.ts                                  |     100 |      100 |     100 |     100 |                                                                                              
+ modules/user/services                            |    92.7 |    83.33 |   92.85 |   92.47 |                                                                                              
+  user.service.ts                                 |    92.7 |    83.33 |   92.85 |   92.47 | 168-169,180-185,196,202                                                                      
+--------------------------------------------------|---------|----------|---------|---------|----------------------------------------------------------------------------------------------
+Summary of all failing tests
+FAIL src/infrastructure/redis/cache.service.spec.ts (6.98 s)
+  ● CacheService › mset › should handle mset errors gracefully
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+    [0m [90m 384 |[39m
+     [90m 385 |[39m       [90m// mset catches the error and re-throws, so we expect it to reject[39m
+    [31m[1m>[22m[39m[90m 386 |[39m       [36mawait[39m expect(service[33m.[39mmset(entries))[33m.[39mrejects[33m.[39mtoThrow()[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 387 |[39m     })[33m;[39m
+     [90m 388 |[39m   })[33m;[39m
+     [90m 389 |[39m[0m
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (src/infrastructure/redis/cache.service.spec.ts:386:13)
+
+
+Test Suites: 1 failed, 77 passed, 78 total
+Tests:       1 failed, 2 skipped, 1156 passed, 1159 total
+Snapshots:   0 total
+Time:        24.054 s
+Ran all test suites.

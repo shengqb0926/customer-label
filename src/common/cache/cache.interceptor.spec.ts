@@ -87,6 +87,7 @@ describe('CacheInterceptor', () => {
         .mockReturnValueOnce((...args: any[]) => `test:${args[0]}`) // key generator
         .mockReturnValueOnce(3600); // ttl
       
+      // Cache miss - return null
       mockCacheService.get.mockResolvedValue(null);
       mockCacheService.set.mockResolvedValue(undefined);
 
@@ -95,21 +96,24 @@ describe('CacheInterceptor', () => {
         getArgs: jest.fn().mockReturnValue([1]),
       };
 
+      // Use real RxJS Observable to properly simulate tap behavior
+      const { of } = require('rxjs');
+      const handleResult = of(mockData);
+
       const nextMock = {
-        handle: jest.fn().mockReturnValue({
-          pipe: jest.fn((operator) => {
-            // Simulate the tap operator execution
-            return {
-              subscribe: jest.fn((callback) => callback(mockData)),
-            };
-          }),
-        }),
+        handle: jest.fn().mockReturnValue(handleResult),
       };
 
-      await interceptor.intercept(contextMock as any, nextMock as any);
+      // Call intercept and convert Observable to Promise to trigger execution
+      const result = await interceptor.intercept(contextMock as any, nextMock as any);
+      
+      // Convert the returned Observable to Promise to ensure tap operator executes
+      if (result && typeof result.toPromise === 'function') {
+        await result.toPromise();
+      }
 
       expect(cacheService.get).toHaveBeenCalledWith('test:1');
-      // The set should be called after the tap operator processes the result
+      // The set should be called after processing the result
       expect(cacheService.set).toHaveBeenCalled();
       expect(nextMock.handle).toHaveBeenCalled();
     });

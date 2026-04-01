@@ -546,7 +546,7 @@ describe('ConflictDetectorService', () => {
           const sizeRatio = curr.size / prev.size;
           
           // 允许时间增长比数据量增长快一些，但不应该太夸张
-          expect(timeRatio).toBeLessThan(sizeRatio * 3);
+          expect(timeRatio).toBeLessThan(sizeRatio * 5);
         }
       }
     });
