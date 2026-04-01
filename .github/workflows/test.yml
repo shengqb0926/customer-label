@@ -5,6 +5,16 @@ on:
     branches: [ master, develop ]
   pull_request:
     branches: [ master, develop ]
+  workflow_dispatch:
+    inputs:
+      performance_tests:
+        description: '运行性能基准测试（会显著增加运行时间）'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   test:
@@ -47,23 +57,46 @@ jobs:
           fi
       
       - name: Run unit tests with coverage
+        env:
+          PERFORMANCE_TESTS: ${{ github.event.inputs.performance_tests || 'false' }}
         run: |
-          # 运行单元测试，跳过需要原生模块的测试（bcrypt 在 Linux CI 环境可能有问题）
-          npm test -- --coverage \
-            --testPathIgnorePatterns="e2e" \
-            --testPathIgnorePatterns="auth" \
-            --coverageReporters=text-summary \
-            --coverageReporters=json-summary \
-            --maxWorkers=2 || {
-              echo "⚠️ 部分测试失败，尝试重新运行不含 auth 模块的测试..."
-              npm test -- --coverage \
-                --testPathIgnorePatterns="e2e" \
-                --testPathIgnorePatterns="auth.*\\.spec\\.ts" \
-                --coverageReporters=text-summary \
-                --coverageReporters=json-summary \
-                --maxWorkers=2
-            }
-
+          # 判断是否启用性能测试
+          if [ "$PERFORMANCE_TESTS" = "true" ]; then
+            echo "🚀 运行完整测试套件（包含性能基准测试）..."
+            npm test -- --coverage \
+              --testPathIgnorePatterns="e2e" \
+              --testPathIgnorePatterns="auth" \
+              --coverageReporters=text-summary \
+              --coverageReporters=json-summary \
+              --maxWorkers=2 || {
+                echo "⚠️ 部分测试失败，尝试重新运行不含 auth 模块的测试..."
+                npm test -- --coverage \
+                  --testPathIgnorePatterns="e2e" \
+                  --testPathIgnorePatterns="auth.*\\.spec\\.ts" \
+                  --coverageReporters=text-summary \
+                  --coverageReporters=json-summary \
+                  --maxWorkers=2
+              }
+          else
+            echo "✅ 运行常规测试（跳过性能基准测试）..."
+            npm test -- --coverage \
+              --testPathIgnorePatterns="e2e" \
+              --testPathIgnorePatterns="auth" \
+              --testPathIgnorePatterns="performance.benchmark.spec.ts" \
+              --coverageReporters=text-summary \
+              --coverageReporters=json-summary \
+              --maxWorkers=2 || {
+                echo "⚠️ 部分测试失败，尝试重新运行..."
+                npm test -- --coverage \
+                  --testPathIgnorePatterns="e2e" \
+                  --testPathIgnorePatterns="auth.*\\.spec\\.ts" \
+                  --testPathIgnorePatterns="performance.benchmark.spec.ts" \
+                  --coverageReporters=text-summary \
+                  --coverageReporters=json-summary \
+                  --maxWorkers=2
+              }
+          fi
+      
       - name: Check coverage thresholds
         run: |
           # 检查覆盖率报告是否存在
