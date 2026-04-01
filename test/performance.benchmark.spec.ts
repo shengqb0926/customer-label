@@ -134,12 +134,12 @@ describe('Performance Benchmark Suite (e2e)', () => {
       .overrideProvider(ConfigService)
       .useValue({
         get: (key: string) => {
-          if (key === 'database.host') return process.env.TEST_DB_HOST || 'localhost';
+          if (key === 'database.host') return process.env.TEST_DB_HOST || '127.0.0.1'; // 使用 IPv4 避免 GitHub Actions 中 IPv6 连接问题
           if (key === 'database.port') return parseInt(process.env.TEST_DB_PORT || '5432');
           if (key === 'database.username') return process.env.TEST_DB_USERNAME || 'postgres';
           if (key === 'database.password') return process.env.TEST_DB_PASSWORD || 'postgres';
           if (key === 'database.database') return process.env.TEST_DB_DATABASE || 'customer_label_test';
-          if (key === 'redis.url') return process.env.TEST_REDIS_URL || 'redis://localhost:6379';
+          if (key === 'redis.url') return process.env.TEST_REDIS_URL || 'redis://127.0.0.1:6379'; // 使用 IPv4
           if (key === 'redis.cluster.enabled') return false;
           if (key === 'jwt.secret') return 'test-secret-key-for-benchmark-12345';
           if (key === 'jwt.expiresIn') return '1h';
