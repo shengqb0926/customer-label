@@ -205,7 +205,7 @@ const VisualAssociationRuleBuilder: React.FC<VisualRuleBuilderProps> = ({ config
                     <ul>
                       <li><strong>最小支持度：</strong> 项集出现的最低频率阈值（越低发现越多规则）</li>
                       <li><strong>最小置信度：</strong> 规则的可信程度（越高规则越可靠）</li>
-                      <li><strong>最小提升度：</strong> 规则的相关性强度（>1 表示正相关）</li>
+                      <li><strong>最小提升度：</strong> 规则的相关性强度（{'>'}1 表示正相关）</li>
                     </ul>
                   }
                   type="info"

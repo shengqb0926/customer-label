@@ -23,8 +23,8 @@ import {
   DashboardOutlined,
   ThunderboltOutlined,
   BellOutlined,
-  TrendUpOutlined,
-  TrendDownOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   ReloadOutlined,
@@ -268,15 +268,15 @@ export default function Dashboard() {
               title="客户总数"
               value={metrics.totalCustomers}
               prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff' } }}
             />
             <div style={{ marginTop: 16 }}>
               <Space>
                 <Tag color="blue">
                   {metrics.customerGrowthRate > 0 ? (
-                    <TrendUpOutlined />
+                    <ArrowUpOutlined />
                   ) : (
-                    <TrendDownOutlined />
+                    <ArrowDownOutlined />
                   )}
                   {metrics.customerGrowthRate > 0 ? '+' : ''}{metrics.customerGrowthRate}%
                 </Tag>
@@ -295,15 +295,15 @@ export default function Dashboard() {
               title="推荐记录"
               value={metrics.totalRecommendations}
               prefix={<ExperimentOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
             <div style={{ marginTop: 16 }}>
               <Space>
                 <Tag color="green">
                   {metrics.recommendationGrowthRate > 0 ? (
-                    <TrendUpOutlined />
+                    <ArrowUpOutlined />
                   ) : (
-                    <TrendDownOutlined />
+                    <ArrowDownOutlined />
                   )}
                   {metrics.recommendationGrowthRate > 0 ? '+' : ''}{metrics.recommendationGrowthRate}%
                 </Tag>
@@ -323,7 +323,7 @@ export default function Dashboard() {
               value={metrics.avgScore}
               precision={2}
               prefix={<TrophyOutlined />}
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14' } }}
             />
             <div style={{ marginTop: 16 }}>
               <Progress
@@ -349,7 +349,7 @@ export default function Dashboard() {
               title="高分客户"
               value={metrics.highScoreCount}
               prefix={<DashboardOutlined />}
-              valueStyle={{ color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1' } }}
             />
             <div style={{ marginTop: 16 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>
@@ -405,7 +405,7 @@ export default function Dashboard() {
         {/* 系统性能监控 */}
         <Col xs={24} md={12}>
           <Card title="⚡ 系统性能监控">
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Space orientation="vertical" style={{ width: '100%' }} size="middle">
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Text>平均响应时间</Text>
                 <Text strong>{metrics.avgResponseTime.toFixed(2)} ms</Text>
@@ -455,7 +455,7 @@ export default function Dashboard() {
           </Button>
         }
       >
-        <Space direction="vertical" style={{ width: '100%' }} size="small">
+        <Space orientation="vertical" style={{ width: '100%' }} size="small">
           {notifications.map(noti => (
             <Alert
               key={noti.id}
@@ -521,7 +521,7 @@ export default function Dashboard() {
                       '0%': '#108ee9',
                       '100%': '#87d068',
                     }}
-                    format={(percent) => `${percent.toFixed(1)}%`}
+                    format={(percent) => `${(percent || 0).toFixed(1)}%`}
                   />
                 ),
               },

@@ -11,7 +11,6 @@ import {
   DownloadOutlined,
   ThunderboltOutlined,
   ExperimentOutlined,
-  ClusterOutlined,
   LinkOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -410,7 +409,7 @@ const CustomerList: React.FC = () => {
               <Button
                 type="primary"
                 size="small"
-                icon={<ClusterOutlined />}
+                icon={<ExperimentOutlined />}
                 onClick={() => handleTriggerEngine(record.id, 'clustering')}
               >
                 聚合

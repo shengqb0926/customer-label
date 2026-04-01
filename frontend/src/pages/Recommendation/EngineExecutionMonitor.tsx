@@ -18,7 +18,7 @@ import {
   SearchOutlined,
   ReloadOutlined,
   ThunderboltOutlined,
-  ClusterOutlined,
+  ExperimentOutlined,
   LinkOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -124,7 +124,7 @@ const EngineExecutionMonitor: React.FC = () => {
       render: (type: string) => {
         const iconMap = {
           rule: <ThunderboltOutlined />,
-          clustering: <ClusterOutlined />,
+          clustering: <ExperimentOutlined />,
           association: <LinkOutlined />,
         };
         const colorMap = {
@@ -187,7 +187,7 @@ const EngineExecutionMonitor: React.FC = () => {
               title="总执行次数"
               value={stats.total}
               suffix="次"
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff' } }}
             />
           </Card>
         </Col>
@@ -198,7 +198,7 @@ const EngineExecutionMonitor: React.FC = () => {
               value={stats.rule}
               suffix="次"
               prefix={<ThunderboltOutlined />}
-              valueStyle={{ color: '#fa8c16' }}
+              styles={{ content: { color: '#fa8c16' } }}
             />
           </Card>
         </Col>
@@ -208,8 +208,8 @@ const EngineExecutionMonitor: React.FC = () => {
               title="聚合引擎"
               value={stats.clustering}
               suffix="次"
-              prefix={<ClusterOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              prefix={<ExperimentOutlined />}
+              styles={{ content: { color: '#1890ff' } }}
             />
           </Card>
         </Col>
@@ -220,7 +220,7 @@ const EngineExecutionMonitor: React.FC = () => {
               value={stats.association}
               suffix="次"
               prefix={<LinkOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
           </Card>
         </Col>
@@ -233,7 +233,7 @@ const EngineExecutionMonitor: React.FC = () => {
               title="成功次数"
               value={stats.success}
               suffix="次"
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
             <Progress
               percent={stats.total > 0 ? Math.round((stats.success / stats.total) * 100) : 0}

@@ -200,7 +200,7 @@ const AssociationPerformanceAnalysis: React.FC<AssociationPerformanceAnalysisPro
                 title="总规则数"
                 value={overallMetrics.totalRules}
                 prefix={<LinkOutlined />}
-                valueStyle={{ color: '#1890ff' }}
+                styles={{ content: { color: '#1890ff' } }}
               />
             </Card>
           </Col>
@@ -212,7 +212,7 @@ const AssociationPerformanceAnalysis: React.FC<AssociationPerformanceAnalysisPro
                 value={overallMetrics.avgSupport}
                 precision={2}
                 prefix={<BarChartOutlined />}
-                valueStyle={{ color: '#faad14' }}
+                styles={{ content: { color: '#faad14' } }}
               />
               <div style={{ marginTop: 16 }}>
                 <Text type="secondary">频繁程度</Text>
@@ -227,7 +227,7 @@ const AssociationPerformanceAnalysis: React.FC<AssociationPerformanceAnalysisPro
                 value={overallMetrics.avgConfidence}
                 precision={2}
                 prefix={<TrophyOutlined />}
-                valueStyle={{ color: '#52c41a' }}
+                styles={{ content: { color: '#52c41a' } }}
               />
               <div style={{ marginTop: 16 }}>
                 <Text type="secondary">可信程度</Text>
@@ -242,7 +242,7 @@ const AssociationPerformanceAnalysis: React.FC<AssociationPerformanceAnalysisPro
                 value={overallMetrics.avgLift}
                 precision={2}
                 prefix={<BarChartOutlined />}
-                valueStyle={{ color: '#722ed1' }}
+                styles={{ content: { color: '#722ed1' } }}
               />
               <div style={{ marginTop: 16 }}>
                 <Text type="secondary">相关强度</Text>

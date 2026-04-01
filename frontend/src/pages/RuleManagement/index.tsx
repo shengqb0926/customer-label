@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Tabs, Typography, Space, Button, message } from 'antd';
 import {
   AppstoreOutlined,
-  TestOutlined,
+  ExperimentOutlined,
   HistoryOutlined,
   BarChartOutlined,
 } from '@ant-design/icons';
@@ -53,7 +53,7 @@ const RuleManagement: React.FC = () => {
       key: 'test',
       label: (
         <Space>
-          <TestOutlined />
+          <ExperimentOutlined />
           规则测试
         </Space>
       ),

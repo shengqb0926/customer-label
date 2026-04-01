@@ -218,13 +218,30 @@ const AssociationConfigManagement: React.FC = () => {
     fetchConfigs();
   }, []);
 
+  // 【调试用】监听 configs 状态变化
+  useEffect(() => {
+    console.log('🔍 [DEBUG-Association] configs 状态变化:', configs);
+    console.log('🔍 [DEBUG-Association] configs 长度:', configs?.length || 0);
+    console.log('🔍 [DEBUG-Association] 活跃配置数:', configs?.filter(c => c.isActive).length || 0);
+  }, [configs]);
+
   const fetchConfigs = async () => {
     setLoading(true);
     try {
       const response = await associationConfigService.getConfigs();
-      setConfigs(response.data);
-    } catch (error) {
-      message.error('获取配置列表失败');
+      console.log('🔍 [DEBUG-Association] fetchConfigs - response:', response);
+      console.log('🔍 [DEBUG-Association] fetchConfigs - response.data:', response?.data);
+      
+      // ✅ 修复：response 可能是数组或包含 data 属性的对象
+      const configsData = Array.isArray(response) ? response : (response.data || []);
+      console.log('🔍 [DEBUG-Association] fetchConfigs - 实际使用的数据:', configsData);
+      console.log('🔍 [DEBUG-Association] fetchConfigs - 实际数据长度:', configsData.length);
+      
+      setConfigs(configsData);
+      console.log('✅ [DEBUG-Association] fetchConfigs - 已调用 setConfigs');
+    } catch (error: any) {
+      console.error('❌ [DEBUG-Association] fetchConfigs - 错误:', error);
+      message.error(`获取配置列表失败：${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -482,9 +499,9 @@ const AssociationConfigManagement: React.FC = () => {
           <Card>
             <Statistic
               title="总配置数"
-              value={configs.length}
+              value={(configs || []).length}
               suffix="个"
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff' } }}
             />
           </Card>
         </Col>
@@ -492,9 +509,9 @@ const AssociationConfigManagement: React.FC = () => {
           <Card>
             <Statistic
               title="活跃配置"
-              value={configs.filter(c => c.isActive).length}
+              value={(configs || []).filter(c => c.isActive).length}
               suffix="个"
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
           </Card>
         </Col>
@@ -502,9 +519,9 @@ const AssociationConfigManagement: React.FC = () => {
           <Card>
             <Statistic
               title="总运行次数"
-              value={configs.reduce((sum, c) => sum + c.runCount, 0)}
+              value={(configs || []).reduce((sum, c) => sum + (c.runCount || 0), 0)}
               suffix="次"
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14' } }}
             />
           </Card>
         </Col>
@@ -513,12 +530,12 @@ const AssociationConfigManagement: React.FC = () => {
             <Statistic
               title="平均质量"
               value={
-                configs.filter(c => c.avgQualityScore).length > 0
-                  ? (configs.reduce((sum, c) => sum + (c.avgQualityScore || 0), 0) /
-                      configs.filter(c => c.avgQualityScore).length).toFixed(3)
+                (configs || []).filter(c => c.avgQualityScore).length > 0
+                  ? ((configs || []).reduce((sum, c) => sum + (c.avgQualityScore || 0), 0) /
+                      (configs || []).filter(c => c.avgQualityScore).length).toFixed(3)
                   : '0.000'
               }
-              valueStyle={{ color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1' } }}
             />
           </Card>
         </Col>
@@ -638,7 +655,7 @@ const AssociationConfigManagement: React.FC = () => {
       {/* 创建/编辑弹窗 */}
       <Modal
         title={editingConfig ? '编辑关联规则配置' : '新建关联规则配置'}
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={handleSubmit}
         width={750}
@@ -733,7 +750,7 @@ const AssociationConfigManagement: React.FC = () => {
       {/* 模板选择弹窗 */}
       <Modal
         title="从模板创建配置"
-        visible={templateVisible}
+        open={templateVisible}
         onCancel={() => setTemplateVisible(false)}
         footer={null}
         width={900}
@@ -804,7 +821,7 @@ const AssociationConfigManagement: React.FC = () => {
       {/* 详情弹窗 */}
       <Modal
         title="配置详情"
-        visible={detailVisible}
+        open={detailVisible}
         onCancel={() => setDetailVisible(false)}
         footer={null}
         width={800}

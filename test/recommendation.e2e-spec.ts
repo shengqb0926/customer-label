@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ConfigService } from '@nestjs/config';
+import { loginAndGetToken, setAuthHeader } from '../test-helpers';
 
 describe('Recommendation System E2E (e2e)', () => {
   let app: INestApplication;
+  let authToken: string;
   let testCustomerId: number;
   let createdRuleId: number;
   let createdRecommendationId: number;
@@ -32,23 +34,36 @@ describe('Recommendation System E2E (e2e)', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.init();
+
+    // 获取认证 token
+    const tokens = await loginAndGetToken(app);
+    authToken = tokens.accessToken;
   });
 
   afterAll(async () => {
     // Cleanup
     if (createdRecommendationId) {
       try {
-        await request(app.getHttpServer()).delete(`/recommendations/${createdRecommendationId}`);
+        await setAuthHeader(
+          request(app.getHttpServer()).delete(`/recommendations/${createdRecommendationId}`),
+          authToken
+        );
       } catch (e) {}
     }
     if (createdRuleId) {
       try {
-        await request(app.getHttpServer()).delete(`/rules/${createdRuleId}`);
+        await setAuthHeader(
+          request(app.getHttpServer()).delete(`/rules/${createdRuleId}`),
+          authToken
+        );
       } catch (e) {}
     }
     if (testCustomerId) {
       try {
-        await request(app.getHttpServer()).delete(`/customers/${testCustomerId}`);
+        await setAuthHeader(
+          request(app.getHttpServer()).delete(`/customers/${testCustomerId}`),
+          authToken
+        );
       } catch (e) {}
     }
     await app.close();
@@ -68,8 +83,10 @@ describe('Recommendation System E2E (e2e)', () => {
         isActive: true,
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/rules')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/rules'),
+        authToken
+      )
         .send(ruleDto)
         .expect(201);
 
@@ -82,8 +99,10 @@ describe('Recommendation System E2E (e2e)', () => {
     });
 
     it('/rules (GET) - should get rules list', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/rules?page=1&limit=10')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/rules?page=1&limit=10'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -92,8 +111,10 @@ describe('Recommendation System E2E (e2e)', () => {
     });
 
     it('/rules/:id (GET) - should get rule by id', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/rules/${createdRuleId}`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get(`/rules/${createdRuleId}`),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.id).toBe(createdRuleId);
@@ -106,8 +127,10 @@ describe('Recommendation System E2E (e2e)', () => {
         isActive: false,
       };
 
-      const response = await request(app.getHttpServer())
-        .put(`/rules/${createdRuleId}`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).put(`/rules/${createdRuleId}`),
+        authToken
+      )
         .send(updateDto)
         .expect(200);
 
@@ -129,8 +152,10 @@ describe('Recommendation System E2E (e2e)', () => {
         lastOrderDate: new Date().toISOString(),
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/customers')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/customers'),
+        authToken
+      )
         .send(customerDto)
         .expect(201);
 
@@ -147,8 +172,10 @@ describe('Recommendation System E2E (e2e)', () => {
         detectConflicts: false,
       };
 
-      const response = await request(app.getHttpServer())
-        .post(`/recommendations/generate/${testCustomerId}`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post(`/recommendations/generate/${testCustomerId}`),
+        authToken
+      )
         .send(options)
         .expect(201);
 
@@ -158,8 +185,10 @@ describe('Recommendation System E2E (e2e)', () => {
     });
 
     it('/recommendations/customer/:customerId (GET) - should get customer recommendations', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/recommendations/customer/${testCustomerId}?page=1&limit=10`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get(`/recommendations/customer/${testCustomerId}?page=1&limit=10`),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -178,8 +207,10 @@ describe('Recommendation System E2E (e2e)', () => {
     beforeAll(async () => {
       // Ensure we have a recommendation to work with
       if (!createdRecommendationId) {
-        const response = await request(app.getHttpServer())
-          .get(`/recommendations/customer/${testCustomerId}?page=1&limit=1`)
+        const response = await setAuthHeader(
+          request(app.getHttpServer()).get(`/recommendations/customer/${testCustomerId}?page=1&limit=1`),
+          authToken
+        )
           .expect(200);
         
         if (response.body.data && response.body.data.length > 0) {
@@ -199,8 +230,10 @@ describe('Recommendation System E2E (e2e)', () => {
         feedbackReason: 'E2E 测试接受',
       };
 
-      const response = await request(app.getHttpServer())
-        .post(`/recommendations/${createdRecommendationId}/accept`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post(`/recommendations/${createdRecommendationId}/accept`),
+        authToken
+      )
         .send(acceptDto)
         .expect(200);
 
@@ -209,8 +242,10 @@ describe('Recommendation System E2E (e2e)', () => {
     });
 
     it('/recommendations/stats (GET) - should get recommendation statistics', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/recommendations/stats')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/recommendations/stats'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.total).toBeDefined();
@@ -219,8 +254,10 @@ describe('Recommendation System E2E (e2e)', () => {
     });
 
     it('/recommendations/status-stats (GET) - should get status statistics', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/recommendations/status-stats')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/recommendations/status-stats'),
+        authToken
+      )
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -233,8 +270,10 @@ describe('Recommendation System E2E (e2e)', () => {
 
   describe('Recommendation Filtering and Search', () => {
     it('/recommendations (GET) - should support filtering by status', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/recommendations?status=PENDING&page=1&limit=10')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/recommendations?status=PENDING&page=1&limit=10'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -242,8 +281,10 @@ describe('Recommendation System E2E (e2e)', () => {
     });
 
     it('/recommendations (GET) - should support filtering by source', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/recommendations?source=RULE&page=1&limit=10')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/recommendations?source=RULE&page=1&limit=10'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -254,16 +295,20 @@ describe('Recommendation System E2E (e2e)', () => {
       const startDate = new Date(Date.now() - 86400000).toISOString(); // 昨天
       const endDate = new Date().toISOString();
 
-      const response = await request(app.getHttpServer())
-        .get(`/recommendations?startDate=${startDate}&endDate=${endDate}&page=1&limit=10`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get(`/recommendations?startDate=${startDate}&endDate=${endDate}&page=1&limit=10`),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.data).toBeDefined();
     });
 
     it('/recommendations (GET) - should support sorting', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/recommendations?sortBy=confidence&sortOrder=desc&page=1&limit=10')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/recommendations?sortBy=confidence&sortOrder=desc&page=1&limit=10'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -286,8 +331,10 @@ describe('Recommendation System E2E (e2e)', () => {
 
       // First create should succeed (already done above)
       // This test verifies uniqueness constraint
-      return request(app.getHttpServer())
-        .post('/rules')
+      return setAuthHeader(
+        request(app.getHttpServer()).post('/rules'),
+        authToken
+      )
         .send({
           ruleName: 'Duplicate Rule Name',
           ruleExpression: 'test',
@@ -301,15 +348,19 @@ describe('Recommendation System E2E (e2e)', () => {
     });
 
     it('/recommendations/generate/:id (POST) - should fail for non-existent customer', async () => {
-      return request(app.getHttpServer())
-        .post('/recommendations/generate/999999')
+      return setAuthHeader(
+        request(app.getHttpServer()).post('/recommendations/generate/999999'),
+        authToken
+      )
         .send({ mode: 'rule' })
         .expect(404);
     });
 
     it('/recommendations/:id/accept (POST) - should fail for non-existent recommendation', async () => {
-      return request(app.getHttpServer())
-        .post('/recommendations/999999/accept')
+      return setAuthHeader(
+        request(app.getHttpServer()).post('/recommendations/999999/accept'),
+        authToken
+      )
         .send({})
         .expect(404);
     });

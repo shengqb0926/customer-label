@@ -1,13 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { getTestConfig, createTestTypeOrmConfig, sleep } from './test-utils';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { loginAndGetToken, setAuthHeader } from '../test-helpers';
 
 describe('Customer API E2E (e2e)', () => {
   let app: INestApplication;
+  let authToken: string;
   let createdCustomerId: number;
   let testIdentifier: string;
 
@@ -33,6 +35,10 @@ describe('Customer API E2E (e2e)', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     await app.init();
+
+    // 获取认证 token
+    const tokens = await loginAndGetToken(app);
+    authToken = tokens.accessToken;
   });
 
   afterAll(async () => {
@@ -52,13 +58,15 @@ describe('Customer API E2E (e2e)', () => {
         gender: 'M',
         age: 30,
         city: '北京',
-        totalOrders: 5,
-        totalAmount: 5000,
+        orderCount: 5,
+        totalAssets: 5000,
         lastOrderDate: new Date().toISOString(),
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/customers')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/customers'),
+        authToken
+      )
         .send(createCustomerDto)
         .expect(201);
 
@@ -70,8 +78,10 @@ describe('Customer API E2E (e2e)', () => {
     });
 
     it('/customers/:id (GET) - should get customer by id', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/customers/${createdCustomerId}`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get(`/customers/${createdCustomerId}`),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.id).toBe(createdCustomerId);
@@ -79,8 +89,10 @@ describe('Customer API E2E (e2e)', () => {
     });
 
     it('/customers (GET) - should get customers list with pagination', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/customers?page=1&limit=10')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/customers?page=1&limit=10'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -93,22 +105,26 @@ describe('Customer API E2E (e2e)', () => {
     it('/customers/:id (PUT) - should update customer', async () => {
       const updateDto = {
         name: `${testIdentifier}_updated`,
-        totalOrders: 10,
-        totalAmount: 10000,
+        orderCount: 10,
+        totalAssets: 10000,
       };
 
-      const response = await request(app.getHttpServer())
-        .put(`/customers/${createdCustomerId}`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).put(`/customers/${createdCustomerId}`),
+        authToken
+      )
         .send(updateDto)
         .expect(200);
 
       expect(response.body.name).toBe(updateDto.name);
-      expect(response.body.totalOrders).toBe(updateDto.totalOrders);
+      expect(response.body.orderCount).toBe(updateDto.orderCount);
     });
 
     it('/customers/statistics (GET) - should get customer statistics', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/customers/statistics')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/customers/statistics'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.total).toBeDefined();
@@ -117,13 +133,17 @@ describe('Customer API E2E (e2e)', () => {
     });
 
     it('/customers/:id (DELETE) - should delete customer', async () => {
-      await request(app.getHttpServer())
-        .delete(`/customers/${createdCustomerId}`)
+      await setAuthHeader(
+        request(app.getHttpServer()).delete(`/customers/${createdCustomerId}`),
+        authToken
+      )
         .expect(200);
 
       // Verify deletion
-      await request(app.getHttpServer())
-        .get(`/customers/${createdCustomerId}`)
+      await setAuthHeader(
+        request(app.getHttpServer()).get(`/customers/${createdCustomerId}`),
+        authToken
+      )
         .expect(404);
     });
   });
@@ -136,13 +156,14 @@ describe('Customer API E2E (e2e)', () => {
       const createDto = {
         name: `RFM_Test_${Date.now()}`,
         email: `rfm_${Date.now()}@example.com`,
-        totalOrders: 15,
-        totalAmount: 50000,
-        lastOrderDate: new Date().toISOString(),
+        orderCount: 15,
+        totalAssets: 50000,
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/customers')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/customers'),
+        authToken
+      )
         .send(createDto)
         .expect(201);
 
@@ -151,15 +172,19 @@ describe('Customer API E2E (e2e)', () => {
 
     afterAll(async () => {
       if (rfmCustomerId) {
-        await request(app.getHttpServer())
-          .delete(`/customers/${rfmCustomerId}`)
+        await setAuthHeader(
+          request(app.getHttpServer()).delete(`/customers/${rfmCustomerId}`),
+          authToken
+        )
           .expect(200);
       }
     });
 
     it('/customers/rfm/analyze/:id (GET) - should analyze customer RFM', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/customers/rfm/analyze/${rfmCustomerId}`)
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get(`/customers/rfm/analyze/${rfmCustomerId}`),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.customerId).toBe(rfmCustomerId);
@@ -170,8 +195,10 @@ describe('Customer API E2E (e2e)', () => {
     });
 
     it('/customers/rfm/summary (GET) - should get RFM summary', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/customers/rfm/summary')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/customers/rfm/summary'),
+        authToken
+      )
         .expect(200);
 
       expect(response.body.segments).toBeDefined();
@@ -179,8 +206,10 @@ describe('Customer API E2E (e2e)', () => {
     });
 
     it('/customers/rfm/high-value (GET) - should get high value customers', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/customers/rfm/high-value?limit=10')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).get('/customers/rfm/high-value?limit=10'),
+        authToken
+      )
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -206,8 +235,10 @@ describe('Customer API E2E (e2e)', () => {
         },
       ];
 
-      const response = await request(app.getHttpServer())
-        .post('/customers/batch')
+      const response = await setAuthHeader(
+        request(app.getHttpServer()).post('/customers/batch'),
+        authToken
+      )
         .send(customers)
         .expect(201);
 
@@ -219,8 +250,10 @@ describe('Customer API E2E (e2e)', () => {
 
     it('/customers/batch (DELETE) - should batch delete customers', async () => {
       // First create some customers
-      const createResponse = await request(app.getHttpServer())
-        .post('/customers/batch')
+      const createResponse = await setAuthHeader(
+        request(app.getHttpServer()).post('/customers/batch'),
+        authToken
+      )
         .send([
           { name: `ToDelete_1_${Date.now()}`, email: `del1_${Date.now()}@test.com` },
           { name: `ToDelete_2_${Date.now()}`, email: `del2_${Date.now()}@test.com` },
@@ -230,8 +263,10 @@ describe('Customer API E2E (e2e)', () => {
       const idsToDelete = createResponse.body.map((c: any) => c.id);
 
       // Then delete them
-      const deleteResponse = await request(app.getHttpServer())
-        .delete('/customers/batch')
+      const deleteResponse = await setAuthHeader(
+        request(app.getHttpServer()).delete('/customers/batch'),
+        authToken
+      )
         .send({ ids: idsToDelete })
         .expect(200);
 
@@ -241,14 +276,18 @@ describe('Customer API E2E (e2e)', () => {
 
   describe('Error Handling', () => {
     it('/customers/:id (GET) - should return 404 for non-existent customer', async () => {
-      return request(app.getHttpServer())
-        .get('/customers/999999')
+      return setAuthHeader(
+        request(app.getHttpServer()).get('/customers/999999'),
+        authToken
+      )
         .expect(404);
     });
 
     it('/customers (POST) - should fail with invalid email', async () => {
-      return request(app.getHttpServer())
-        .post('/customers')
+      return setAuthHeader(
+        request(app.getHttpServer()).post('/customers'),
+        authToken
+      )
         .send({
           name: 'Test Customer',
           email: 'invalid-email',
@@ -260,8 +299,10 @@ describe('Customer API E2E (e2e)', () => {
       const uniqueEmail = `dup_${Date.now()}@test.com`;
       
       // Create first customer
-      await request(app.getHttpServer())
-        .post('/customers')
+      await setAuthHeader(
+        request(app.getHttpServer()).post('/customers'),
+        authToken
+      )
         .send({
           name: 'First Customer',
           email: uniqueEmail,
@@ -269,8 +310,10 @@ describe('Customer API E2E (e2e)', () => {
         .expect(201);
 
       // Try to create with same email
-      return request(app.getHttpServer())
-        .post('/customers')
+      return setAuthHeader(
+        request(app.getHttpServer()).post('/customers'),
+        authToken
+      )
         .send({
           name: 'Second Customer',
           email: uniqueEmail,

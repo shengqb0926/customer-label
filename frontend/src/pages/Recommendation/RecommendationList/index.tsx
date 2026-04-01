@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Input, Select, Space, Tag, Popconfirm, message, Typography, DatePicker, Row, Col, Statistic, Card, Progress, Modal, Form, Slider, Checkbox, Divider, Badge, Tooltip, Radio, ProgressProps } from 'antd';
+import { Table, Button, Input, Select, Space, Tag, Popconfirm, message, Typography, DatePicker, Row, Col, Statistic, Card, Progress, Modal, Form, Slider, Checkbox, Divider, Badge, Tooltip, Radio } from 'antd';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -44,8 +44,8 @@ type RecommendationStatus = 'pending' | 'accepted' | 'rejected' | boolean;
 // 置信度等级
 const CONFIDENCE_LEVELS = [
   { label: '高', value: 'high', range: [0.7, 1], color: 'green' },
-  { label: '中', value: 'medium', range: [0.4, 0.7), color: 'orange' },
-  { label: '低', value: 'low', range: [0, 0.4), color: 'red' },
+  { label: '中', value: 'medium', range: [0.4, 0.7], color: 'orange' },
+  { label: '低', value: 'low', range: [0, 0.4], color: 'red' },
 ];
 
 const RecommendationList: React.FC = () => {
@@ -71,7 +71,7 @@ const RecommendationList: React.FC = () => {
   const [advancedSearchVisible, setAdvancedSearchVisible] = React.useState(false);
   const [confidenceLevel, setConfidenceLevel] = useState<string>('all');
   const [batchProcessing, setBatchProcessing] = React.useState(false);
-  const [batchProgress, setBatchProgress] = React.useState({ percent: 0, status: 'active' as ProgressProps['status'] });
+  const [batchProgress, setBatchProgress] = React.useState({ percent: 0, status: 'active' as 'active' | 'exception' | 'success' | 'normal' });
 
   // 加载推荐列表和统计数据
   useEffect(() => {
@@ -744,7 +744,7 @@ const RecommendationList: React.FC = () => {
             <Statistic
               title={<span style={{ color: '#fff', fontWeight: 500 }}>📄 总推荐数</span>}
               value={statistics?.total ?? 0}
-              valueStyle={{ fontSize: 32, fontWeight: 700, color: '#fff' }}
+              styles={{ content: { fontSize: 32, fontWeight: 700, color: '#fff' } }}
             />
           </Card>
         </Col>
@@ -761,7 +761,7 @@ const RecommendationList: React.FC = () => {
             <Statistic
               title={<span style={{ color: '#fff', fontWeight: 500 }}>⏰ 待处理</span>}
               value={statistics?.pending ?? 0}
-              valueStyle={{ fontSize: 32, fontWeight: 700, color: '#fff' }}
+              styles={{ content: { fontSize: 32, fontWeight: 700, color: '#fff' } }}
             />
           </Card>
         </Col>
@@ -778,7 +778,7 @@ const RecommendationList: React.FC = () => {
             <Statistic
               title={<span style={{ color: '#fff', fontWeight: 500 }}>✅ 已接受</span>}
               value={statistics?.accepted ?? 0}
-              valueStyle={{ fontSize: 32, fontWeight: 700, color: '#fff' }}
+              styles={{ content: { fontSize: 32, fontWeight: 700, color: '#fff' } }}
             />
           </Card>
         </Col>
@@ -795,7 +795,7 @@ const RecommendationList: React.FC = () => {
             <Statistic
               title={<span style={{ color: '#fff', fontWeight: 500 }}>❌ 已拒绝</span>}
               value={statistics?.rejected ?? 0}
-              valueStyle={{ fontSize: 32, fontWeight: 700, color: '#fff' }}
+              styles={{ content: { fontSize: 32, fontWeight: 700, color: '#fff' } }}
             />
           </Card>
         </Col>

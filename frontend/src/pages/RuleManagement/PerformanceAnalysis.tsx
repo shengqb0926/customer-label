@@ -12,10 +12,12 @@ import {
   Select,
   Button,
   Empty,
+  Alert,
+  message,
 } from 'antd';
 import {
   BarChartOutlined,
-  TrendUpOutlined,
+  ArrowUpOutlined,
   UsergroupAddOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
@@ -179,7 +181,7 @@ const PerformanceAnalysis: React.FC<{ ruleId?: number }> = ({ ruleId }) => {
                     value={metrics.totalExecutions}
                     prefix={<BarChartOutlined />}
                     suffix="次"
-                    valueStyle={{ color: '#1890ff' }}
+                    styles={{ content: { color: '#1890ff' } }}
                   />
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     选定时间段内规则执行总次数
@@ -194,7 +196,7 @@ const PerformanceAnalysis: React.FC<{ ruleId?: number }> = ({ ruleId }) => {
                     value={metrics.matchedCount}
                     prefix={<CheckCircleOutlined />}
                     suffix="次"
-                    valueStyle={{ color: '#52c41a' }}
+                    styles={{ content: { color: '#52c41a' } }}
                   />
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     匹配成功率：{(metrics.matchRate * 100).toFixed(1)}%
@@ -208,9 +210,9 @@ const PerformanceAnalysis: React.FC<{ ruleId?: number }> = ({ ruleId }) => {
                     title="平均执行时间"
                     value={metrics.avgExecutionTime}
                     precision={2}
-                    prefix={<TrendUpOutlined />}
+                    prefix={<ArrowUpOutlined />}
                     suffix="ms"
-                    valueStyle={{ color: '#faad14' }}
+                    styles={{ content: { color: '#faad14' } }}
                   />
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     性能表现良好
@@ -226,7 +228,7 @@ const PerformanceAnalysis: React.FC<{ ruleId?: number }> = ({ ruleId }) => {
                     precision={1}
                     prefix={<UsergroupAddOutlined />}
                     suffix="%"
-                    valueStyle={{ color: '#722ed1' }}
+                    styles={{ content: { color: '#722ed1' } }}
                   />
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     已接受：{metrics.acceptedTags} / 已拒绝：{metrics.rejectedTags}
@@ -252,7 +254,7 @@ const PerformanceAnalysis: React.FC<{ ruleId?: number }> = ({ ruleId }) => {
                 description={
                   <Space direction="vertical">
                     <Text type="secondary">趋势图区域（可集成 Recharts/G2Plot）</Text>
-                    <Text type="tertiary" style={{ fontSize: 12 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
                       展示每日执行次数、匹配次数、接受数量的趋势变化
                     </Text>
                   </Space>

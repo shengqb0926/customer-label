@@ -7,13 +7,18 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "collectCoverageFrom": [
-    "**/*.(t|s)js",
-    "!**/node_modules/**",
-    "!**/dist/**",
-    "!**/*.spec.ts",
-    "!**/*.d.ts"
+    "src/**/*.(t|j)s",
+    "!src/**/*.spec.ts",
+    "!src/**/*.d.ts"
+  ],
+  "coveragePathIgnorePatterns": [
+    "/node_modules/",
+    "/dist/",
+    "/frontend/",
+    "\\.vite_cache"
   ],
   "coverageDirectory": "./coverage",
+  "coverageReporters": ["json-summary", "lcov", "text", "text-summary"],
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/src/$1"
   }

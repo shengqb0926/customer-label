@@ -271,25 +271,34 @@ export class ClusteringManagerService {
     // 根据不同算法验证必需参数
     if (algorithm === 'k-means') {
       // K-Means 需要 k 参数（聚类数量）
-      if (!parameters.k || typeof parameters.k !== 'number' || parameters.k < 2) {
+      const k = typeof parameters.k === 'string' ? Number(parameters.k) : parameters.k;
+      if (k === undefined || k === null || typeof k !== 'number' || isNaN(k) || k < 2) {
         throw new BadRequestException('K-Means 算法需要指定参数 k（聚类数量），且必须 >= 2');
       }
       // 可选参数：最大迭代次数
-      if (parameters.maxIterations && (typeof parameters.maxIterations !== 'number' || parameters.maxIterations < 1)) {
-        throw new BadRequestException('maxIterations 必须是正整数');
+      if (parameters.maxIterations !== undefined && parameters.maxIterations !== null) {
+        const maxIter = typeof parameters.maxIterations === 'string' 
+          ? Number(parameters.maxIterations) 
+          : parameters.maxIterations;
+        if (typeof maxIter !== 'number' || isNaN(maxIter) || maxIter < 1) {
+          throw new BadRequestException('maxIterations 必须是正整数');
+        }
       }
     } else if (algorithm === 'dbscan') {
       // DBSCAN 需要 eps 参数（邻域半径）
-      if (!parameters.eps || typeof parameters.eps !== 'number' || parameters.eps <= 0) {
+      const eps = typeof parameters.eps === 'string' ? Number(parameters.eps) : parameters.eps;
+      if (eps === undefined || eps === null || typeof eps !== 'number' || isNaN(eps) || eps <= 0) {
         throw new BadRequestException('DBSCAN 算法需要指定参数 eps（邻域半径），且必须 > 0');
       }
       // DBSCAN 需要 minPoints 参数
-      if (!parameters.minPoints || typeof parameters.minPoints !== 'number' || parameters.minPoints < 1) {
+      const minPoints = typeof parameters.minPoints === 'string' ? Number(parameters.minPoints) : parameters.minPoints;
+      if (minPoints === undefined || minPoints === null || typeof minPoints !== 'number' || isNaN(minPoints) || minPoints < 1) {
         throw new BadRequestException('DBSCAN 算法需要指定参数 minPoints，且必须 >= 1');
       }
     } else if (algorithm === 'hierarchical') {
       // 层次聚类需要 nClusters 参数
-      if (!parameters.nClusters || typeof parameters.nClusters !== 'number' || parameters.nClusters < 2) {
+      const nClusters = typeof parameters.nClusters === 'string' ? Number(parameters.nClusters) : parameters.nClusters;
+      if (nClusters === undefined || nClusters === null || typeof nClusters !== 'number' || isNaN(nClusters) || nClusters < 2) {
         throw new BadRequestException('层次聚类需要指定参数 nClusters（聚类数量），且必须 >= 2');
       }
     }

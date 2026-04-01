@@ -170,7 +170,7 @@ const PerformanceAnalysis: React.FC<PerformanceAnalysisProps> = ({ configId }) =
                 value={overallMetrics.avgSilhouetteScore}
                 precision={2}
                 prefix={<BarChartOutlined />}
-                valueStyle={{ color: qualityEval.color === 'green' ? '#52c41a' : '#1890ff' }}
+                styles={{ content: { color: qualityEval.color === 'green' ? '#52c41a' : '#1890ff' } }}
               />
               <div style={{ marginTop: 16 }}>
                 <Text type="secondary">聚类质量:</Text>{' '}
@@ -185,7 +185,7 @@ const PerformanceAnalysis: React.FC<PerformanceAnalysisProps> = ({ configId }) =
                 title="总样本数"
                 value={overallMetrics.totalSamples}
                 prefix={<TrophyOutlined />}
-                valueStyle={{ color: '#faad14' }}
+                styles={{ content: { color: '#faad14' } }}
               />
               <div style={{ marginTop: 16 }}>
                 <Text type="secondary">簇数量:</Text>{' '}
@@ -201,7 +201,7 @@ const PerformanceAnalysis: React.FC<PerformanceAnalysisProps> = ({ configId }) =
                 value={overallMetrics.totalInertia}
                 precision={2}
                 prefix={<CheckCircleOutlined />}
-                valueStyle={{ color: '#722ed1' }}
+                styles={{ content: { color: '#722ed1' } }}
               />
               <div style={{ marginTop: 16 }}>
                 <Text type="secondary">值越小越好</Text>

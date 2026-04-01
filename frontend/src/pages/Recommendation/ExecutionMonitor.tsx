@@ -148,7 +148,7 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({ configId }) => {
               <Statistic
                 title="成功"
                 value={stats.completed}
-                valueStyle={{ color: '#52c41a' }}
+                styles={{ content: { color: '#52c41a' } }}
                 prefix={<CheckCircleOutlined />}
               />
             </Card>
@@ -158,7 +158,7 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({ configId }) => {
               <Statistic
                 title="执行中"
                 value={stats.running}
-                valueStyle={{ color: '#1890ff' }}
+                styles={{ content: { color: '#1890ff' } }}
                 prefix={<SyncOutlined spin />}
               />
             </Card>
@@ -168,7 +168,7 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({ configId }) => {
               <Statistic
                 title="失败"
                 value={stats.failed}
-                valueStyle={{ color: '#ff4d4f' }}
+                styles={{ content: { color: '#ff4d4f' } }}
                 prefix={<CloseCircleOutlined />}
               />
             </Card>
@@ -289,7 +289,7 @@ const ExecutionMonitor: React.FC<ExecutionMonitorProps> = ({ configId }) => {
 
               {selectedTask.error && (
                 <Descriptions.Item label="错误信息" span={2}>
-                  <Alert message={selectedTask.error} type="error" showIcon />
+                  <Alert title={selectedTask.error} type="error" showIcon />
                 </Descriptions.Item>
               )}
             </Descriptions>

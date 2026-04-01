@@ -170,7 +170,7 @@ const AssociationExecutionMonitor: React.FC<AssociationExecutionMonitorProps> = 
               <Statistic
                 title="成功"
                 value={stats.completed}
-                valueStyle={{ color: '#52c41a' }}
+                styles={{ content: { color: '#52c41a' } }}
                 prefix={<CheckCircleOutlined />}
               />
             </Card>
@@ -180,7 +180,7 @@ const AssociationExecutionMonitor: React.FC<AssociationExecutionMonitorProps> = 
               <Statistic
                 title="执行中"
                 value={stats.running}
-                valueStyle={{ color: '#1890ff' }}
+                styles={{ content: { color: '#1890ff' } }}
                 prefix={<SyncOutlined spin />}
               />
             </Card>
@@ -190,7 +190,7 @@ const AssociationExecutionMonitor: React.FC<AssociationExecutionMonitorProps> = 
               <Statistic
                 title="失败"
                 value={stats.failed}
-                valueStyle={{ color: '#ff4d4f' }}
+                styles={{ content: { color: '#ff4d4f' } }}
                 prefix={<CloseCircleOutlined />}
               />
             </Card>
@@ -237,7 +237,7 @@ const AssociationExecutionMonitor: React.FC<AssociationExecutionMonitorProps> = 
                                   title="规则数量"
                                   value={task.result.ruleCount}
                                   suffix="条"
-                                  valueStyle={{ fontSize: 16 }}
+                                  styles={{ content: { fontSize: 16 } }}
                                 />
                               </Col>
                               <Col span={6}>
@@ -245,7 +245,7 @@ const AssociationExecutionMonitor: React.FC<AssociationExecutionMonitorProps> = 
                                   title="频繁项集"
                                   value={task.result.frequentItemCount}
                                   suffix="个"
-                                  valueStyle={{ fontSize: 16 }}
+                                  styles={{ content: { fontSize: 16 } }}
                                 />
                               </Col>
                               <Col span={6}>
@@ -253,7 +253,7 @@ const AssociationExecutionMonitor: React.FC<AssociationExecutionMonitorProps> = 
                                   title="平均支持度"
                                   value={task.result.avgSupport}
                                   precision={2}
-                                  valueStyle={{ fontSize: 16 }}
+                                  styles={{ content: { fontSize: 16 } }}
                                 />
                               </Col>
                               <Col span={6}>
@@ -261,7 +261,7 @@ const AssociationExecutionMonitor: React.FC<AssociationExecutionMonitorProps> = 
                                   title="平均置信度"
                                   value={task.result.avgConfidence}
                                   precision={2}
-                                  valueStyle={{ fontSize: 16 }}
+                                  styles={{ content: { fontSize: 16 } }}
                                 />
                               </Col>
                             </Row>

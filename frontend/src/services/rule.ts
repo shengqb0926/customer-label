@@ -347,7 +347,7 @@ export const associationConfigService = {
    * 创建关联规则配置
    */
   async createConfig(dto: CreateAssociationConfigDto): Promise<AssociationConfig> {
-    const response = await apiClient.post('/association', dto);
+    const response = await apiClient.post('/association-configs', dto);
     return response.data;
   },
 
@@ -363,7 +363,7 @@ export const associationConfigService = {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<{ data: AssociationConfig[]; total: number }> {
-    const response = await apiClient.get('/association', { params });
+    const response = await apiClient.get('/association-configs', { params });
     return response.data;
   },
 
@@ -371,7 +371,7 @@ export const associationConfigService = {
    * 获取单个配置详情
    */
   async getConfigById(id: number): Promise<AssociationConfig> {
-    const response = await apiClient.get(`/association/${id}`);
+    const response = await apiClient.get(`/association-configs/${id}`);
     return response.data;
   },
 
@@ -379,7 +379,7 @@ export const associationConfigService = {
    * 更新关联规则配置
    */
   async updateConfig(id: number, dto: UpdateAssociationConfigDto): Promise<AssociationConfig> {
-    const response = await apiClient.put(`/association/${id}`, dto);
+    const response = await apiClient.put(`/association-configs/${id}`, dto);
     return response.data;
   },
 
@@ -387,14 +387,14 @@ export const associationConfigService = {
    * 删除关联规则配置
    */
   async deleteConfig(id: number): Promise<void> {
-    await apiClient.delete(`/association/${id}`);
+    await apiClient.delete(`/association-configs/${id}`);
   },
 
   /**
    * 激活关联规则配置
    */
   async activateConfig(id: number): Promise<AssociationConfig> {
-    const response = await apiClient.post(`/association/${id}/activate`);
+    const response = await apiClient.post(`/association-configs/${id}/activate`);
     return response.data;
   },
 
@@ -402,7 +402,7 @@ export const associationConfigService = {
    * 停用关联规则配置
    */
   async deactivateConfig(id: number): Promise<AssociationConfig> {
-    const response = await apiClient.post(`/association/${id}/deactivate`);
+    const response = await apiClient.post(`/association-configs/${id}/deactivate`);
     return response.data;
   },
 
@@ -410,7 +410,7 @@ export const associationConfigService = {
    * 手动运行关联规则挖掘任务
    */
   async runAssociation(id: number): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post(`/association/${id}/run`);
+    const response = await apiClient.post(`/association-configs/${id}/run`);
     return response.data;
   },
 

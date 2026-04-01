@@ -92,7 +92,7 @@ function App() {
             <Route
               path="association-configs"
               element={
-                <AuthGuard roles={[UserRole.ADMIN, UserRole.ANALYST}>
+                <AuthGuard roles={[UserRole.ADMIN, UserRole.ANALYST]}>
                   <AssociationConfigManagement />
                 </AuthGuard>
               }

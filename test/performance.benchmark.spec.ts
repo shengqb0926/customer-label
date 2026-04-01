@@ -13,7 +13,7 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ConfigService } from '@nestjs/config';
 
@@ -508,9 +508,10 @@ describe('Performance Benchmark Suite (e2e)', () => {
         const startTime = tester.start();
         
         await request(app.getHttpServer())
-          .get(`/customers/rfm/analyze/${rfmCustomerId}`)
+          .post('/customers/rfm-analysis')
           .set('Authorization', `Bearer ${authToken}`)
-          .expect(200);
+          .send({})
+          .expect(201);
         
         tester.end('rfm_analyze', startTime);
       }
@@ -530,9 +531,10 @@ describe('Performance Benchmark Suite (e2e)', () => {
         const startTime = tester.start();
         
         await request(app.getHttpServer())
-          .get('/customers/rfm/summary')
+          .post('/customers/rfm-summary')
           .set('Authorization', `Bearer ${authToken}`)
-          .expect(200);
+          .send({})
+          .expect(201);
         
         tester.end('rfm_summary', startTime);
       }
