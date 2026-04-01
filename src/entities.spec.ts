@@ -1,10 +1,10 @@
-import { entities, TagRecommendation, RecommendationRule, ClusteringConfig, Customer, TagScore, FeedbackStatistic, User } from './entities';
+import { entities, TagRecommendation, RecommendationRule, ClusteringConfig, Customer, TagScore, FeedbackStatistic, User, AssociationConfig, CustomerTag } from './entities';
 
 describe('Entities Export', () => {
   it('应该导出 entities 数组', () => {
     expect(entities).toBeDefined();
     expect(Array.isArray(entities)).toBe(true);
-    expect(entities.length).toBe(7);
+    expect(entities.length).toBe(9);
   });
 
   it('应该导出 TagRecommendation 实体', () => {
@@ -22,9 +22,19 @@ describe('Entities Export', () => {
     expect(typeof ClusteringConfig).toBe('function');
   });
 
+  it('应该导出 AssociationConfig 实体', () => {
+    expect(AssociationConfig).toBeDefined();
+    expect(typeof AssociationConfig).toBe('function');
+  });
+
   it('应该导出 Customer 实体', () => {
     expect(Customer).toBeDefined();
     expect(typeof Customer).toBe('function');
+  });
+
+  it('应该导出 CustomerTag 实体', () => {
+    expect(CustomerTag).toBeDefined();
+    expect(typeof CustomerTag).toBe('function');
   });
 
   it('应该导出 TagScore 实体', () => {
@@ -46,7 +56,9 @@ describe('Entities Export', () => {
     expect(entities).toContain(TagRecommendation);
     expect(entities).toContain(RecommendationRule);
     expect(entities).toContain(ClusteringConfig);
+    expect(entities).toContain(AssociationConfig);
     expect(entities).toContain(Customer);
+    expect(entities).toContain(CustomerTag);
     expect(entities).toContain(TagScore);
     expect(entities).toContain(FeedbackStatistic);
     expect(entities).toContain(User);

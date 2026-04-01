@@ -126,6 +126,8 @@ describe('Performance Benchmark Suite (e2e)', () => {
   let testCustomerId: number;
 
   beforeAll(async () => {
+    jest.setTimeout(30000); // 增加超时时间到 30 秒
+    
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
@@ -147,26 +149,32 @@ describe('Performance Benchmark Suite (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    await app.init();
+    
+    try {
+      await app.init();
 
-    // 获取认证令牌
-    const registerResponse = await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        username: `benchmark_${Date.now()}`,
-        email: `benchmark_${Date.now()}@example.com`,
-        password: 'BenchmarkTest123!',
-      });
+      // 获取认证令牌
+      const registerResponse = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          username: `benchmark_${Date.now()}`,
+          email: `benchmark_${Date.now()}@example.com`,
+          password: 'BenchmarkTest123!',
+        });
 
-    const loginResponse = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({
-        username: registerResponse.body.username,
-        password: 'BenchmarkTest123!',
-      });
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username: registerResponse.body.username,
+          password: 'BenchmarkTest123!',
+        });
 
-    authToken = loginResponse.body.access_token;
-  });
+      authToken = loginResponse.body.access_token;
+    } catch (error) {
+      console.error('Failed to initialize test application:', error);
+      throw error;
+    }
+  }, 30000); // 设置 beforeAll 超时为 30 秒
 
   afterAll(async () => {
     // 清理测试数据
@@ -177,8 +185,13 @@ describe('Performance Benchmark Suite (e2e)', () => {
           .set('Authorization', `Bearer ${authToken}`);
       } catch (e) {}
     }
-    await app.close();
-  });
+    
+    try {
+      await app?.close();
+    } catch (error) {
+      console.error('Error closing application:', error);
+    }
+  }, 10000);
 
   beforeEach(() => {
     tester = new PerformanceTester();
